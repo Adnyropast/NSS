@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    
+        <style>
+        
+        html {
+            width : 100%;
+            height : 100%;
+        }
+        
+        body {
+            margin : 0;
+            width : 100%; height : 100%;
+            
+            text-align : center;
+            background : #00003F;
+            color : #FFFF00;
+        }
+        
+        #main-div {
+            display : flex;
+            align-items : center;
+            justify-content : center;
+            
+            width : 100%;
+            height : 100%;
+        }
+        
+        canvas {
+            background : #00AFFF;
+            width : 100%;
+            height : 100%;
+        }
+        
+        </style>
+    </head>
+    <body>
+        <div id="main-div">
+            <canvas id="canv", width=640, height=360></canvas>
+        </div>
+        
+        <script src="events.js"></script>
+        <script src="Vector.js"></script>
+        <script src="Rectangle.js"></script>
+        <script src="draft.js"></script>
+        <script>
+        
+        var WORLD_PACE = 16;
+        
+        </script>
+        
+        <script src="Entity.js"></script>
+        <script src="Action.js"></script>
+        
+        <script src="entities/draft-entities.js"></script>
+        <script src="entities/PlayableCharacter.js"></script>
+        <script src="entities/Adnyropast.js"></script>
+        <script src="entities/Haple.js"></script>
+        <script src="entities/LCreator.js"></script>
+        
+        <script src="actions/draft-actions.js"></script>
+        <script src="actions/cursorControl.js"></script>
+        <script src="actions/Jump.js"></script>
+        <script src="actions/Teleport.js"></script>
+        <script src="actions/ProjectileShot.js"></script>
+        
+        <script>
+        
+        const CANVAS = document.getElementById("canv");
+        const CTX = CANVAS.getContext("2d");
+        
+        CANVAS.makePattern = function makePattern(image, width, height, repeat) {
+            var tmpr = document.createElement("canvas");
+            tmpr.width = width; tmpr.height = height;
+            tmpr.getContext("2d").drawImage(image, 0, 0, width, height);
+            
+            return this.getContext("2d").createPattern(tmpr, repeat);
+        };
+        
+        class EntityCollection extends Array {
+            add(entity) {
+                if(this.indexOf(entity) == -1) {
+                    this.push(entity);
+                }
+                
+                return this;
+            }
+            
+            remove(entity) {
+                var index = this.indexOf(entity);
+                
+                if(index != -1) {
+                    this.splice(index, 1);
+                }
+                
+                return this;
+            }
+            
+            clear() {
+                this.splice(0, this.length);
+                
+                return this;
+            }
+        }
+        
+        const NOENTITY = [];
+        const ENTITIES = new EntityCollection();
+        const COLLIDABLE = new EntityCollection();
+        const DRAWABLE = new EntityCollection();
+        const PLAYABLE = new EntityCollection();
+        var CAMERA = new TCamera(CANVAS.width / 2, CANVAS.height / 2, CANVAS.width, CANVAS.height);
+        var PLAYER = null;
+        
+        function addEntity(entity) {
+            ENTITIES.add(entity);
+            
+            if(entity.isCollidable()) {
+                COLLIDABLE.add(entity);
+            }
+            
+            if(entity.isDrawable()) {
+                DRAWABLE.add(entity);
+            }
+            
+            if(entity instanceof PlayableCharacter) {
+                PLAYABLE.add(entity);
+                PLAYER = entity;
+            }
+        }
+        
+        function removeEntity(entity) {
+            entity.removeBlacklist(entity);
+            
+            ENTITIES.remove(entity);
+            COLLIDABLE.remove(entity);
+            DRAWABLE.remove(entity);
+            PLAYABLE.remove(entity);
+            
+            if(entity == PLAYER) {
+                PLAYER = null;
+                
+                mapTest();
+            }
+        }
+        
+        function clearEntities() {
+            ENTITIES.clear();
+            COLLIDABLE.clear();
+            DRAWABLE.clear();
+            PLAYABLE.clear();
+        }
+        
+        function playerUpdate(player) {
+            if(player instanceof Entity) {
+                if(keyList.value(K_FOCUS)) {
+                    player.addAction(new HoldFocus());
+                }
+                
+                if(keyList.value(K_PRESSFOCUS) == 1) {
+                    player.addAction(new PressFocus());
+                }
+                
+                if(mouse.moveValue == 1) {
+                    player.addAction(new MouseFocus());
+                }
+                
+                if(keyList.value(K_CDIRECTION)) {
+                    player.addAction(new FreeKeyFocus());
+                }
+                
+                if(keyList.value(71)) {
+                    player.addAction(new RoundFocus(8));
+                }
+            }
+            
+            if(player instanceof Haple) {
+                if(keyList.value(K_FLURRY)) {
+                    player.addAction(new GoldFlurry());
+                }
+                
+                player.route = Vector.addition(player.getPositionM(), getKDirection());
+                
+                if(keyList.value(LEFT) || keyList.value(UP) || keyList.value(RIGHT) || keyList.value(DOWN)) {
+                    player.addAction(new MoveFocus());
+                    
+                    if(player.groundCheck) {
+                        player.addAction(new Movement(1.125));
+                    } else {
+                        player.addAction(new Movement(0.125));
+                    }
+                }
+                
+                if(keyList.value(K_JUMP) == 1 && player.groundCheck) {
+                    player.addAction(new Jump());
+                } else if(!keyList.value(K_JUMP)) {
+                    player.removeAction(new Jump());
+                }
+                
+                if(mouse.value(1) == 1 || keyList.value(80) == 1) {
+                    player.addAction(new RocketPunch());
+                }
+                
+                if(keyList.value(67) == 1) {
+                    if(CAMERA.target == player) {
+                        CAMERA.target = null;
+                    } else {
+                        CAMERA.target = player;
+                    }
+                }
+            }
+            
+            if(player instanceof LCreator) {
+                if(mouse.value(1) == 1) {
+                    player.addAction(new LCreation());
+                }
+                
+                if(keyList.value(K_DIRECTION)) {
+                    player.route = getKDirection().add(player.getPositionM());
+                    player.addAction(new Movement(1.25));
+                }
+            }
+        }
+        
+        var timenote = document.createElement("text");
+        document.body.appendChild(timenote);
+        var lastDate = new Date();
+        
+        function worldLoop() {
+            playerUpdate(PLAYER);
+            
+            for(var i = 0; i < ENTITIES.length; ++i) {
+                for(var i = ENTITIES.length - 1; i >= 0; --i) { 
+                var entity = ENTITIES[i];
+                
+                entity.update();
+                
+                if(entity.isRemovable()) {
+                    removeEntity(entity);
+                }
+            }
+            
+            keyList.increment();
+            mouse.increment();
+            
+            for(var i = 0; i < COLLIDABLE.length; ++i) {
+                for(var j = i + 1; j < COLLIDABLE.length; ++j) {
+                    if(COLLIDABLE[i].collides(COLLIDABLE[j])) {
+                        COLLIDABLE[i].oncollision(COLLIDABLE[j]);
+                        COLLIDABLE[j].oncollision(COLLIDABLE[i]);
+                    }
+                }
+            }
+            CTX.fillStyle = "#FFFFFF3F";
+            CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
+            
+            DRAWABLE.sort(function(a, b) {
+                if(a.zIndex > b.zIndex) {
+                    return -1;
+                } if(a.zIndex < b.zIndex) {
+                    return +1;
+                }
+                
+                return 0;
+            });
+            
+            for(var i = 0; i < DRAWABLE.length; ++i) {
+                if(i < DRAWABLE.length - 1 && DRAWABLE[i].zIndex < DRAWABLE[i + 1].zIndex) {
+                    var drawable = DRAWABLE[i + 1];
+                    DRAWABLE[i + 1] = DRAWABLE[i];
+                    DRAWABLE[i] = drawable;
+                }
+                
+                var drawable = DRAWABLE[i];
+                
+                var x = drawable.getX();
+                var y = drawable.getY();
+                var width = drawable.getWidth();
+                var height = drawable.getHeight();
+                
+                x += -CAMERA.getOffsetX();
+                y += -CAMERA.getOffsetY();
+                
+                if(x == -Infinity) {
+                    x = 0;
+                } if(y == -Infinity) {
+                    y = 0;
+                } if(width == Infinity) {
+                    width = CANVAS.width;
+                } if(height == Infinity) {
+                    height = CANVAS.height;
+                }
+                
+                var style = drawable.getStyle();
+                
+                if(style instanceof HTMLImageElement) {
+                    CTX.drawImage(style, x, y, width, height);
+                } else {
+                    CTX.fillStyle = style;
+                    CTX.translate(x, y);
+                    CTX.fillRect(0, 0, width, height);
+                    CTX.translate(-x, -y);
+                }
+                
+                if(keyList.value(13) && drawable instanceof GroundArea) {
+                    console.log(style);
+                }
+            }
+            
+                timenote.innerHTML = new Date() - lastDate; 
+                 lastDate = new Date(); 
+        }
+    }    
+        const BATTLERS = [];
+        
+        BATTLERS.push(new Entity());
+        BATTLERS.push(new Entity());
+        
+        function battleLoop() {
+            BATTLERS.sort(function(a, b) {
+                
+                
+                return 0;
+            });
+            
+            for(var i = 0; i < BATTLERS.length; ++i) {
+                console.log(BATTLERS[i]);
+            }
+            
+            clearInterval(gameInterval);
+        }
+        
+        var gameInterval;
+        
+        function resetLoop(loopF, pace) {
+            clearInterval(gameInterval);
+            gameInterval = setInterval(loopF, pace);
+        }
+        
+        resetLoop(worldLoop, WORLD_PACE);
+        
+        </script>
+        <script>
+        
+        function mapTest() {
+            clearEntities();
+            
+            addEntity(CAMERA);
+            addEntity(new CameraBoundary(-Infinity, -CANVAS.height, Infinity, CANVAS.height));
+            addEntity(new CameraBoundary(-Infinity, CANVAS.height, Infinity, CANVAS.height));
+            addEntity(new CameraBoundary(-640, 0, 320, CANVAS.height));
+            addEntity(new CameraBoundary(960, 0, 320, CANVAS.height));
+            
+            addEntity((new Adnyropast(80, 80, 16, 16)).setZIndex(-1).setStyle("#00FFFF")); 
+            addEntity((new Haple(80, 80, 16, 16)).setZIndex(-1).setStyle("#00FFFF"));
+            
+            addEntity(new Entity(0, 0, 16, 16)); -->
+            addEntity((new Obstacle(240, 240, 32, 32)).setZIndex(-1).setStyle(IMG_SEED));
+            addEntity((new Ground(-Infinity, 328, Infinity, 16)).setStyle("#7F7F7F"));
+            addEntity((new Obstacle(-Infinity, 16, Infinity, 16)).setStyle("#7F7F7F").setReplaceID(8));
+            
+            addEntity((new MovingObstacle(360, 300 - 128, 64, 16)).setStyle("#0000FF"));
+            
+            addEntity((new Hazard(320, 160, 32, 16)).setStyle("#7F007F"));
+            
+            addEntity((new Target(320, 120, 16, 16)));
+            
+            
+            addEntity((new Enemy(320, 128, 16, 16)));
+            
+            addEntity((new Obstacle(240, 0, 16, 160)));
+            addEntity((new Obstacle(240, 176, 16, 160)));
+            
+            addEntity((new GroundArea(0, 0, 320, 320)).setZIndex(1).setStyle("#007F00"));
+            addEntity((new Braker(-Infinity, -Infinity, Infinity, Infinity, 1.03125)).setStyle("#00000000"));
+            addEntity((new GravityField(0, 0, 320, 320)).setStyle("#00000000").setForce([0, 0]));
+            addEntity((new GravityField(320, 0, 512, 320)).setStyle("#00000000").setForce([+0, +0.25]));
+            
+            addEntity((new Decoration(48, 304, 16, 80)).setZIndex(-2).setStyle("#9F3F00"));
+            addEntity((new Decoration(-640, 0, 640 * 3, 360)).setZIndex(1000).setStyle(IMG_SKY));
+            
+            var c = document.createElement("canvas");
+            c.width = 64; c.height = 64;
+            
+            var ctx = c.getContext("2d");
+            
+            ctx.fillStyle = "#3F3F00";
+            ctx.fillRect(0, 0, 64, 64);
+            ctx.drawImage(IMG_GRASSTILE, 0, 0, 16, 16);
+            ctx.drawImage(IMG_GRASSTILE, 16, 16, 32, 32);
+            
+            pattern = CTX.createPattern(c, "no-repeat");
+            
+            addEntity((new Decoration(0, 0, 64, 64)).setZIndex(1).setStyle(pattern));
+        }
+        
+        function mapTest2() {
+            clearEntities();
+            
+            addEntity((new LCreator(320, 180, 16, 16)));
+            
+            addEntity((new GroundArea(0, 0, 640, 360)).setZIndex(+1).setStyle(CANVAS.makePattern(IMG_HPP_C0, 8, 8, "repeat")));
+            
+            addEntity((new Obstacle(0, 0, 16, 16)).setStyle("#7F7F00"));
+            addEntity((new Obstacle(624, 0, 16, 16)).setStyle("#7F7F00"));
+            addEntity((new Obstacle(0, 344, 16, 16)).setStyle("#7F7F00"));
+            addEntity((new Obstacle(624, 344, 16, 16)).setStyle("#7F7F00"));
+            
+            addEntity((new Obstacle(0, 16, 16, 328)));
+            addEntity((new Obstacle(16, 0, 608, 16)));
+            addEntity((new Obstacle(16, 344, 608, 16)));
+            addEntity((new Obstacle(624, 16, 16, 328)));
+            
+            addEntity((new Obstacle(32, 32, 16, 16)));
+            
+            addEntity((new Braker(0, 0, 640, 360, 1.25)));
+        }
+        
+        setTimeout(mapTest(), 128);
+        
+        </script>
+    </body>
+</html>
