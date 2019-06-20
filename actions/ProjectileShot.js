@@ -1,32 +1,4 @@
 
-class Projectile extends Entity {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
-        this.style = "#FF0000";
-        this.setBlockable(true);
-        this.setBrakeExponent(0);
-        this.setForceFactor(0);
-        this.setRegeneration(-1);
-        this.setOffense(FX_PIERCING, 1);
-    }
-    
-    oncollision(other) {
-        super.oncollision(other);
-        
-        if(other.getReplaceID() != 0) {
-            var particle = new TpParticle(NaN, NaN, 32, 32);
-            particle.setPositionM(this.getPositionM());
-            particle.setColorTransition([255, 0, 0, 255], [255, 0, 0, 0], 10);
-            particle.setLifespan(10);
-            
-            addEntity(particle);
-            this.setEnergy(0);
-        }
-        
-        return this;
-    }
-}
-
 class ProjectileShot extends Action {
     constructor() {
         super();
@@ -46,7 +18,7 @@ class ProjectileShot extends Action {
             
             var projectile = Projectile.fromMiddle(initialPosition[0], initialPosition[1], 12, 12);
             
-            projectile.speed = Vector.subtraction(this.user.getCursor().getPositionM(), initialPosition).normalize(16);
+            projectile.setSpeed(Vector.subtraction(this.user.getCursor().getPositionM(), initialPosition).normalize(16));
             projectile.setBlacklist(this.user.getBlacklist());
             projectile.setLifespan(100);
             
@@ -88,7 +60,7 @@ class BlowoutShots extends Action {
         if(this.phase % this.pace == 0) {
             var projectile = new Projectile(this.user.getPositionM(0), this.user.getPositionM(1), 16, 16);
             projectile.setPositionM(this.user.getPositionM());
-            projectile.speed = new Vector(Math.cos(this.angle), Math.sin(this.angle)).normalize(8);
+            projectile.setSpeed(new Vector(Math.cos(this.angle), Math.sin(this.angle)).normalize(8));
             projectile.setBlacklist(this.user.getBlacklist());
             projectile.setLifespan(20);
             addEntity(projectile);

@@ -1,4 +1,13 @@
 
+var abilityId = -1;
+
+var actionid = -1;
+const ACT_JUMP = ++actionid;
+const ACT_TELEPORT = ++actionid;
+const ACT_PROJECTILE = ++actionid;
+const ACT_TARGETATTACK = ++actionid;
+const ACT_MOVEMENT = ++actionid;
+
 /**
  * The Action class represents any action that can be performed by a character.
  * Do not start anyhting that would change the game in the constructor, do it during the phase 0 in the use method instead.
@@ -15,12 +24,21 @@ class Action {
     }
     
     constructor() {
+        this.abilityId = -1;
         this.user = null;
         this.phase = 0;
         this.id = -1;
         this.useCost = 0;
         this.order = 0;
+        
+        this.endid = -1;
+        this.phaseLimit = 255;
+        
+        this.removable = true;
     }
+    
+    getAbilityId() {return this.abilityId;}
+    setAbilityId(abilityId) {this.abilityId = abilityId; return this;}
     
     getUser() {
         return this.user;
@@ -39,14 +57,18 @@ class Action {
     incPhase() {
         ++this.phase;
         
+        if(this.phase > this.phaseLimit) {
+            this.phase = this.phaseLimit;
+        }
+        
         return this;
     }
     
-    getID() {
+    getId() {
         return this.id;
     }
     
-    setID(id) {
+    setId(id) {
         this.id = id;
         
         return this;
@@ -72,10 +94,13 @@ class Action {
         return this;
     }
     
-    use() { return this.end(); }
+    use() {
+        return this.end();
+    }
     
-    end() {
-        if(this.user != null) {
+    end(endid = 0) {
+        if(this.user != null && this.isRemovable()) {
+            this.endid = endid;
             this.onend();
             
             var user = this.user;
@@ -86,11 +111,34 @@ class Action {
         return this;
     }
     
+    onadd() {
+        return this;
+    }
+    
     onend() {
         return this;
     }
     
     allowsReplacement(action) {
         return false;
+    }
+    
+    preventsAddition(action) {
+        return this.id === action.id;
+    }
+    
+    isRemovable() {return this.removable;}
+    setRemovable(removable) {this.removable = removable; return this;}
+}
+
+class BusyAction extends Action {
+    onadd() {
+        this.user.removeActionsWithId(ACT_MOVEMENT);
+        
+        return this;
+    }
+    
+    preventsAddition(action) {
+        return super.preventsAddition(action) || action.id === ACT_JUMP || action.id === ACT_MOVEMENT;
     }
 }

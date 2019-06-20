@@ -1,5 +1,7 @@
 
-class HoldFocus extends Action {
+class FocusAction extends Action {}
+
+class HoldFocus extends FocusAction {
     constructor() {
         super();
         this.id = "cursorControl";
@@ -7,17 +9,23 @@ class HoldFocus extends Action {
     }
     
     use() {
-        this.user.cursor.centerTarget();
+        // console.log("holdfocus #" + this.phase);
         
-        if(!keyList.value(K_FOCUS)) {
-            this.end();
+        if(this.phase == 0) {
+            this.user.cursor.setNextTarget();
         }
+        
+        this.user.cursor.centerTarget();
         
         return this;
     }
+    
+    onend() {
+        console.log("holdfocus ended");
+    }
 }
 
-class PressFocus extends Action {
+class PressFocus extends FocusAction {
     constructor() {
         super();
         this.id = "cursorControl";
@@ -25,6 +33,10 @@ class PressFocus extends Action {
     }
     
     use() {
+        if(this.phase == 0) {
+            this.user.cursor.setNextTarget();
+        }
+        
         if(this.phase > 0 && keyList.value(K_PRESSFOCUS) == 1) {
             this.user.cursor.setPositionM(this.user.getPositionM());
             this.end();
@@ -34,9 +46,13 @@ class PressFocus extends Action {
         
         return this;
     }
+    
+    onend() {
+        console.log("press focus ended");
+    }
 }
 
-class MouseFocus extends Action {
+class MouseFocus extends FocusAction {
     constructor() {
         super();
         this.id = "cursorControl";
@@ -45,7 +61,7 @@ class MouseFocus extends Action {
     
     use() {
         if(mouse.moveValue == 1) {
-            this.user.cursor.setPositionM(Vector.from(getMousePosition()));
+            this.user.cursor.setPositionM(getMousePosition());
         }
         
         this.end();
@@ -54,7 +70,7 @@ class MouseFocus extends Action {
     }
 }
 
-class MoveFocus extends Action {
+class MoveFocus extends FocusAction {
     constructor() {
         super();
         this.id = "cursorControl";
@@ -62,18 +78,38 @@ class MoveFocus extends Action {
     }
     
     use() {
-        this.user.cursor.setPositionM(getKDirection().add(this.user.getPositionM()));
-        this.end();
+        // console.log("movefocus #" + this.phase);
+        
+        if(this.phase == 0) {
+            this.user.cursor.setPositionM(Vector.addition(this.user.getPositionM(), this.user.speed));
+        }
+        
+        // this.user.cursor.setPositionM(this.user.route.minus(this.user.getPositionM()).multiply(this.user.cursorDistance).add(this.user.getPositionM()));
+        this.user.cursor.setPositionM(this.user.route.minus(this.user.getPositionM()).normalize(this.user.cursorDistance).add(this.user.getPositionM()));
+        // this.user.cursor.route = getKDirection().add(this.user.getPositionM());
+        // this.user.cursor.speed = this.user.speed;
+        
+        // if(this.phase > 0 && this.user.speed.isZero()) {
+            // this.end();
+        // }
         
         return this;
     }
     
     allowsReplacement(action) {
-        return action.id == "cursorControl";
+        return false && action.id == "cursorControl" && !(action instanceof MoveFocus);
+    }
+    
+    onadd() {
+        // console.log("babababa");
+    }
+    
+    onend() {
+        console.error("movefocus ended");
     }
 }
 
-class FreeKeyFocus extends Action {
+class FreeKeyFocus extends FocusAction {
     constructor() {
         super();
         this.id = "cursorControl";

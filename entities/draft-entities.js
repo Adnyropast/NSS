@@ -1,44 +1,17 @@
 
-class Area extends Entity {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
-        
-        this.otherThrust = 0.5;
-    }
-}
+const BRK_OBST = 1.25;
+const BRK_AIR = 1.03125;
+const BRK_WATER = 1.25;
+var THRUST_OBSTACLE = 1.125;
+var THRUST_OBSTACLE = 0.5;
+var _THRUST_AIR = 0.125;
+var THRUST_WATER = 1.0;
 
-class NonlivingCollidable extends Entity {
+class ActorCollidable extends Entity {
     constructor(x, y, width, height) {
         super(x, y, width, height);
         this.collidable = true;
         this.setEffectFactor("default", 0);
-    }
-}
-
-class Obstacle extends NonlivingCollidable {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
-        this.replaceID = -1;
-        this.otherBrake = 1.25;
-        this.otherThrust = 0.5;
-    }
-}
-
-class Braker extends NonlivingCollidable {
-    constructor(x, y, width, height, otherBrake) {
-        super(x, y, width, height);
-        this.setReplaceID(0);
-        this.otherBrake = otherBrake;
-        this.setStyle("#00000000");
-    }
-}
-
-class GravityField extends NonlivingCollidable {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
-        this.setReplaceID(0);
-        this.setOtherBrake(1);
-        this.force = [0, +0.25];
     }
 }
 
@@ -50,107 +23,59 @@ class Decoration extends Entity {
     }
 }
 
+class Area extends ActorCollidable {
+    constructor(x, y, width, height) {
+        super(x, y, width, height);
+    }
+}
+
+class Obstacle extends ActorCollidable {
+    constructor(x, y, width, height) {
+        super(x, y, width, height);
+        this.replaceId = -1;
+        this.otherBrake = BRK_OBST;
+        this.otherThrust = THRUST_OBSTACLE;
+    }
+}
+
+class Braker extends ActorCollidable {
+    constructor(x, y, width, height, otherBrake) {
+        super(x, y, width, height);
+        this.setReplaceId(0);
+        this.otherBrake = otherBrake;
+        this.setStyle(INVISIBLE);
+    }
+}
+
+class ForceField extends ActorCollidable {
+    constructor(x, y, width, height, force = [0, 0]) {
+        super(x, y, width, height);
+        this.setStyle(INVISIBLE);
+        this.setReplaceId(0);
+        this.setOtherBrake(1);
+        this.setForce(force);
+    }
+}
+
+class GravityField extends ForceField {
+    constructor(x, y, width, height, force = [0, +0.25]) {
+        super(x, y, width, height, force);
+    }
+}
+
 class MovingObstacle extends Obstacle {
     constructor(x, y, width, height) {
         super(x, y, width, height);
-    }
-    
-    update() {
-        this.speed = new Vector(0, 0);
         this.speed.set(0, 0.1);
-        this.advance();
-        
-        return this;
+        this.ground = true;
     }
 }
 
-class TCamera extends Entity {
-    constructor(xM, yM, width, height) {
-        super(NaN, NaN, width, height);
-        this.setPositionM([xM, yM]);
-        this.setZIndex(-1000);
-        this.setStyle("#00000000");
-        this.setCollidable(true);
-        this.setSelfBrake(1.25);
-        this.setEffectFactor("default", 0);
-        
-        this.ratio = 1;
-        this.accVal = 1.125;
-        this.accVal = 4;
-        this.cameraControllable = true;
-    }
-    
-    getOffsetX() {
-        return this.getXM() - CANVAS.width / 2;
-    }
-    
-    getOffsetY() {
-        return this.getYM() - CANVAS.height / 2;
-    }
-    
-    getOffset() {
-        return new Vector(this.getOffsetX(), this.getOffsetY());
-    }
-    
-    getRatio() {
-        return this.ratio;
-    }
-    
-    setRatio(ratio) {
-        this.ratio = ratio;
-        
-        return this;
-    }
-    
-    oncollision(other) {
-        return this;
-    }
-    
-    update() {
-        /**/
-        if(this.cameraControllable) {
-            if(keyList.value(100)) {
-                this.drag([-this.accVal, 0]);
-            } if(keyList.value(104)) {
-                this.drag([0, -this.accVal]);
-            } if(keyList.value(102)) {
-                this.drag([+this.accVal, 0]);
-            } if(keyList.value(101)) {
-                this.drag([0, +this.accVal]);
-            }
-        }
-        /**/
-        
-        if(this.target != null) {
-            this.route = this.target.getPositionM();
-        } else {
-            this.route = null;
-        }
-        
-        this.addAction((new Movement(this.accVal)).setUseCost(0));
-        
-        /**/
-        
-        // this.advance();
-        super.update();
-        
-        return this;
-    }
-}
-
-class CameraBoundary extends Entity {
+class Bouncer extends Obstacle {
     constructor(x, y, width, height) {
         super(x, y, width, height);
-        this.setReplaceID(-1);
-        this.setEffectFactor("default", 0);
-    }
-    
-    oncollision(camera) {
-        if(camera instanceof TCamera) {
-            this.replace(camera, this.getReplaceID());
-        }
-        
-        return this;
+        this.bounce = 1;
+        this.ground = true;
     }
 }
 
@@ -158,20 +83,41 @@ class Hazard extends Obstacle {
     constructor(x, y, width, height) {
         super(x, y, width, height);
         this.setOffense("default", 1);
+        this.ground = true;
     }
 }
 
 class Ground extends Obstacle {
     constructor(x, y, width, height) {
         super(x, y, width, height);
+        this.ground = true;
     }
 }
 
-class GroundArea extends Ground {
+class GroundArea extends Area {
     constructor(x, y, width, height) {
         super(x, y, width, height);
-        this.setReplaceID(0);
-        this.otherThrust = 0.5;
+        this.setReplaceId(0);
+        this.otherThrust = THRUST_OBSTACLE;
+        this.setOtherBrake(BRK_OBST);
+        this.ground = true;
+    }
+}
+
+class AirArea extends Area {
+    constructor(x, y, width, height) {
+        super(x, y, width, height);
+        this.setOtherBrake(BRK_AIR);
+        this.setStyle(INVISIBLE);
+    }
+}
+
+class WaterArea extends Area {
+    constructor(x, y, width, height) {
+        super(x, y, width, height);
+        this.setOtherBrake(BRK_WATER);
+        this.otherThrust = THRUST_WATER;
+        this.setStyle("#007FFF3F");
     }
 }
 
@@ -195,4 +141,173 @@ class Router extends Entity {
         
         return this;
     }
+}
+
+const INVISIBLE_VECTOR = new Vector(0, 0, 0, 0);
+const WHITE_VECTOR = new Vector(255, 255, 255, 255);
+
+class Particle extends Decoration {
+    constructor(x, y, width, height) {
+        super(x, y, width, height);
+        this.setZIndex(-1);
+        this.setLifespan(1);
+        
+        this.initialColor = INVISIBLE_VECTOR, this.endColor = WHITE_VECTOR;
+        // this.currentColor;
+        this.colorDuration = 1, this.colorStep = 0;
+        this.colorTiming = bezierEaseIn;
+        
+        this.initialSize = 0, this.endSize = 1;
+        this.sizeDuration = 1, this.sizeStep = 0;
+        this.sizeTiming = bezierLinear;
+    }
+    
+    getColorAt(t) {
+        var color = new Vector();
+        
+        for(var dim = 0; dim < this.initialColor.length; ++dim) {
+            color[dim] = this.initialColor[dim] + this.colorTiming(t) * (this.endColor[dim] - this.initialColor[dim]);
+        }
+        
+        return color;
+    }
+    
+    getSizeAt(t) {
+        var size = new Vector();
+        
+        for(var dim = 0; dim < this.initialSize.length; ++dim) {
+            size[dim] = this.initialSize[dim] + this.sizeTiming(t) * (this.endSize[dim] - this.initialSize[dim]);
+        }
+        
+        return size;
+    }
+    
+    setColorTransition(initialColor, endColor, colorDuration = this.colorDuration) {
+        this.initialColor = initialColor;
+        this.endColor = endColor;
+        
+        this.colorDuration = colorDuration;
+        this.colorStep = 0;
+        
+        return this;
+    }
+    
+    setSizeTransition(initialSize, endSize, sizeDuration = this.sizeDuration) {
+        this.initialSize = initialSize;
+        this.endSize = endSize;
+        
+        this.sizeDuration = sizeDuration;
+        this.sizeStep = 0;
+        
+        return this;
+    }
+    
+    convert(alpha) {
+        return ((alpha < 16) ? "0" : "") + Math.floor(alpha).toString(16);
+    }
+    
+    getHex(rgba) {
+        return "#" + this.convert(rgba[0]) + this.convert(rgba[1]) + this.convert(rgba[2]) + this.convert(rgba[3]);
+    }
+    
+    getRGBA(rgba) {
+        return "rgba(" + rgba[0] + ", " + rgba[1] + ", " + rgba[2] + ", " + (rgba[3] / 255) + ")";
+    }
+    
+    updateStyle() {
+        super.updateStyle()
+        
+        // var stepVector = Vector.from(this.endColor).subtract(this.initialColor).divide(this.colorDuration);
+        
+        // this.currentColor = this.currentColor.add(stepVector);
+        
+        if(this.colorStep <= this.colorDuration) {
+            this.style = this.getRGBA(this.getColorAt(this.colorStep / this.colorDuration));
+            ++this.colorStep;
+        }
+        
+        return this;
+    }
+    
+    update() {
+        super.update();
+        
+        // 
+        
+        var positionM = this.getPositionM();
+        
+        this.setSize(Vector.from(this.endSize).subtract(this.initialSize).divide(this.sizeDuration).add(this.getSize()));
+        
+        this.setPositionM(positionM);
+        
+        return this;
+    }
+}
+
+class TpParticle extends Particle {
+    constructor(x, y, width, height) {
+        super(x, y, width, height);
+    }
+}
+
+class CSmokeParticle extends Particle {
+    constructor(x, y, width, height) {
+        super(x, y, width, height);
+        
+        this.setSelfBrake(1.0625);
+        this.setLifespan(60);
+        this.setColorTransition([0, 255, 255, 127], [0, 255, 255, 0], 60);
+    }
+}
+
+class SmokeParticle extends Particle {
+    constructor(x, y, width, height) {
+        super(x, y, width, height);
+        
+        this.setSelfBrake(1.0625);
+        this.setLifespan(60);
+        this.setColorTransition([255, 255, 255, 191], [223, 223, 223, 31], 60);
+    }
+}
+
+class FireSmokeParticle extends Particle {
+    constructor(x, y, width, height) {
+        super(x, y, width, height);
+        
+        this.setSelfBrake(1.0625);
+        this.setLifespan(60);
+        this.setColorTransition([255, 0, 0, 127], [0, 0, 0, 127], 60);
+    }
+}
+
+class Projectile extends Entity {
+    constructor(x, y, width, height) {
+        super(x, y, width, height);
+        this.style = "#FF0000";
+        this.setBlockable(true);
+        this.setBrakeExponent(0);
+        this.setForceFactor(0);
+        this.setRegeneration(-1);
+        this.setOffense(FX_PIERCING, 1);
+    }
+    
+    oncollision(other) {
+        super.oncollision(other);
+        
+        if(other.getReplaceId() != 0) {
+            var particle = new TpParticle(NaN, NaN, 32, 32);
+            particle.setPositionM(this.getPositionM());
+            particle.setColorTransition([255, 0, 0, 255], [255, 0, 0, 0], 10);
+            particle.setLifespan(10);
+            
+            addEntity(particle);
+            this.setEnergy(0);
+        }
+        
+        return this;
+    }
+}
+
+class Door extends Entity {
+    
 }

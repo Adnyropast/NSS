@@ -414,7 +414,7 @@ class Vector extends Array {
         return res.divide.apply(res, arguments);
     }
     
-    opp() {
+    opposite() {
         var opposite = new Vector();
         
         for(var i = 0; i < this.size(); ++i) {

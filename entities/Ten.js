@@ -1,0 +1,4 @@
+
+class Ten extends PlayableCharacter {
+    
+}

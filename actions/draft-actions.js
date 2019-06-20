@@ -33,26 +33,9 @@ class TargetAttack extends Action {
     }
 }
 
-class Movement extends Action {
-    constructor(power) {
-        super();
-        this.id = 4;
-        this.setUseCost(0.125);
+class Buff extends Action {
+    constructor() {
         
-        this.direction = new Vector(0, 0);
-        this.power = power;
-    }
-    
-    use() {
-        if(this.user.route != null) {
-            this.power = this.user.thrust;
-            this.user.drag(Vector.subtraction(this.user.route, this.user.getPositionM()).normalize(this.power));
-            this.user.addState("walking");
-        }
-        
-        this.end();
-        
-        return this;
     }
 }
 
@@ -75,14 +58,20 @@ class Counter extends Action {
     
 }
 
+function alterVector(vector, angle) {
+    var cos = Math.cos(angle), sin = Math.sin(angle);
+    
+    return new Vector(cos * vector[0] - sin * vector[1], sin * vector[0] + cos * vector[1]);
+}
+
 class BackSmoke extends Action {
     constructor() {
         super();
+        this.id = "smoke";
         
         this.t = 0;
-        this.angleVariation = 1;
-        this.shouldEnd = false;
-        this.smokeLifespan = 30;
+        this.angleVariation = 0.5;
+        this.smokeLifespan = 60;
         this.smokeWidth = 16;
         this.smokeHeight = 16;
     }
@@ -90,37 +79,38 @@ class BackSmoke extends Action {
     use() {
         ++this.t;
         
-        var particle = new TpParticle(NaN, NaN, 16, 16);
-        particle.setColorTransition([255, 0, 0, 127], [0, 0, 0, 127], this.smokeLifespan);
-        particle.setColorTransition([0, 255, 255, 127], [0, 255, 255, 0], 30);
-        particle.setSizeTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth * 2, this.smokeHeight * 2], this.smokeLifespan);
-        particle.setPositionM(this.user.getPositionM());
-        particle.setLifespan(this.smokeLifespan);
+        var particle = SmokeParticle.fromMiddle(this.user.getXM(), this.user.getYM(), 16, 16);// .setCollidable(true).setReplaceable(true);
+        particle.setSizeTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 2, this.smokeHeight / 2], this.smokeLifespan);
+        
         var angle = Math.sin(this.t) * this.angleVariation;
-        var cos = Math.cos(angle);
-        var sin = Math.sin(angle);
-        particle.speed = new Vector(cos * -this.user.speed[0] - sin * -this.user.speed[1], sin * -this.user.speed[0] + cos * -this.user.speed[1]).normalize(2);
-        particle.setSelfBrake(1.15);
-        particle.setCollidable(true).setReplaceable(true);
-        particle.setWhitelist(NOENTITY);
+        particle.setSpeed(alterVector(this.user.speed, angle + Math.PI).normalize(2));
         addEntity(particle);
-        /**/
-        if(this.shouldEnd) {
-            this.end();
-        }
+        
+        var particle = SmokeParticle.fromMiddle(this.user.getXM(), this.user.getYM(), 16, 16);// .setCollidable(true).setReplaceable(true);
+        particle.setSizeTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 4, this.smokeHeight / 4], this.smokeLifespan);
+        
+        var angle = Math.sin(this.t) * this.angleVariation;
+        particle.setSpeed(alterVector(this.user.speed, angle + Math.PI).normalize(2));
+        addEntity(particle);
+        
+        var particle = SmokeParticle.fromMiddle(this.user.getXM(), this.user.getYM(), 16, 16);// .setCollidable(true).setReplaceable(true);
+        particle.setSizeTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 8, this.smokeHeight / 8], this.smokeLifespan);
+        
+        var angle = Math.sin(this.t) * -this.angleVariation;
+        particle.setSpeed(alterVector(this.user.speed, angle + Math.PI).normalize(2));
+        addEntity(particle);
+        
+        var particle = SmokeParticle.fromMiddle(this.user.getXM(), this.user.getYM(), 16, 16);// .setCollidable(true).setReplaceable(true);
+        particle.setSizeTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 2, this.smokeHeight / 2], this.smokeLifespan);
+        
+        var angle = Math.sin(this.t) * 0.125;
+        particle.setSpeed(alterVector(this.user.speed, angle + Math.PI).normalize(2));
+        addEntity(particle);
         
         return this;
     }
-}
-
-class Walk extends Movement {
-    use() {
-        if(!this.user.groundCheck) {
-            this.end();
-        }
-        
-        return this;
-    }
+    
+    preventsAddition() {return false;}
 }
 
 class DashKick extends Action {
@@ -153,13 +143,29 @@ class ZoneEngage extends Action {
     constructor() {
         super();
         this.id = "engage";
+        
+        this.zone = null;
     }
     
     use() {
+        if(this.phase == 0) {
+            this.zone = Entity.fromMiddle(this.user.getXM(), this.user.getYM(), 0, 0).setZIndex(this.user.getZIndex() + 1);
+            addEntity(this.zone);
+        } else if(this.phase == 100) {
+            return this.end();
+        }
         
+        this.zone.setSizeM([this.phase * 8, this.phase * 8]);
+        this.zone.setStyle("rgba(0, 255, 255, " + (this.phase / 100) + ")");
+        
+        return this;
     }
-}
-
-class Still extends Movement {
     
+    onend() {
+        removeEntity(this.zone);
+        
+        engageBattle(this.zone.collidedWith);
+        
+        return this;
+    }
 }

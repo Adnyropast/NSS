@@ -1,112 +1,99 @@
 
-var entityID = -1;
+var entityId = -1;
 
 class Entity extends Rectangle {
     constructor(x, y, width, height) {
         super([x, y], [width, height]);
         
-        // Graphic
+        // this.id = ++entityId;
+        
+        Object.defineProperty(this, "speed", {"configurable" : true, "enumerable" : true, "value" : Vector.filled(this.getDimension(), 0), "writable" : true});
+        this.selfBrake = 1;
+        
+        this.removable = false;
+        
+        // 
+        
+        this.drawable = true;
         this.zIndex = 0;
         this.style = "#000000";
-        
-        // frame in game ?
-        this.icpf = 16;
+        this.icpf = 12;
         this.icount = 0;
         this.iindex = 0;
         
-        // Speed 
-        this.speed = Vector.filled(this.getDimension(), 0);
+        // 
         
-        // Collision
-        this.removable = false;
         this.collidable = true;
-        this.drawable = true;
         
         this.blockable = false;
-        this.replaceable = false;
-        
+        // this.solid = false;
+        // this.crusher = false;
         this.whitelist = COLLIDABLE;
         this.blacklist = [this];
         
-        // Physics
-        // Movements : Brake
-        this.selfBrake = 1;
+        this.collidedWith = [];
+        
+        this.replaceId = 0;
+        this.bounce = 0;
+        this.replaceable = false;
+        
         this.otherBrake = 1;
         this.brakeExponent = 1;
+        
         this.force = new Vector(0, 0);
         this.forceFactor = 1;
-        this.replaceID = 0;
         this.vacuum = 0;
-        // Direction
-        this.direction = Vector.filled(this.getDimension(), 0);
+        
         this.thrust = 0;
         this.otherThrust = 0;
         this.thrustFactor = 1;
         this.selfThrust = 0;
-
-        // type Entity => pass to Action ? 
-        this.target = null;
         
+        
+        
+        this.direction = Vector.filled(this.getDimension(), 0);
+        
+        // this.focus;
+        this.target = null;// Entity
+        this.targets = [];// Entity[]
+        // this.destination = Vector.from(this.getPosition());
         this.route = null;// Vector
         this.cursor = null;// Entity
         
         this.effectiveEnergy = this.realEnergy = this.energy = 1;
         this.regeneration = 0;
-        
         this.effects = [];
+        
         this.actions = [];
+        this.possibleActions = [];
+        this.impossibleActions = [];
+        this.abilities = [];
+        this.stale = [];
+        
         this.state = [];
         
+        this.gravityDirection = new Vector(0, 0);
+        this.ground = false;
         
-    }
-    
-    static fromData(data) {
-        var entity = new this();
+        // 
         
-        if(typeof data.x != "undefined") {
-            entity.setX(data.x);
-        } if(typeof data.y != "undefined") {
-            entity.setY(data.y);
-        } if(typeof data.xM != "undefined") {
-            entity.setPositionM(0, data.xM);
-        } if(typeof data.yM != "undefined") {
-            entity.setPositionM(1, data.yM);
-        } if(typeof data.x2 != "undefined") {
-            entity.setPositionM(0, data.x2);
-        } if(typeof data.y2 != "undefined") {
-            entity.setPositionM(1, data.x2);
-        }
-        
-        if(Array.isArray(data.position)) {
-            entity.setPosition(data.position);
-        } if(Array.isArray(data.positionM)) {
-            entity.setPositionM(data.positionM);
-        } if(Array.isArray(data.size)) {
-            entity.setSize(data.size);
-        }
-        
-        if(typeof data.id != "undefined") {
-            entity.setID(data.id);
-        }
-        
-        Object.assign(entity, data);
-        
-        return entity;
+        this.battler = false;
     }
     
     static fromMiddle(xm, ym, width, height) {
         return new this(xm - width / 2, ym - height / 2, width, height);
     }
     
-    getZIndex() {
-        return this.zIndex;
-    }
-    
-    setZIndex(zIndex) {
-        this.zIndex = zIndex;
+    setSpeed(speed) {
+        for(var dim = 0; dim < this.getDimension(); ++dim) {
+            this.speed.set(dim, speed[dim]);
+        }
         
         return this;
     }
+    
+    getZIndex() {return this.zIndex;}
+    setZIndex(zIndex) {this.zIndex = zIndex; return this;}
     
     getStyle() {
         if(Array.isArray(this.style) && this.style.length > 0) {
@@ -132,6 +119,10 @@ class Entity extends Rectangle {
         return this;
     }
     
+    updateStyle() {
+        return this;
+    }
+    
     setICPF(icpf) {
         this.icpf = icpf;
         
@@ -148,45 +139,17 @@ class Entity extends Rectangle {
         return this;
     }
     
-    setCollidable(collidable) {
-        this.collidable = collidable;
-        
-        return this;
-    }
+    setCollidable(collidable) {this.collidable = collidable; return this;}
+    isCollidable() {return this.collidable;}
     
-    isCollidable() {
-        return this.collidable;
-    }
+    setDrawable(drawable) {this.drawable = drawable; return this;}
+    isDrawable() {return this.drawable;}
     
-    setDrawable(drawable) {
-        this.drawable = drawable;
-        
-        return this;
-    }
+    isBlockable() {return this.blockable;}
+    setBlockable(blockable) {this.blockable = blockable;return this;}
     
-    isDrawable() {
-        return this.drawable;
-    }
-    
-    isBlockable() {
-        return this.blockable;
-    }
-    
-    setBlockable(blockable) {
-        this.blockable = blockable;
-        
-        return this;
-    }
-    
-    isReplaceable() {
-        return this.replaceable;
-    }
-    
-    setReplaceable(replaceable) {
-        this.replaceable = replaceable;
-        
-        return this;
-    }
+    isReplaceable() {return this.replaceable;}
+    setReplaceable(replaceable) {this.replaceable = replaceable; return this;}
     
     getWhitelist() {return this.whitelist;}
     getBlacklist() {return this.blacklist;}
@@ -233,75 +196,41 @@ class Entity extends Rectangle {
     
     // 
     
-    getSelfBrake() {
-        return this.selfBrake;
-    }
+    getSelfBrake() {return this.selfBrake;}
+    setSelfBrake(selfBrake) {this.selfBrake = selfBrake; return this;}
     
-    setSelfBrake(selfBrake) {
-        this.selfBrake = selfBrake;
-        
-        return this;
-    }
+    getOtherBrake() {return this.otherBrake;}
+    setOtherBrake(otherBrake) {this.otherBrake = otherBrake; return this;}
     
-    getOtherBrake() {
-        return this.otherBrake;
-    }
+    getBrakeExponent() {return this.brakeExponent;}
+    setBrakeExponent(brakeExponent) {this.brakeExponent = brakeExponent; return this;}
     
-    setOtherBrake(otherBrake) {
-        this.otherBrake = otherBrake;
-        
-        return this;
-    }
-    
-    getBrakeExponent() {
-        return this.brakeExponent;
-    }
-    
-    setBrakeExponent(brakeExponent) {
-        this.brakeExponent = brakeExponent;
-        
-        return this;
-    }
-    
-    getForce() {
-        return this.force;
-    }
-    
+    getForce() {return this.force;}
     setForce(force) {
-        this.force = force;
+        for(var dim = 0; dim < this.getDimension(); ++dim) {
+            this.force.set(dim, force[dim]);
+        }
         
         return this;
     }
     
-    getForceFactor() {
-        return this.forceFactor();
-    }
+    getForceFactor() {return this.forceFactor();}
+    setForceFactor(forceFactor) {this.forceFactor = forceFactor; return this;}
     
-    setForceFactor(forceFactor) {
-        this.forceFactor = forceFactor;
-        
-        return this;
-    }
+    getReplaceId() {return this.replaceId;}
+    setReplaceId(replaceId) {this.replaceId = replaceId; return this;}
     
-    getReplaceID() {
-        return this.replaceID;
-    }
+    getVacuum() {return this.vacuum;}
+    setVacuum(vacuum) {this.vacuum = vacuum; return this;}
     
-    setReplaceID(replaceID) {
-        this.replaceID = replaceID;
-        
-        return this;
-    }
+    getOtherThrust() {return this.otherThrust;}
+    setOtherThrust(otherThrust) {this.otherThrust = otherThrust; return this;}
     
-    getVacuum() {
-        return this.vacuum;
-    }
+    getThrustFactor() {return this.thrustFactor;}
+    setThrustFactor(thrustFactor) {this.thrustFactor = thrustFactor; return this;}
     
-    setVacuum(vacuum) {
-        this.vacuum = vacuum;
-        
-        return this;
-    }
+    getSelfThrust() {return this.selfThrust;}
+    setSelfThrust(selfThrust) {this.selfThrust = selfThrust; return this;}
     
     // 
     
@@ -337,6 +266,10 @@ class Entity extends Rectangle {
         return this;
     }
     
+    getEnergyRatio() {
+        return this.energy / this.realEnergy;
+    }
+    
     getEnergy() {
         return this.energy;
     }
@@ -362,10 +295,8 @@ class Entity extends Rectangle {
         return this;
     }
     
-    regenerate() {
-        this.heal(this.regeneration);
-        
-        return this;
+    regenerate(value = this.regeneration) {
+        return this.heal(value);
     }
     
     setRegeneration(regeneration) {
@@ -431,14 +362,24 @@ class Entity extends Rectangle {
     
     // 
     
-    addState(statename) {
+    addState(statename, value = true) {
         for(var i = 0; i < this.state.length; ++i) {
             if(this.state[i].name == statename) {
                 return this;
             }
         }
         
-        this.state.push({"name" : statename, "countdown" : -1});
+        this.state.push({"name" : statename, "countdown" : 1, "value" : value});
+        
+        return this;
+    }
+    
+    removeState(statename) {
+        for(var i = this.state.length - 1; i >= 0; --i) {
+            if(this.state[i].name == statename) {
+                this.state.splice(i, 1);
+            }
+        }
         
         return this;
     }
@@ -449,8 +390,30 @@ class Entity extends Rectangle {
         }) != undefined;
     }
     
+    getStateValue(statename) {
+        for(var i = 0; i < this.state.length; ++i) {
+            if(this.state[i].name == statename) {
+                return this.state[i].value;
+            }
+        }
+        
+        return undefined;
+    }
+    
     resetState(newState = []) {
         this.state = newState;
+        
+        return this;
+    }
+    
+    countdownStates() {
+        for(var i = this.state.length - 1; i >= 0; --i) {
+            if(this.state[i].countdown > 0) {
+                --this.state[i].countdown;
+            } if(this.state[i].countdown == 0) {
+                this.state.splice(i, 1);
+            }
+        }
         
         return this;
     }
@@ -461,7 +424,7 @@ class Entity extends Rectangle {
         if(arguments.length == 2) {
             this.speed[arguments[0]] += arguments[1];
         } else if(Array.isArray(force)) {
-            for(var i = 0; i < Math.min(force.length); ++i) {
+            for(var i = 0; i < Math.min(this.getDimension(), force.length); ++i) {
                 this.speed[i] += force[i];
             }
         }
@@ -470,9 +433,9 @@ class Entity extends Rectangle {
     }
     
     advance() {
-        for(var i = 0; i < this.getDimension(); ++i) {
-            this.position[i] += this.speed[i];
-            this.speed[i] /= this.selfBrake;
+        for(var dim = 0; dim < this.getDimension(); ++dim) {
+            this.position[dim] += this.speed[dim];
+            this.brake(dim, this.selfBrake);
         }
         
         return this;
@@ -540,7 +503,7 @@ class Entity extends Rectangle {
         return this;
     }
     
-    heal(value) {
+    heal(value = this.regeneration) {
         this.energy += value;
         
         if(this.energy > this.realEnergy) {
@@ -550,30 +513,37 @@ class Entity extends Rectangle {
         return this;
     }
     
+    dragOther(other, vector) {
+        
+    }
+    
+    dragOtherIO(other, norm) {
+        
+    }
+    
     oncollision(other) {
         if(this.findWhitelist(other) && !this.findBlacklist(other)) {
             if(other.blockable) {
-                for(var i = 0; i < Math.min(this.getDimension(), other.getDimension()); ++i) {
-                    other.speed[i] += this.force[i] * other.forceFactor;
+                for(var dim = 0; dim < Math.min(this.getDimension(), other.getDimension()); ++dim) {
+                    other.speed[dim] += this.force[dim] * other.forceFactor;
                     
                     if(this.vacuum != 0) {
-                        other.speed[i] += this.vacuum * (this.getPositionM(i) - other.getPositionM(i));
+                        other.speed[dim] += this.vacuum * (this.getPositionM(dim) - other.getPositionM(dim));
                     }
                     
-                    other.speed[i] /= Math.pow(this.otherBrake, other.brakeExponent);
+                    other.speed[dim] /= Math.pow(this.otherBrake, other.brakeExponent);
                     
-                    if(this.speed[i] != 0) {
-                        other.position[i] += this.speed[i];
-                    }
-                    
-                    if(Math.abs(other.speed[i]) < ALMOST_ZERO) {
-                        other.speed[i] = 0;
+                    if(Math.abs(other.speed[dim]) < ALMOST_ZERO) {
+                        other.speed[dim] = 0;
                     }
                 }
             }
             
-            if(other.replaceable) {
-                this.replace(other, this.replaceID);
+            if(other.replaceable && this.replaceId != 0) {
+                this.replace(other, this.replaceId);
+                for(var dim = 0; dim < Math.min(this.getDimension(), other.getDimension()); ++dim) {
+                    other.position[dim] += this.speed[dim];
+                }
             }
             
             other.hurt(this.effects);
@@ -581,6 +551,14 @@ class Entity extends Rectangle {
             if(this.otherThrust != 0) {
                 other.thrust = this.otherThrust * other.thrustFactor + other.selfThrust;
             }
+            
+            if(other.ground) {
+                this.addState("grounded");
+            }
+            
+            this.gravityDirection.add(other.force);
+            
+            this.collidedWith.push(other);
         }
         
         return this;
@@ -602,6 +580,8 @@ class Entity extends Rectangle {
                 } else if(!negative && other.speed[dimension] <= 0) {
                     other.setPosition1(dimension, this.getPosition2(dimension));
                 }
+                
+                other.speed[dimension] = -this.bounce * other.speed[dimension];
             }
             
             
@@ -619,42 +599,121 @@ class Entity extends Rectangle {
     }
     
     update() {
-        this.regenerate()
+        this.heal();
+        this.updateStale();
         this.updateActions();
-        this.advance()
+        this.updateStyle();
+        this.advance();
+        
+        // this.updateReset();
+        
+        return this;
+    }
+    
+    updateReset() {
+        this.resetState();
+        this.gravityDirection.fill(0);
+        this.direction.fill(0);
+        this.collidedWith.splice(0, this.collidedWith.length);
         
         return this;
     }
     
     addAction(action) {
-        if(action.getUseCost() >= this.getEnergy()) {
+        action.endid = "this message should be overwritten";
+        
+        if(!this.canUseAction(action) && !this.hasAbility(action.getAbilityId()) && !this.hasAbility("all")) {
+            action.end("User can't use the action.");
+            
             return this;
         }
         
-        for(var i = 0; i < this.actions.length; ++i) {
+        for(var i = this.actions.length - 1; i >= 0; --i) {
             if(this.actions[i].allowsReplacement(action)) {
-                this.actions[i] = action;
-                this.hurt(action.getUseCost());
+                this.actions[i].end("Replaced from user with another action.");
+                // this.actions[i] = action;
+                this.actions.splice(i, 1);
+                
+                action.setUser(this);
+                this.actions.push(action);
+                action.onadd();
+                
+                console.log("replaced", this.actions[i].constructor.name, "with", action.constructor.name);
+                
                 return this;
             }
             
-            if(this.actions[i].getID() == action.getID()) {
+            if(this.actions[i].preventsAddition(action)) {
+                action.end("Blocked from user by action.");
+                
+                if(action instanceof Movement) {
+                    // console.log(action);
+                }
+                if(this.actions[i] instanceof HoldFocus && action instanceof MoveFocus) {
+                    // console.log(action, "blocked by", this.actions[i]);
+                }
+                
                 return this;
             }
         }
         
         action.setUser(this);
         this.actions.push(action);
-        this.hurt(action.getUseCost());
+        // console.log(this.actions);
+        action.onadd();
+        // console.log("added", action);
+        
+        return this;
+    }
+    
+    removeActionAt(index) {
+        if(index != -1 && this.actions[index].isRemovable()) {
+            this.actions[index].end("Removed from user.");
+            this.actions.splice(index, 1);
+        }
         
         return this;
     }
     
     removeAction(action) {
         for(var i = this.actions.length - 1; i >= 0; --i) {
-            if(this.actions[i].getID() == action.getID()) {
-                this.actions[i].end();
-                this.actions.splice(i, 1);
+            if(this.actions[i] == action) {
+                // this.actions[i].end("Removed specifically from user (removeAction).");
+                this.removeActionAt(i);
+            }
+        }
+        
+        return this;
+    }
+    
+    removeActionsWithConstructor(constructor) {
+        for(var i = this.actions.length - 1; i >= 0; --i) {
+            if(/*this.actions[i] instanceof Action && */this.actions[i].constructor == constructor) {
+                // this.actions[i].end("Removed from user with a constructor match (removeActionsWithConstructor).");
+                this.removeActionAt(i);
+            }
+        }
+        
+        return this;
+    }
+    
+    removeActionsInstanceof(constructor) {
+        for(var i = this.actions.length - 1; i >= 0; --i) {
+            if(this.actions[i] instanceof constructor) {
+                // this.actions[i].end("Removed from user as instanceof (removeActionsInstanceof).");
+                this.removeActionAt(i);
+            }
+        }
+        
+        return this;
+    }
+    
+    removeActionsWithId(id) {
+        for(var i = this.actions.length - 1; i >= 0; --i) {
+            if(this.actions[i] instanceof Action)/**/
+            if(this.actions[i].getId() == id) {
+                // this.actions[i].end("Removed from user with id (removeActionsWithId).");
+                this.removeActionAt(i);
             }
         }
         
@@ -671,9 +730,165 @@ class Entity extends Rectangle {
         for(var i = this.actions.length - 1; i >= 0; --i) {
             var action = this.actions[i];
             
-            action.use();
-            action.incPhase();
+            if(action instanceof Action) {
+                if(action.user != this) {
+                    console.error("??? action.user is not entity that updates action ???");
+                }
+                
+                action.use();
+                action.incPhase();
+            }
         }
+        
+        return this;
+    }
+    
+    hasActionWithConstructor(constructor) {
+        for(var i = 0; i < this.actions.length; ++i) {
+            if(this.actions[i].constructor == constructor) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    canUseAction(action) {
+        for(var i = 0; i < this.possibleActions.length; ++i) {
+            if(action instanceof this.possibleActions[i]) {
+                var impossible = false;
+                var j = 0;
+                
+                while(!impossible && j < this.impossibleActions.length) {
+                    if(action instanceof this.impossibleActions[j]) {
+                        impossible = true;
+                    }
+                    
+                    ++j;
+                }
+                
+                if(!impossible) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    addPossibleAction(action) {
+        if(Array.isArray(action)) {
+            for(var i = 0; i < action.length; ++i) {
+                this.addPossibleAction(action[i]);
+            }
+        } else if(this.possibleActions.indexOf(action) == -1) {
+            this.possibleActions.push(action);
+        }
+        
+        return this;
+    }
+    
+    addImpossibleAction(action) {
+        if(Array.isArray(action)) {
+            for(var i = 0; i < action.length; ++i) {
+                this.addImpossibleAction(action[i]);
+            }
+        } else if(this.impossibleActions.indexOf(action) == -1) {
+            this.impossibleActions.push(action);
+        }
+        
+        return this;
+    }
+    
+    addAbility(ability) {
+        var index = this.abilities.indexOf(ability);
+        
+        if(index == -1) {
+            this.abilities.push(ability);
+        }
+        
+        return this;
+    }
+    
+    addAbilities(abilities) {
+        for(var i = 0; i < abilities.length; ++i) {
+            this.addAbility(abilities[i]);
+        }
+        
+        return this;
+    }
+    
+    removeAbility(ability) {
+        for(var i = this.abilities.length - 1; i >= 0; --i) {
+            if(this.abilities[i] == ability) {
+                this.abilities.splice(i, 1);
+            }
+        }
+        
+        return this;
+    }
+    
+    hasAbility(ability) {
+        for(var i = 0; i < this.abilities.length; ++i) {
+            if(this.abilities[i] == ability) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    makeStale(id, value) {
+        for(var i = 0; i < this.stale.length; ++i) {
+            if(this.stale[i].id == id) {
+                this.stale[i].value += value;
+                // this.stale[i].value = Math.max(this.stale[i].value, value);
+                
+                return this;
+            }
+        }
+        
+        this.stale.push({"id" : id, "value" : value});
+        
+        return this;
+    }
+    
+    getStale(id) {
+        for(var i = 0; i < this.stale.length; ++i) {
+            if(this.stale[i].id == id) {
+                return this.stale[i].value;
+            }
+        }
+        
+        return 0;
+    }
+    
+    updateStale() {
+        for(var i = this.stale.length - 1; i >= 0; --i) {
+            if(--this.stale[i].value <= 0) {
+                this.stale.splice(i, 1);
+            }
+        }
+        
+        return this;
+    }
+    
+    // 
+    
+    isBattler() {
+        return this.battler;
+    }
+    
+    setBattler(battler) {
+        this.battler = battler;
+        
+        return this;
+    }
+    
+    // 
+    
+    onremove() {
+        this.removeBlacklist(this);
         
         return this;
     }

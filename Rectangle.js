@@ -22,6 +22,8 @@ class Rectangle {
             } else {
                 throw "Dimension error : position and size dimensions are not equal";
             }
+        } else {
+            
         }
     }
     
@@ -73,6 +75,118 @@ class Rectangle {
         }
         
         return rectangle;
+    }
+    
+    static fromData(data) {
+        var clone = {};
+        Object.assign(clone, data);
+        data = clone;
+        
+        var position = [], size = [];
+        
+        if(data.hasOwnProperty("width")) {
+            size[0] = data.width;
+        } if(data.hasOwnProperty("height")) {
+            size[1] = data.height;
+        } if(data.hasOwnProperty("depth")) {
+            size[2] = data.depth;
+        } if(Array.isArray(data.size)) {
+            for(var dim = 0; dim < data.size.length; ++dim) {
+                size[dim] = data.size[dim];
+            }
+            
+            delete data.size;
+        }
+        
+        if(data.hasOwnProperty("x")) {
+            position[0] = data.x;
+            delete data.x;
+        } if(data.hasOwnProperty("y")) {
+            position[1] = data.y;
+            delete data.y;
+        } if(data.hasOwnProperty("z")) {
+            position[2] = data.z;
+            delete data.z;
+        } if(data.hasOwnProperty("x1")) {
+            position[0] = data.x1;
+            delete data.x1;
+        } if(data.hasOwnProperty("y1")) {
+            position[1] = data.y1;
+            delete data.y1;
+        } if(data.hasOwnProperty("z1")) {
+            position[2] = data.z1;
+            delete data.z1;
+        } if(data.hasOwnProperty("xM")) {
+            if(typeof size[0] != "undefined") {
+                position[0] = data.xM - size[0] / 2;
+            } else {
+                throw "error : width not defined";
+            }
+            
+            delete data.xM;
+        } if(data.hasOwnProperty("yM")) {
+            if(typeof size[1] != "undefined") {
+                position[1] = data.yM - size[1] / 2;
+            } else {
+                throw "error : height not defined";
+            }
+            
+            delete data.yM;
+        } if(data.hasOwnProperty("zM")) {
+            if(typeof size[2] != "undefined") {
+                position[2] = data.zM - size[2] / 2;
+            } else {
+                throw "error : depth not defined";
+            }
+            
+            delete data.zM;
+        } if(data.hasOwnProperty("x2")) {
+            if(typeof size[0] != "undefined") {
+                position[0] = data.x2 - size[0];
+            } else {
+                throw "error : width not defined";
+            }
+            
+            delete data.x2;
+        } if(data.hasOwnProperty("y2")) {
+            if(typeof size[1] != "undefined") {
+                position[1] = data.y2 - size[1];
+            } else {
+                throw "error : height not defined";
+            }
+            
+            delete data.y2;
+        } if(data.hasOwnProperty("z2")) {
+            if(typeof size[2] != "undefined") {
+                position[2] = data.z2 - size[2];
+            } else {
+                throw "error : depth not defined";
+            }
+            
+            delete data.z2;
+        } if(Array.isArray(data.position)) {
+            for(var dim = 0; dim < data.position.length; ++dim) {
+                position[dim] = data.position[dim];
+            }
+            
+            delete data.position;
+        } if(Array.isArray(data.positionM)) {
+            for(var dim = 0; dim < data.positionM.length; ++dim) {
+                if(typeof size[dim] != "undefined") {
+                    position[dim] = data.positionM[dim] - size[dim] / 2;
+                } else {
+                    throw "Dimension error";
+                }
+            }
+            
+            delete data.positionM;
+        }
+        
+        var entity = (new this()).setPosition(position).setSize(size);
+        
+        Object.assign(entity, data);
+        
+        return entity;
     }
     
     static fromMiddle(positionM, size) {
@@ -176,6 +290,26 @@ class Rectangle {
         return this;
     }
     
+    /* 18/06/2019 */
+    
+    setSizeM(size) {
+        for(var i = 0; i < size.length; ++i) {
+            this.position[i] = this.position[i] + this.size[i] / 2;
+            this.size[i] = size[i];
+            this.position[i] = this.position[i] - this.size[i] / 2;
+        }
+        
+        return this;
+    }
+    
+    roundPosition(gridunit = 8) {
+        for(var dim = 0; dim < this.getDimension(); ++dim) {
+            this.position[dim] = Math.round(this.position[dim] / gridunit) * gridunit;
+        }
+        
+        return this;
+    }
+    
     /**
      * 26/04/2019
      * Multiplies the size of the rectangle (the center position remains the same).
@@ -224,9 +358,7 @@ class Rectangle {
         }
         
         return this.position[d];
-    } 
-    
-    getPositionM(d) {
+    } getPositionM(d) {
         if(arguments.length == 0) {
             var positionM = [];
             
@@ -238,9 +370,7 @@ class Rectangle {
         }
         
         return this.position[d] + this.size[d] / 2;
-    } 
-    
-    getPosition2(d) {
+    } getPosition2(d) {
         if(arguments.length == 0) {
             var position2 = [];
             
@@ -290,6 +420,22 @@ class Rectangle {
     } getDepth() {
         return this.size[2];
     }
+    
+    /* 15/06/2019 */
+    
+    setX(x) {this.position[0] = x; return this;}
+    setY(y) {this.position[1] = y; return this;}
+    setZ(z) {this.position[2] = z; return this;}
+    setXM(xM) {this.position[0] = xM - this.size[0] / 2; return this;}
+    setYM(yM) {this.position[1] = yM - this.size[1] / 2; return this;}
+    setZM(zM) {this.position[2] = zM - this.size[2] / 2; return this;}
+    setX2(x2) {this.position[0] = x2 - this.size[0]; return this;}
+    setY2(y2) {this.position[1] = y2 - this.size[1]; return this;}
+    setZ2(z2) {this.position[2] = z2 - this.size[2]; return this;}
+    
+    setWidth(width) {this.size[0] = width; return this;}
+    setHeight(height) {this.size[1] = height; return this;}
+    setDepth(depth) {this.size[2] = depth; return this;}
     
     /* 02/11/2018 */
     
@@ -349,7 +495,7 @@ class Rectangle {
         return this.position[1];
     } get z() {
         return this.position[2];
-    } get t() {
+    } get _t() {
         return this.position[3];
     }
     
@@ -359,7 +505,7 @@ class Rectangle {
         this.position[1] = y;
     } set z(z) {
         this.position[2] = z;
-    } set t(t) {
+    } set _t(t) {
         this.position[3] = t;
     }
     
@@ -493,16 +639,14 @@ class Rectangle {
     
     static collision(o, p) {
         if((o instanceof this) && (p instanceof this) && o.getDimension() == p.getDimension()) {
-            var dimension = o.getDimension();
-            
-            for(var i = 0; i < dimension; i++) {
-                if(o.getPosition1(i) >= p.getPosition2(i) || o.getPosition2(i) <= p.getPosition1(i)) {
+            for(var dim = 0; dim < o.getDimension(); ++dim) {
+                if(o.getPosition1(dim) >= p.getPosition2(dim) || o.getPosition2(dim) <= p.getPosition1(dim)) {
                     return false;
                 }
             }
             
             return true;
-            
+            /**
             for(var i = 0; i < dimension; i++) {
                 if(Math.abs(p.getPositionM(i) - o.getPositionM(i)) >= (o.size[i] + p.size[i]) / 2) {
                     return false;
@@ -510,6 +654,7 @@ class Rectangle {
             }
             
             return true;
+            /**/
         }
         
         return false;
