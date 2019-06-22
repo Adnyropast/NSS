@@ -1,14 +1,14 @@
 
 class Character extends Entity {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.setCollidable(true);
         this.setBlockable(true);
         this.setReplaceable(true);
         this.setBattler(true);
         this.setZIndex(-100);
         
-        this.cursor = Cursor.fromMiddle(this.getXM(), this.getYM(), width, height);
+        this.cursor = Cursor.fromMiddle([this.getXM(), this.getYM()], [this.getWidth(), this.getHeight()]);
         addEntity(this.cursor);
         
         this.addPossibleAction([FocusAction, Movement]);
@@ -22,8 +22,8 @@ class Character extends Entity {
 }
 
 class PlayableCharacter extends Character {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.resetEnergy(100);
         this.setEffectFactor("default", 1);
         
@@ -39,8 +39,8 @@ class PlayableCharacter extends Character {
 }
 
 class Cursor extends Entity {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.setCollidable(true);
         this.setSelfBrake(1.25);
         this.setZIndex(-101);
@@ -119,8 +119,8 @@ class FocusClosest extends FocusAction {
 }
 
 class Enemy extends Character {
-    constructor(x, y, width, height) {
-        super(x, y, width, height).setStyle("#7F007F");
+    constructor(position, size) {
+        super(position, size).setStyle("#7F007F");
         this.setEffectFactor("default", 1);
         this.setOffense("default", 1);
         

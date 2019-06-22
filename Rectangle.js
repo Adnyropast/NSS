@@ -5,19 +5,16 @@
 
 class Rectangle {
     constructor(position, size) {
-        this.position = null;
-        this.size = null;
+        this.position = [];
+        this.size = [];
         
         if(Array.isArray(position) && Array.isArray(size)) {
             if(position.length == size.length) {
-                Object.defineProperty(this, "dimension", {"enumerable" : false, "value" : position.length});
+                this.setDimension(position.length);
                 
-                this.position = [];
-                this.size = [];
-                
-                for(var i = 0; i < this.getDimension(); ++i) {
-                    this.position[i] = position[i];
-                    this.size[i] = size[i];
+                for(var dim = 0; dim < this.getDimension(); ++dim) {
+                    this.position[dim] = position[dim];
+                    this.size[dim] = size[dim];
                 }
             } else {
                 throw "Dimension error : position and size dimensions are not equal";
@@ -323,6 +320,35 @@ class Rectangle {
             this.size[i] *= factor;
             this.position[i] = this.position[i] - this.size[i] / 2;
         }
+        
+        return this;
+    }
+    
+    /**
+     * 21/06/2019
+     */
+    
+    setPositionSize(position, size) {
+        if(Array.isArray(position) && Array.isArray(size) && position.length == size.length) {
+            this.setDimension(position.length);
+            
+            for(var dim = 0; dim < this.getDimension(); ++dim) {
+                this.position[dim] = position[dim];
+                this.size[dim] = size[dim];
+            }
+        }
+        
+        return this;
+    }
+    
+    /**
+     * 21/06/2019
+     */
+    
+    setDimension(dimension) {
+        Object.defineProperty(this, "dimension", {"enumerable" : false, "value" : dimension});
+        this.position.length = dimension;
+        this.size.length = dimension;
         
         return this;
     }

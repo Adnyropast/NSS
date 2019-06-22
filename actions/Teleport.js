@@ -38,7 +38,7 @@ class Teleportation extends Action {
     
     use() {
         if(this.phase == 0) {
-            var particle = new TpParticle(this.user.getX(), this.user.getY(), 64, 64);
+            var particle = new TpParticle([this.user.getX(), this.user.getY()], [64, 64]);
             particle.setPositionM(this.user.getPositionM());
             particle.setSizeTransition([64, 64], [0, 0], 30);
             particle.setColorTransition([0, 255, 255, 0], [0, 255, 255, 255], 30);
@@ -47,7 +47,7 @@ class Teleportation extends Action {
         }
         
         if(this.phase == this.t1) {
-            var particle = new TpParticle(this.targetPosition[0], this.targetPosition[1], 64, 64);
+            var particle = new TpParticle([this.targetPosition[0], this.targetPosition[1]], [64, 64]);
             particle.setColorTransition([0, 255, 255, 255], [0, 255, 255, 0], 30);
             particle.setSizeTransition([0, 0], [64, 64], 30);
             particle.setPositionM(this.targetPosition);

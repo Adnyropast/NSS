@@ -19,8 +19,8 @@ class SwordAbility extends BusyAction {
 }
 
 class SlashEffect extends Entity {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.setOffense(FX_SHARP, 1);
     }
     
@@ -59,7 +59,7 @@ class OverheadSlash extends SwordAbility {
             
             this.setRemovable(false);
             
-            this.effect = SlashEffect.fromMiddle(this.face.x + this.user.getXM(), this.face.y + this.user.getYM(), 32, 32);
+            this.effect = SlashEffect.fromMiddle([this.face.x + this.user.getXM(), this.face.y + this.user.getYM()], [32, 32]);
             this.effect.setLifespan(16);
             this.effect.setBlacklist(this.user.getBlacklist());
             this.effect.setForce(this.face.multiply(2));

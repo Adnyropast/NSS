@@ -1,10 +1,17 @@
 
-class FocusAction extends Action {}
+const AS_FOCUS = gather("");
+
+class FocusAction extends Action {
+    constructor() {
+        super();
+        this.setAbilityId("cursorControl");
+    }
+}
 
 class HoldFocus extends FocusAction {
     constructor() {
         super();
-        this.id = "cursorControl";
+        this.id = "holdFocus";
         this.order = -1;
     }
     
@@ -28,7 +35,7 @@ class HoldFocus extends FocusAction {
 class PressFocus extends FocusAction {
     constructor() {
         super();
-        this.id = "cursorControl";
+        this.id = "pressFocus";
         this.order = -1;
     }
     
@@ -55,7 +62,7 @@ class PressFocus extends FocusAction {
 class MouseFocus extends FocusAction {
     constructor() {
         super();
-        this.id = "cursorControl";
+        this.id = "mouseFocus";
         this.order = -1;
     }
     
@@ -73,7 +80,7 @@ class MouseFocus extends FocusAction {
 class MoveFocus extends FocusAction {
     constructor() {
         super();
-        this.id = "cursorControl";
+        this.id = "moveFocus";
         this.order = -1;
     }
     
@@ -112,7 +119,7 @@ class MoveFocus extends FocusAction {
 class FreeKeyFocus extends FocusAction {
     constructor() {
         super();
-        this.id = "cursorControl";
+        this.id = "freeKeyFocus";
         this.order = -1;
     }
     

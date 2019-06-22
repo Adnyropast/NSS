@@ -8,30 +8,30 @@ var _THRUST_AIR = 0.125;
 var THRUST_WATER = 1.0;
 
 class ActorCollidable extends Entity {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.collidable = true;
         this.setEffectFactor("default", 0);
     }
 }
 
 class Decoration extends Entity {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.collidable = false;
         this.setEffectFactor("default", 0);
     }
 }
 
 class Area extends ActorCollidable {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
     }
 }
 
 class Obstacle extends ActorCollidable {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.replaceId = -1;
         this.otherBrake = BRK_OBST;
         this.otherThrust = THRUST_OBSTACLE;
@@ -39,8 +39,8 @@ class Obstacle extends ActorCollidable {
 }
 
 class Braker extends ActorCollidable {
-    constructor(x, y, width, height, otherBrake) {
-        super(x, y, width, height);
+    constructor(position, size, otherBrake = 1) {
+        super(position, size);
         this.setReplaceId(0);
         this.otherBrake = otherBrake;
         this.setStyle(INVISIBLE);
@@ -48,8 +48,8 @@ class Braker extends ActorCollidable {
 }
 
 class ForceField extends ActorCollidable {
-    constructor(x, y, width, height, force = [0, 0]) {
-        super(x, y, width, height);
+    constructor(position, size, force = [0, 0]) {
+        super(position, size);
         this.setStyle(INVISIBLE);
         this.setReplaceId(0);
         this.setOtherBrake(1);
@@ -58,45 +58,45 @@ class ForceField extends ActorCollidable {
 }
 
 class GravityField extends ForceField {
-    constructor(x, y, width, height, force = [0, +0.25]) {
-        super(x, y, width, height, force);
+    constructor(position, size, force = [0, +0.25]) {
+        super(position, size, force);
     }
 }
 
 class MovingObstacle extends Obstacle {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.speed.set(0, 0.1);
         this.ground = true;
     }
 }
 
 class Bouncer extends Obstacle {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.bounce = 1;
         this.ground = true;
     }
 }
 
 class Hazard extends Obstacle {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.setOffense("default", 1);
         this.ground = true;
     }
 }
 
 class Ground extends Obstacle {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.ground = true;
     }
 }
 
 class GroundArea extends Area {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.setReplaceId(0);
         this.otherThrust = THRUST_OBSTACLE;
         this.setOtherBrake(BRK_OBST);
@@ -105,16 +105,16 @@ class GroundArea extends Area {
 }
 
 class AirArea extends Area {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.setOtherBrake(BRK_AIR);
         this.setStyle(INVISIBLE);
     }
 }
 
 class WaterArea extends Area {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.setOtherBrake(BRK_WATER);
         this.otherThrust = THRUST_WATER;
         this.setStyle("#007FFF3F");
@@ -122,15 +122,15 @@ class WaterArea extends Area {
 }
 
 class Target extends Entity {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.setEffectFactor("default", 1);
     }
 }
 
 class Router extends Entity {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.setStyle("FF7FFF3F");
         
         this.table = [];
@@ -147,8 +147,8 @@ const INVISIBLE_VECTOR = new Vector(0, 0, 0, 0);
 const WHITE_VECTOR = new Vector(255, 255, 255, 255);
 
 class Particle extends Decoration {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.setZIndex(-1);
         this.setLifespan(1);
         
@@ -245,14 +245,14 @@ class Particle extends Decoration {
 }
 
 class TpParticle extends Particle {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
     }
 }
 
 class CSmokeParticle extends Particle {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         
         this.setSelfBrake(1.0625);
         this.setLifespan(60);
@@ -261,8 +261,8 @@ class CSmokeParticle extends Particle {
 }
 
 class SmokeParticle extends Particle {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         
         this.setSelfBrake(1.0625);
         this.setLifespan(60);
@@ -271,8 +271,8 @@ class SmokeParticle extends Particle {
 }
 
 class FireSmokeParticle extends Particle {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         
         this.setSelfBrake(1.0625);
         this.setLifespan(60);
@@ -281,8 +281,8 @@ class FireSmokeParticle extends Particle {
 }
 
 class Projectile extends Entity {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.style = "#FF0000";
         this.setBlockable(true);
         this.setBrakeExponent(0);
@@ -309,5 +309,9 @@ class Projectile extends Entity {
 }
 
 class Door extends Entity {
-    
+    constructor(position, size) {
+        super(position, size);
+        
+        this.nextMap = "";
+    }
 }

@@ -98,6 +98,8 @@ class Action {
         return this.end();
     }
     
+    setEndid(endid) {this.endid = endid; return this;}
+    
     end(endid = 0) {
         if(this.user != null && this.isRemovable()) {
             this.endid = endid;

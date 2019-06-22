@@ -1,7 +1,7 @@
 
 class Adnyropast extends PlayableCharacter {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.setRegeneration(0.0625);
         
         this.cursorDistance = 32;

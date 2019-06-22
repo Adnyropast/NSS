@@ -2,8 +2,8 @@
 var entityId = -1;
 
 class Entity extends Rectangle {
-    constructor(x, y, width, height) {
-        super([x, y], [width, height]);
+    constructor(position, size) {
+        super(position, size);
         
         // this.id = ++entityId;
         
@@ -68,6 +68,7 @@ class Entity extends Rectangle {
         this.possibleActions = [];
         this.impossibleActions = [];
         this.abilities = [];
+        this.actset = [];
         this.stale = [];
         
         this.state = [];
@@ -78,10 +79,6 @@ class Entity extends Rectangle {
         // 
         
         this.battler = false;
-    }
-    
-    static fromMiddle(xm, ym, width, height) {
-        return new this(xm - width / 2, ym - height / 2, width, height);
     }
     
     setSpeed(speed) {
@@ -622,7 +619,7 @@ class Entity extends Rectangle {
     addAction(action) {
         action.endid = "this message should be overwritten";
         
-        if(!this.canUseAction(action) && !this.hasAbility(action.getAbilityId()) && !this.hasAbility("all")) {
+        if(!this.canUseAction(action) && !this.hasAbility(action.getAbilityId()) && !this.containsActset(action.getId())) {
             action.end("User can't use the action.");
             
             return this;
@@ -630,28 +627,22 @@ class Entity extends Rectangle {
         
         for(var i = this.actions.length - 1; i >= 0; --i) {
             if(this.actions[i].allowsReplacement(action)) {
-                this.actions[i].end("Replaced from user with another action.");
+                var replaced = this.actions[i];
+                
                 // this.actions[i] = action;
                 this.actions.splice(i, 1);
+                this.removeActionAt(i);
+                replaced.setEndid("Replaced from user with another action.");
                 
                 action.setUser(this);
                 this.actions.push(action);
                 action.onadd();
                 
-                console.log("replaced", this.actions[i].constructor.name, "with", action.constructor.name);
-                
                 return this;
             }
             
             if(this.actions[i].preventsAddition(action)) {
-                action.end("Blocked from user by action.");
-                
-                if(action instanceof Movement) {
-                    // console.log(action);
-                }
-                if(this.actions[i] instanceof HoldFocus && action instanceof MoveFocus) {
-                    // console.log(action, "blocked by", this.actions[i]);
-                }
+                action.setEndid("Blocked from user by action.");
                 
                 return this;
             }
@@ -659,17 +650,17 @@ class Entity extends Rectangle {
         
         action.setUser(this);
         this.actions.push(action);
-        // console.log(this.actions);
         action.onadd();
-        // console.log("added", action);
         
         return this;
     }
     
     removeActionAt(index) {
         if(index != -1 && this.actions[index].isRemovable()) {
-            this.actions[index].end("Removed from user.");
+            var action = this.actions[index];
+            
             this.actions.splice(index, 1);
+            action.end("Removed from user.");
         }
         
         return this;
@@ -831,6 +822,66 @@ class Entity extends Rectangle {
     hasAbility(ability) {
         for(var i = 0; i < this.abilities.length; ++i) {
             if(this.abilities[i] == ability) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    addActset() {
+        if(arguments.length > 1) {
+            for(var i = 0; i < arguments.length; ++i) {
+                this.addActset(arguments[i]);
+            }
+        } else if(arguments.length == 1) {
+            if(Array.isArray(arguments[0])) {
+                for(var i = 0; i < arguments[0].length; ++i) {
+                    this.addActset(arguments[0][i]);
+                }
+            } else {
+                var index = this.actset.indexOf(arguments[0]);
+                
+                if(index == -1) {
+                    this.actset.push(arguments[0]);
+                }
+            }
+        } 
+        
+        return this;
+    }
+    
+    clearActset() {
+        this.actset.splice(0, this.actset.length);
+        
+        return this;
+    }
+    
+    removeActset() {
+        if(arguments.length > 1) {
+            for(var i = 0; i < arguments.length; ++i) {
+                this.removeActset(arguments[i]);
+            }
+        } else if(arguments.length == 1) {
+            if(Array.isArray(arguments[0])) {
+                for(var i = 0; i < arguments[0].length; ++i) {
+                    this.removeActset(arguments[0][i]);
+                }
+            } else {
+                var index = this.actset.indexOf(arguments[0]);
+                
+                if(index != -1) {
+                    this.actset.splice(index, 1);
+                }
+            }
+        } 
+        
+        return this;
+    }
+    
+    containsActset(id) {
+        for(var i = 0; i < this.actset.length; ++i) {
+            if(this.actset[i] == id) {
                 return true;
             }
         }

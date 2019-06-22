@@ -56,10 +56,6 @@ class CutterDash extends CutterAbility {
         
         return this;
     }
-    
-    onend() {
-        console.log("cutterdash end");
-    }
 }
 
 class FinalCutter extends CutterAbility {

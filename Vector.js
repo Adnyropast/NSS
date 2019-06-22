@@ -600,6 +600,38 @@ class Vector extends Array {
         
         return false;
     }
+    
+    /* 22/06/2019 */
+    
+    rotate(angle) {
+        if(this.getDimension() != 2) {
+            return this;
+        }
+        
+        var cos = Math.cos(angle), sin = Math.sin(angle);
+        
+        var x = cos * this.get(0) - sin * this.get(1);
+        var y = sin * this.get(0) + cos * this.get(1);
+        
+        this.set(0, x).set(1, y);
+        
+        return this;
+    }
+    
+    /* 22/06/2019 */
+    
+    rotated(angle) {
+        if(this.getDimension() != 2) {
+            return null;
+        }
+        
+        var cos = Math.cos(angle), sin = Math.sin(angle);
+        
+        return new Vector(
+            cos * this.get(0) - sin * this.get(1),
+            sin * this.get(0) + cos * this.get(1)
+        );
+    }
 }
 
 /**/

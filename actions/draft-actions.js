@@ -15,7 +15,7 @@ class TargetAttack extends Action {
         if(this.phase < this.t1) {
             
         } else if(this.phase == this.t1) {
-            this.hit = new Entity(NaN, NaN, 32, 32);
+            this.hit = new Entity([NaN, NaN], [32, 32]);
             this.hit.setPositionM(this.targetPosition);
             
             addEntity(this.hit);
@@ -58,12 +58,6 @@ class Counter extends Action {
     
 }
 
-function alterVector(vector, angle) {
-    var cos = Math.cos(angle), sin = Math.sin(angle);
-    
-    return new Vector(cos * vector[0] - sin * vector[1], sin * vector[0] + cos * vector[1]);
-}
-
 class BackSmoke extends Action {
     constructor() {
         super();
@@ -79,32 +73,32 @@ class BackSmoke extends Action {
     use() {
         ++this.t;
         
-        var particle = SmokeParticle.fromMiddle(this.user.getXM(), this.user.getYM(), 16, 16);// .setCollidable(true).setReplaceable(true);
+        var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getYM()], [16, 16]);// .setCollidable(true).setReplaceable(true);
         particle.setSizeTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 2, this.smokeHeight / 2], this.smokeLifespan);
         
         var angle = Math.sin(this.t) * this.angleVariation;
-        particle.setSpeed(alterVector(this.user.speed, angle + Math.PI).normalize(2));
+        particle.setSpeed(this.user.speed.rotated(angle + Math.PI).normalize(2));
         addEntity(particle);
         
-        var particle = SmokeParticle.fromMiddle(this.user.getXM(), this.user.getYM(), 16, 16);// .setCollidable(true).setReplaceable(true);
+        var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getYM()], [16, 16]);// .setCollidable(true).setReplaceable(true);
         particle.setSizeTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 4, this.smokeHeight / 4], this.smokeLifespan);
         
         var angle = Math.sin(this.t) * this.angleVariation;
-        particle.setSpeed(alterVector(this.user.speed, angle + Math.PI).normalize(2));
+        particle.setSpeed(this.user.speed.rotated(angle + Math.PI).normalize(2));
         addEntity(particle);
         
-        var particle = SmokeParticle.fromMiddle(this.user.getXM(), this.user.getYM(), 16, 16);// .setCollidable(true).setReplaceable(true);
+        var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getYM()], [16, 16]);// .setCollidable(true).setReplaceable(true);
         particle.setSizeTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 8, this.smokeHeight / 8], this.smokeLifespan);
         
         var angle = Math.sin(this.t) * -this.angleVariation;
-        particle.setSpeed(alterVector(this.user.speed, angle + Math.PI).normalize(2));
+        particle.setSpeed(this.user.speed.rotated(angle + Math.PI).normalize(2));
         addEntity(particle);
         
-        var particle = SmokeParticle.fromMiddle(this.user.getXM(), this.user.getYM(), 16, 16);// .setCollidable(true).setReplaceable(true);
+        var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getYM()], [16, 16]);// .setCollidable(true).setReplaceable(true);
         particle.setSizeTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 2, this.smokeHeight / 2], this.smokeLifespan);
         
         var angle = Math.sin(this.t) * 0.125;
-        particle.setSpeed(alterVector(this.user.speed, angle + Math.PI).normalize(2));
+        particle.setSpeed(this.user.speed.rotated(angle + Math.PI).normalize(2));
         addEntity(particle);
         
         return this;
@@ -149,7 +143,7 @@ class ZoneEngage extends Action {
     
     use() {
         if(this.phase == 0) {
-            this.zone = Entity.fromMiddle(this.user.getXM(), this.user.getYM(), 0, 0).setZIndex(this.user.getZIndex() + 1);
+            this.zone = Entity.fromMiddle([this.user.getXM(), this.user.getYM()], [0, 0]).setZIndex(this.user.getZIndex() + 1);
             addEntity(this.zone);
         } else if(this.phase == 100) {
             return this.end();

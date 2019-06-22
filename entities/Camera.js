@@ -1,7 +1,7 @@
 
 class TCamera extends Entity {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.setZIndex(-1000);
         this.setStyle(INVISIBLE);
         this.setCollidable(true);
@@ -75,8 +75,8 @@ class TCamera extends Entity {
 }
 
 class CameraBoundary extends Entity {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(position, size) {
+        super(position, size);
         this.setReplaceId(-1);
         this.setEffectFactor("default", 0);
     }

@@ -37,12 +37,12 @@ class Jump extends Action {
         for(var dim = 0; dim < this.direction.length; ++dim) {
             if(this.direction[dim] != 0) {
                 if(this.phase < 3) {
-                    var particle = SmokeParticle.fromMiddle(this.user.getXM(), this.user.getY2(), 16, 16).setSizeTransition([12, 12], [0, 0], 60);
-                    particle.setSpeed(alterVector(this.user.speed, Math.PI/2 + this.phase).normalize());
+                    var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getY2()], [16, 16]).setSizeTransition([12, 12], [0, 0], 60);
+                    particle.setSpeed(this.user.speed.rotated(Math.PI/2 + this.phase).normalize());
                     addEntity(particle);
                     
-                    var particle = SmokeParticle.fromMiddle(this.user.getXM(), this.user.getY2(), 16, 16).setSizeTransition([12, 12], [0, 0], 60);
-                    particle.setSpeed(alterVector(this.user.speed, -Math.PI/2 - this.phase).normalize());
+                    var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getY2()], [16, 16]).setSizeTransition([12, 12], [0, 0], 60);
+                    particle.setSpeed(this.user.speed.rotated(-Math.PI/2 - this.phase).normalize());
                     addEntity(particle);
                 }
                 
