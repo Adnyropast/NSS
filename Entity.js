@@ -14,16 +14,12 @@ class Entity extends Rectangle {
         
         // 
         
-        this.drawable = true;
-        this.zIndex = 0;
-        this.style = "#000000";
-        this.icpf = 12;
-        this.icount = 0;
-        this.iindex = 0;
+        this.drawable = new RectangleDrawable(position, size);
         
         // 
         
         this.collidable = true;
+        this.collide_priority = 0;
         
         this.blockable = false;
         // this.solid = false;
@@ -40,7 +36,7 @@ class Entity extends Rectangle {
         this.otherBrake = 1;
         this.brakeExponent = 1;
         
-        this.force = new Vector(0, 0);
+        this.force = Vector.filled(this.getDimension(), 0);
         this.forceFactor = 1;
         this.vacuum = 0;
         
@@ -48,6 +44,9 @@ class Entity extends Rectangle {
         this.otherThrust = 0;
         this.thrustFactor = 1;
         this.selfThrust = 0;
+        
+        this.interactors = [];
+        this.interrecipients = [];
         
         
         
@@ -73,7 +72,7 @@ class Entity extends Rectangle {
         
         this.state = [];
         
-        this.gravityDirection = new Vector(0, 0);
+        this.gravityDirection = Vector.filled(this.getDimension(), 0);
         this.ground = false;
         
         // 
@@ -82,46 +81,31 @@ class Entity extends Rectangle {
     }
     
     setSpeed(speed) {
-        for(var dim = 0; dim < this.getDimension(); ++dim) {
-            this.speed.set(dim, speed[dim]);
+        if(Array.isArray(speed)) {
+            for(var dim = 0; dim < this.getDimension(); ++dim) {
+                this.speed.set(dim, speed[dim]);
+            }
+        } else if(arguments.length == 2) {
+            var dim = arguments[0], value = arguments[1];
+            
+            this.speed.set(dim, value);
         }
         
         return this;
     }
     
-    getZIndex() {return this.zIndex;}
-    setZIndex(zIndex) {this.zIndex = zIndex; return this;}
-    
-    getStyle() {
-        if(Array.isArray(this.style) && this.style.length > 0) {
-            ++this.icount;
-            
-            if(this.icount >= this.icpf) {
-                this.icount = 0;
-                ++this.iindex; this.iindex %= this.style.length;
-            }
-            
-            return this.style[this.iindex];
-        }
-        
-        return this.style;
-    }
+    getZIndex() {return this.drawable.zIndex;}
+    setZIndex(zIndex) {this.drawable.zIndex = zIndex; return this;}
     
     setStyle(style) {
-        if(this.style != style) {
-            this.style = style;
-            this.icount = 0;
-        }
+        this.drawable.setStyle(style);
         
         return this;
     }
     
-    updateStyle() {
-        return this;
-    }
-    
-    setICPF(icpf) {
-        this.icpf = icpf;
+    updateDrawable() {
+        this.drawable.setSize(this.getSize());
+        this.drawable.setPosition(this.getPosition());
         
         return this;
     }
@@ -140,7 +124,7 @@ class Entity extends Rectangle {
     isCollidable() {return this.collidable;}
     
     setDrawable(drawable) {this.drawable = drawable; return this;}
-    isDrawable() {return this.drawable;}
+    getDrawable() {return this.drawable;}
     
     isBlockable() {return this.blockable;}
     setBlockable(blockable) {this.blockable = blockable;return this;}
@@ -253,11 +237,11 @@ class Entity extends Rectangle {
     
     // 
     
-    getrealEnergy() {
+    getRealEnergy() {
         return this.realEnergy;
     }
     
-    setrealEnergy(realEnergy) {
+    setRealEnergy(realEnergy) {
         this.realEnergy = realEnergy;
         
         return this;
@@ -285,7 +269,7 @@ class Entity extends Rectangle {
         if(arguments.length == 0) {
             this.setEnergy(this.realEnergy);
         } else {
-            this.setrealEnergy(realEnergy);
+            this.setRealEnergy(realEnergy);
             this.setEnergy(this.realEnergy);
         }
         
@@ -432,6 +416,7 @@ class Entity extends Rectangle {
     advance() {
         for(var dim = 0; dim < this.getDimension(); ++dim) {
             this.position[dim] += this.speed[dim];
+            this.drawable.position[dim] += this.speed[dim];
             this.brake(dim, this.selfBrake);
         }
         
@@ -444,18 +429,12 @@ class Entity extends Rectangle {
             
             this.speed[dimension] /= value;
             
-            if(Math.abs(this.speed[dimension]) < ALMOST_ZERO) {
+            if(isAlmostZero(this.speed[dimension])) {
                 this.speed[dimension] = 0;
             }
         } else if(arguments.length == 1 && typeof arguments[0] == "number") {
-            var value = arguments[0];
-            
             for(var dim = 0; dim < this.getDimension(); ++dim) {
-                this.speed[dim] /= value;
-                
-                if(Math.abs(this.speed[dim]) < ALMOST_ZERO) {
-                    this.speed[dimension] = 0;
-                }
+                this.brake(dim, arguments[0]);
             }
         }
         
@@ -530,7 +509,7 @@ class Entity extends Rectangle {
                     
                     other.speed[dim] /= Math.pow(this.otherBrake, other.brakeExponent);
                     
-                    if(Math.abs(other.speed[dim]) < ALMOST_ZERO) {
+                    if(isAlmostZero(other.speed[dim])) {
                         other.speed[dim] = 0;
                     }
                 }
@@ -540,6 +519,7 @@ class Entity extends Rectangle {
                 this.replace(other, this.replaceId);
                 for(var dim = 0; dim < Math.min(this.getDimension(), other.getDimension()); ++dim) {
                     other.position[dim] += this.speed[dim];
+                    other.drawable.position[dim] += this.speed[dim];
                 }
             }
             
@@ -556,6 +536,20 @@ class Entity extends Rectangle {
             this.gravityDirection.add(other.force);
             
             this.collidedWith.push(other);
+            
+            for(var i = 0; i < this.interactors.length; ++i) {
+                var interactor = this.interactors[i];
+                
+                for(var j = 0; j < other.interrecipients.length; ++j) {
+                    var interrecipient = other.interrecipients[j];
+                    
+                    if(interrecipient.matchId(interactor.getId())) {
+                        interactor.interact(interrecipient);
+                        interrecipient.oninteraction(interactor);
+                        break;
+                    }
+                }
+            }
         }
         
         return this;
@@ -574,8 +568,10 @@ class Entity extends Rectangle {
             if((type & 1) == 1) {
                 if(negative && other.speed[dimension] >= 0) {
                     other.setPosition2(dimension, this.getPosition1(dimension));
+                    other.drawable.setPosition2(dimension, this.getPosition1(dimension));
                 } else if(!negative && other.speed[dimension] <= 0) {
                     other.setPosition1(dimension, this.getPosition2(dimension));
+                    other.drawable.setPosition1(dimension, this.getPosition2(dimension));
                 }
                 
                 other.speed[dimension] = -this.bounce * other.speed[dimension];
@@ -599,7 +595,7 @@ class Entity extends Rectangle {
         this.heal();
         this.updateStale();
         this.updateActions();
-        this.updateStyle();
+        this.updateDrawable();
         this.advance();
         
         // this.updateReset();
@@ -610,7 +606,6 @@ class Entity extends Rectangle {
     updateReset() {
         this.resetState();
         this.gravityDirection.fill(0);
-        this.direction.fill(0);
         this.collidedWith.splice(0, this.collidedWith.length);
         
         return this;
@@ -629,8 +624,6 @@ class Entity extends Rectangle {
             if(this.actions[i].allowsReplacement(action)) {
                 var replaced = this.actions[i];
                 
-                // this.actions[i] = action;
-                this.actions.splice(i, 1);
                 this.removeActionAt(i);
                 replaced.setEndid("Replaced from user with another action.");
                 
@@ -938,9 +931,74 @@ class Entity extends Rectangle {
     
     // 
     
-    onremove() {
-        this.removeBlacklist(this);
+    onadd() {
+        addDrawable(this.drawable);
         
         return this;
+    }
+    
+    onremove() {
+        this.removeBlacklist(this);
+        removeDrawable(this.drawable);
+        
+        return this;
+    }
+    
+    // 
+    
+    addInteraction(interaction) {
+        if(interaction instanceof Interactor) {
+            interaction.setActor(this);
+            
+            for(var i = 0; i < this.interactors.length; ++i) {
+                var interactor = this.interactors[i];
+                
+                if(interactor.matchId(interaction.getId())) {
+                    interactor.setActor(null);
+                    this.interactors[i] = interaction;
+                    
+                    return this;
+                }
+            }
+            
+            this.interactors.push(interaction);
+        } else if(interaction instanceof Interrecipient) {
+            interaction.setRecipient(this);
+            
+            for(var i = 0; i < this.interrecipients.length; ++i) {
+                var interrecipient = this.interrecipients[i];
+                
+                if(interrecipient.matchId(interaction.getId())) {
+                    interrecipient.setActor(null);
+                    this.interrecipients[i] = interaction;
+                    
+                    return this;
+                }
+            }
+            
+            this.interrecipients.push(interaction);
+        }
+        
+        return this;
+    }
+    
+    findInteractorWithId(id) {
+        for(var i = 0; i < this.interactors.length; ++i) {
+            if(this.interactors[i].matchId(id)) {
+                return this.interactors[i];
+            }
+        }
+        
+        return null;
+    }
+    
+    findInterrecipientWithId(id) {
+        for(var i = 0; i < this.interrecipients.length; ++i) {
+            if(this.interrecipients[i].matchId(id)) {
+                return this.interrecipients[i];
+            }
+        }
+        
+        return null;
     }
 }

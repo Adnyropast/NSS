@@ -1,7 +1,5 @@
 
-const AS_TEST = gather(AS_ZYXEI, AS_CUTTER, AS_SWORD);
-
-var K_FLURRY = [70];
+const AS_TEST = gather(AS_ZYXEI, AS_CUTTER, AS_SWORD, AS_FOCUS, "keySteer", "followMe");
 
 class RunToggle extends Action {
     use() {
@@ -18,7 +16,6 @@ class RunToggle extends Action {
 class Haple extends PlayableCharacter {
     constructor(position, size) {
         super(position, size);
-        this.setStyle(IMG_HAPLE_STD_RIGHT);
         this.setRegeneration(0.0625);
         
         this.cursorDistance = 32;
@@ -27,54 +24,52 @@ class Haple extends PlayableCharacter {
         // this.addAbilities(["zyxei", "cutter", "sword"]);
         this.addActset(AS_TEST);
         
-        this.route = Vector.addition(this.getPositionM(), [1, 0]);
-        
         this.faceSave = "right";
     }
     
-    updateStyle() {
+    updateDrawable() {
         var faceDirection = this.cursor.getXM() - this.getXM(0);
         
         if(!this.hasState("grounded")) {
             if(this.speed[1] < 0) {
                 // if(this.route[0] > this.getPositionM(0)) {
                 if(faceDirection > 0) {
-                    this.setStyle(IMG_HAPLE_JUMP_RIGHT);
+                    this.setStyle(AnimatedImages.from(ANIM_HAPLE["jump-right"]));
                     this.faceSave = "right";
                 // } else if(this.route[0] < this.getPositionM(0)) {
                 } else if(faceDirection < 0) {
-                    this.setStyle(IMG_HAPLE_JUMP_LEFT);
+                    this.setStyle(AnimatedImages.from(ANIM_HAPLE["jump-left"]));
                     this.faceSave = "left";
                 } else {
                     if(this.faceSave == "right") {
-                        this.setStyle(IMG_HAPLE_JUMP_RIGHT);
+                        this.setStyle(AnimatedImages.from(ANIM_HAPLE["jump-right"]));
                     } else {
-                        this.setStyle(IMG_HAPLE_JUMP_LEFT);
+                        this.setStyle(AnimatedImages.from(ANIM_HAPLE["jump-left"]));
                     }
                 }
             } else {
                 // if(this.route[0] > this.getPositionM(0)) {
                 if(faceDirection > 0) {
-                    this.setStyle(IMG_HAPLE_FALL_RIGHT);
+                    this.setStyle(AnimatedImages.from(ANIM_HAPLE["fall-right"]));
                     this.faceSave = "right";
                 // } else if(this.route[0] < this.getPositionM(0)) {
                 } else if(faceDirection < 0) {
-                    this.setStyle(IMG_HAPLE_FALL_LEFT);
+                    this.setStyle(AnimatedImages.from(ANIM_HAPLE["fall-left"]));
                     this.faceSave = "left";
                 } else {
                     if(this.faceSave == "right") {
-                        this.setStyle(IMG_HAPLE_FALL_RIGHT);
+                        this.setStyle(AnimatedImages.from(ANIM_HAPLE["fall-right"]));
                     } else {
-                        this.setStyle(IMG_HAPLE_FALL_LEFT);
+                        this.setStyle(AnimatedImages.from(ANIM_HAPLE["fall-left"]));
                     }
                 }
             }
         } else if(this.hasState("moving")) {
             if(this.route[0] > this.getPositionM(0)) {
-                this.setStyle(IMGS_HAPLE_RUN_RIGHT);
+                this.setStyle(AnimatedImages.from(ANIM_HAPLE["run-right"]));
                 this.faceSave = "right";
             } else if(this.route[0] < this.getPositionM(0)) {
-                this.setStyle(IMGS_HAPLE_RUN_LEFT);
+                this.setStyle(AnimatedImages.from(ANIM_HAPLE["run-left"]));
                 this.faceSave = "left";
             } else {
                 /**
@@ -85,31 +80,31 @@ class Haple extends PlayableCharacter {
                 }
                 /**/
                 if(faceDirection > 0) {
-                    this.setStyle(IMGS_HAPLE_RUN_RIGHT);
+                    this.setStyle(AnimatedImages.from(ANIM_HAPLE["run-right"]));
                 } else if(faceDirection < 0) {
-                    this.setStyle(IMGS_HAPLE_RUN_LEFT);
+                    this.setStyle(AnimatedImages.from(ANIM_HAPLE["run-left"]));
                 } else {
                     if(this.faceSave == "right") {
-                        this.setStyle(IMGS_HAPLE_RUN_RIGHT);
+                        this.setStyle(AnimatedImages.from(ANIM_HAPLE["run-right"]));
                     } else {
-                        this.setStyle(IMGS_HAPLE_RUN_LEFT);
+                        this.setStyle(AnimatedImages.from(ANIM_HAPLE["run-left"]));
                     }
                 }
             }
         } else {
             if(faceDirection > 0) {
-                this.setStyle(IMG_HAPLE_STD_RIGHT);
+                this.setStyle(AnimatedImages.from(ANIM_HAPLE["std-right"]));
             } else if(faceDirection < 0) {
-                this.setStyle(IMG_HAPLE_STD_LEFT);
+                this.setStyle(AnimatedImages.from(ANIM_HAPLE["std-left"]));
             } else {
                 if(this.faceSave == "right") {
-                    this.setStyle(IMG_HAPLE_STD_RIGHT);
+                    this.setStyle(AnimatedImages.from(ANIM_HAPLE["std-right"]));
                 } else {
-                    this.setStyle(IMG_HAPLE_STD_LEFT);
+                    this.setStyle(AnimatedImages.from(ANIM_HAPLE["std-left"]));
                 }
             }
         }
         
-        return this;
+        return super.updateDrawable();
     }
 }

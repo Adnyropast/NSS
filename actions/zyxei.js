@@ -24,14 +24,14 @@ class ZyxeiFlurry extends ZyxeiAbility {
         
         this.user.addAction(new Still());
         
-        var hitbox = Entity.fromMiddle(this.user.getPositionM(), [8, 8]).setStyle("cyan");
+        var hitbox = Entity.fromMiddle(this.user.getPositionM(), [8, 8]).setStyle(new TransitionColor([255, 255, 0, 1], [0, 255, 255, 0.25], 16));
         hitbox.setOffense("zyxei", 1);
         hitbox.setBlacklist(this.user.getBlacklist());
         
         hitbox.setSpeed(Vector.subtraction(this.user.getCursor().getPositionM(), this.user.getPositionM()).rotate(Math.sin(this.phase) * 0.25).normalize(4));
         
         hitbox.setLifespan(16);
-        hitbox.setSelfBrake(1.0625);
+        hitbox.setSelfBrake(1.09375);
         addEntity(hitbox);
         
         

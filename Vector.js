@@ -556,7 +556,13 @@ class Vector extends Array {
     
     /* 22/12/2018 */
     
-    getAngle(vector) {
+    angleBetween(vector = new Vector(1, 0)) {
+        if(!(vector instanceof Vector) && Array.isArray(vector)) {
+            vector = Vector.from(vector);
+        }
+        
+        return vector.getAngle() - this.getAngle();
+        
         var scalar = 0;
         var tnorm = 0, onorm = 0;
         
@@ -571,6 +577,14 @@ class Vector extends Array {
         
         return Math.acos(scalar / (tnorm * onorm));
         return Math.acos(this.scalar(vector) / (this.getNorm() * vector.getNorm()));
+    }
+    
+    /* 24/06/2019 */
+    
+    getAngle() {
+        var norm = this.getNorm();
+        var cos = this.getX() / norm, sin = this.getY() / norm;
+        return Math.atan2(sin, cos);
     }
     
     /* 23/01/2019 */

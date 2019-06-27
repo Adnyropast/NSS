@@ -3,6 +3,10 @@ var effectiveGrowth = true;
 
 const ALMOST_ZERO = Math.pow(2, -10);
 
+function isAlmostZero(x) {
+    return Math.abs(x) < ALMOST_ZERO;
+}
+
 var WORLD_PACE = 16;
 
 const BASEWIDTH = 640;
@@ -26,46 +30,114 @@ const FX_LIGHT = effectsCount++;
 const FX_DARK = effectsCount++;
 const FX_POISON = effectsCount++;
 
-var LEFT = [37, 65, 81];
-var UP = [38, 87, 90];
-var RIGHT = [39, 68];
-var DOWN = [40, 83];
-
-var K_DIRECTION = LEFT.concat(UP).concat(RIGHT).concat(DOWN);
-var K_JUMP = [32];
-var K_FOCUS = [223];
-var K_PRESSFOCUS = [191];
-
-var CLEFT = [72];
-var CUP = [85];
-var CDOWN = [74];
-var CRIGHT = [75];
-var K_CDIRECTION = CLEFT.concat(CUP).concat(CDOWN).concat(CRIGHT);
-
-function getKDirection(kleft = LEFT, kup = UP, kright = RIGHT, kdown = DOWN) {
-    var direction = Vector.filled(2, 0);
+function getDD(bits) {
+    var directions = [];
+    var dimension = 0;
+    var sign = -1;
     
-    if(keyList.value(kleft)) {
-        direction.add(0, -1);
-    } if(keyList.value(kup)) {
-        direction.add(1, -1);
-    } if(keyList.value(kright)) {
-        direction.add(0, +1);
-    } if(keyList.value(kdown)) {
-        direction.add(1, +1);
+    while(bits > 0) {
+        if(bits & 1) {
+            directions.push({"dimension" : dimension, "sign" : sign});
+        }
+        
+        sign *= -1;
+        
+        if(sign == -1) {
+            ++dimension;
+        }
+        
+        bits >>= 1;
     }
     
-    return direction.normalize();
+    return directions;
 }
 
-function getMousePosition(dimension) {
-    const position = Vector.subtraction(mouse.position, [CANVAS.offsetLeft, CANVAS.offsetTop]).multiply([CANVAS.width / CANVAS.clientWidth, CANVAS.height / CANVAS.clientHeight]);
+function array_random(array) {
+    return array[Math.floor(Math.random() * array.length)];
+}
+
+function directionToWord(direction) {
+    var word = "";
     
-    if(arguments.length == 1) {
-        return position[dimension] / [wprop, hprop][dimension] + CAMERA.getOffset()[dimension];
+    if(direction.dimension == 0) {
+        if(direction.sign == -1) {
+            word = "left";
+        } else {
+            word = "right";
+        }
+    } else {
+        if(direction.sign == -1) {
+            word = "up";
+        } else {
+            word = "down";
+        }
     }
     
-    return position.divide([wprop, hprop]).add(CAMERA.getOffset());
+    return word;
+}
+
+function directionsToWords(directions) {
+    var words = [];
+    
+    for(var i = 0; i < directions.length; ++i) {
+        words.push(directionToWord(directions[i]));
+    }
+    
+    return words;
+}
+
+function maze_toString1(maze) {
+    var str = "";
+    
+    for(var y = 0; y < maze.length; ++y) {
+        for(var x = 0; x < maze[y].length; ++x) {
+            str += maze[y][x].walls.toString(16);
+        }
+        
+        str += "\n";
+    }
+    
+    return str;
+}
+
+function maze_toString(maze) {
+    var height = maze.length, width = maze[0].length;
+    
+    var block = '■', space = 'O';
+    
+    var str = "";
+    
+    for(var y = 0; y < height; ++y) {
+        for(var x = 0; x < width; ++x) {
+            str += block;
+            if(maze[y][x].walls & 4) {str += block;}
+            else {str += space;}
+            str += block;
+        }
+        
+        str += "\n";
+        
+        for(var x = 0; x < width; ++x) {
+            if(maze[y][x].walls & 1) {str += block;}
+            else {str += space;}
+            str += space;
+            if(maze[y][x].walls & 2) {str += block;}
+            else {str += space;}
+        }
+        
+        str += "\n";
+        
+        for(var x = 0; x < width; ++x) {
+            str += block;
+            if(maze[y][x].walls & 8) {str += block;}
+            else {str += space;}
+            str += block;
+        }
+        
+        str += "\n";
+    }
+    
+    return str;
 }
 
 function makeMaze(width, height) {
@@ -74,21 +146,114 @@ function makeMaze(width, height) {
     for(var y = 0; y < height; ++y) {
         maze[y] = [];
         for(var x = 0; x < width; ++x) {
-            maze[y][x] = {"walls" : 15, "visited" : 0};
+            maze[y][x] = {"borders" : 0, "walls" : 15, "doors" : 0, "visited" : 0};
         }
     }
     
     for(var x = 0; x < width; ++x) {
-        maze[0][x].walls -= 4;
-        maze[height - 1][x].walls -= 8;
+        maze[0][x].borders += 4;
+        maze[height - 1][x].borders += 8;
     } for(var y = 0; y < height; ++y) {
-        maze[y][0].walls -= 1;
-        maze[y][width - 1].walls -= 2;
+        maze[y][0].borders += 1;
+        maze[y][width - 1].borders += 2;
     }
     
     var x = 0, y = 0;
+    var path = [];
     
-    ++maze[x][y].visited;
+    for(var i = 0; i < width * height * 2; ++i) {
+        var cell = maze[y][x];
+        ++cell.visited;
+        
+        // console.log("(" + x + ", " + y + "), walls :", cell.walls, "visited :", cell.visited);
+        
+        if(cell.visited == 1) {
+            console.log(maze_toString(maze));
+            
+            var directions = getDD(15 - cell.borders);
+            var s = Array.from(directions);
+            
+            for(var k = directions.length - 1; k >= 0; --k) {
+                var d = directions[k];
+                
+                var otherX = x + (d.dimension == 0 ? d.sign : 0);
+                var otherY = y + (d.dimension == 1 ? d.sign : 0);
+                
+                var otherCell = maze[otherY][otherX];
+                
+                if(otherCell.visited > 0) {
+                    directions.splice(k, 1);
+                }
+            }
+            
+            if(directions.length == 0) {
+                cell.visited = 2;
+                
+                if(path.length == 0) {
+                    console.log("end");
+                    
+                    break; break; break;
+                }
+                
+                var direction = path.pop();
+                
+                var opener = (1 << 2 * direction.dimension) << (direction.sign == -1);
+                cell.walls -= opener;
+                
+                if(direction.dimension == 0) {
+                    x -= direction.sign; 
+                } else {
+                    y -= direction.sign;
+                }
+                
+                --maze[y][x].visited;
+            } else {
+                var direction = array_random(directions);
+                
+                var choices = "";
+                
+                for(var k = 0; k < directions.length; ++k) {
+                    if(directions[k] == direction) {
+                        choices += "%c";
+                    }
+                    
+                    choices += directionToWord(directions[k])
+                    
+                    if(directions[k] == direction) {
+                        choices += "%c";
+                    }
+                    
+                    if(k < directions.length - 1) {
+                        choices += ", ";
+                    }
+                }
+                
+                // console.log("Original directions : " + directionsToWords(s).join(", "));
+                // console.log("Possible directions : " + choices, "color : #FF0000;", "color : #000000;");
+                
+                if(direction.dimension == 0) {
+                    x += direction.sign;
+                } else {
+                    y += direction.sign;
+                }
+                
+                cell.walls -= 1 << (2 * (direction.dimension == 1) + (direction.sign == 1));
+                // console.log("Walls now :", cell.walls);
+                path.push(direction);
+            }
+        }
+        
+        
+        /**
+        else if(cell.visited == 2) {
+            
+        } else {
+            break;
+        }
+        /**/
+    }
+    
+    console.log("IIII " + i + " IIII");
     
     
     
@@ -180,23 +345,3 @@ const bezierEase = cubicBezier(.25,.1,.25,1);
 const bezierEaseIn = cubicBezier(.42,0,1,1);
 const bezierEaseOut = cubicBezier(0,0,.58,1);
 const bezierEaseInOut = cubicBezier(.42,0,.58,1);
-
-var color1 = [255, 0, 255], color2 = [0, 255, 255];
-
-var bezierF = bezierLinear;
-
-function getColor(t) {
-    var color = [0, 0, 0];
-    
-    for(var dim = 0; dim < 3; ++dim) {
-        color[dim] = color1[dim] + bezierF(t) * (color2[dim] - color1[dim]);
-    }
-    
-    return color;
-}
-
-var t = 0 / 64;
-
-function rgba(r = 0, g = 0, b = 0, a = 1) {
-    return "rgba(" + r + ", " + g + ", " + b + ", " + a + ")";
-}

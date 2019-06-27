@@ -179,7 +179,7 @@ class Rectangle {
             delete data.positionM;
         }
         
-        var entity = (new this()).setPosition(position).setSize(size);
+        var entity = new this(position, size);
         
         Object.assign(entity, data);
         
@@ -837,6 +837,59 @@ class Rectangle {
         }
         
         return this;
+    }
+    
+    /**
+     * 24/06/2019
+     * Returns the position of the point on the border of the rectangle at a specific angle.
+     * @param angle the angle at which the point should be calculated.
+     * @return the position of the point on the border at the given angle.
+     */
+    
+    pointAt(angle) {
+        if(this.getDimension() != 2) {
+            return null;
+        }
+        
+        var cos = Math.cos(angle), sin = -Math.sin(angle);
+        var vx = -sin, vy = cos;
+        
+        if(Math.abs(cos) > Math.abs(sin)) {
+            var x = this.getXM() + Math.sign(cos) * this.getWidth() / 2;
+            
+            return [
+                x,
+                (   - vx * x + vx * this.getXM() + vy * this.getYM()   ) / vy
+            ];
+        } else {
+            var y = this.getYM() + Math.sign(sin) * this.getHeight() / 2;
+            
+            return [
+                (   + vx * this.getXM() - vy * y + vy * this.getYM()   ) / vx,
+                y
+            ];
+        }
+    }
+    
+    /* 24/06/2019 */
+    
+    sizeAt(angle) {
+        if(this.getDimension() != 2) {
+            return null;
+        }
+        
+        var cos = Math.cos(angle), sin = -Math.sin(angle);
+        var vx = -sin, vy = cos;
+        
+        if(Math.abs(cos) > Math.abs(sin)) {
+            var x = this.getXM() + Math.sign(cos) * this.getWidth() / 2;
+            var y = (   - vx * x + vx * this.getXM() + vy * this.getYM()   ) / vy;
+        } else {
+            var y = this.getYM() + Math.sign(sin) * this.getHeight() / 2;
+            var x = (   + vx * this.getXM() - vy * y + vy * this.getYM()   ) / vx;
+        }
+        
+        return Math.sqrt(Math.pow(x - this.getXM(), 2) + Math.pow(y - this.getYM(), 2));
     }
 }
 

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta charset="utf-8"></meta>
         <title>Not So Simple</title>
         
         <link rel="icon", href="images/seed.png"></link>
@@ -16,8 +17,15 @@
         <script src="events.js"></script>
         <script src="Vector.js"></script>
         <script src="Rectangle.js"></script>
+        <script src="Circle.js"></script>
+        <script src="Polygon.js"></script>
         <script src="draft.js"></script>
         
+        <script id="canvas", src="canvas.js"></script>
+        
+        <script src="images.js"></script>
+        
+        <script src="Drawable.js"></script>
         <script src="Entity.js"></script>
         <script src="Action.js"></script>
         <script src="interactions/Interaction.js"></script>
@@ -41,11 +49,12 @@
         <script src="entities/Haple.js"></script>
         <script src="entities/Ten.js"></script>
         
-        <script id="canvas", src="canvas.js"></script>
-        
-        <script src="images.js"></script>
-        
         <script id="entitycollections">
+        
+        var entityClasses = {
+            "entity" : Entity,
+            "" : Entity
+        };
         
         class EntityCollection extends Array {
             add(entity) {
@@ -82,14 +91,12 @@
         var PLAYER = null;
         
         function addEntity(entity) {
+            entity.onadd();
+            
             ENTITIES.add(entity);
             
             if(entity.isCollidable()) {
                 COLLIDABLE.add(entity);
-            }
-            
-            if(entity.isDrawable()) {
-                DRAWABLE.add(entity);
             }
             
             if(entity instanceof PlayableCharacter) {
@@ -128,33 +135,36 @@
             PLAYABLE.clear();
         }
         
+        function addDrawable(drawable) {
+            DRAWABLE.add(drawable);
+        }
+        
+        function removeDrawable(drawable) {
+            DRAWABLE.remove(drawable);
+        }
+        
         </script>
+        <script src="draft-controls.js"></script>
         <script>
         
         window.addEventListener("keydown", function(event) {
             if(PLAYER != null) {
-                if(K_FOCUS.includes(event.keyCode)) {
-                    PLAYER.addAction(new HoldFocus());
+                /**
+                for(var i = 0; i < actionevents.length; ++i) {
+                    if(actionevents[i].keys.includes(event.keyCode)) {
+                        actionevents[i].oneventdown(PLAYER);
+                    }
                 }
-                
-                if([80].includes(event.keyCode)) {
-                    PLAYER.addAction(new ProjectileShot());
-                }
+                /**/
             }
         });
         
         window.addEventListener("keyup", function(event) {
             if(PLAYER != null) {
-                if(K_FOCUS.includes(event.keyCode)) {
-                    PLAYER.removeActionsWithConstructor(HoldFocus);
-                } if([16].includes(event.keyCode)) {
-                    PLAYER.removeActionsWithConstructor(Still);
-                } if(K_FLURRY.includes(event.keyCode)) {
-                    PLAYER.removeActionsWithConstructor(ZyxeiFlurry);
-                } if(K_DIRECTION.includes(event.keyCode)) {
-                    PLAYER.removeActionsWithConstructor(Movement);
-                } if(K_JUMP.includes(event.keyCode)) {
-                    PLAYER.removeActionsWithConstructor(Jump);
+                for(var i = 0; i < actionevents.length; ++i) {
+                    if(actionevents[i].keys.includes(event.keyCode)) {
+                        actionevents[i].oneventup(PLAYER);
+                    }
                 }
             }
         });
@@ -165,118 +175,76 @@
             }
         });
         
+        window.addEventListener("contextmenu", function(event) {
+            <!-- event.preventDefault(); -->
+        });
+        
         window.addEventListener("mousedown", function(event) {
             if(PLAYER != null) {
-                if(event.which == 1) {
-                    <!-- PLAYER.addAction(new OverheadSlash()); -->
-                    PLAYER.addAction(new RocketPunch());
-                    <!-- player.addAction(new CutterBoomerang()); -->
-                    <!-- player.addAction(new CutterDash()); -->
-                    // this.addAction(new TargetAttack(this.cursor.getPositionM()));
+                PLAYER.addAction(new MouseFocus());
+                /**
+                for(var i = 0; i < actionevents.length; ++i) {
+                    if(actionevents[i].mouse.includes(event.which)) {
+                        actionevents[i].oneventdown(PLAYER);
+                    }
                 }
+                /**/
             }
         });
         
         window.addEventListener("mouseup", function(event) {
             if(PLAYER != null) {
-                if(event.which == 1) {
-                    PLAYER.removeActionsWithConstructor(OverheadSlash);
+                PLAYER.removeActionsWithConstructor(MouseFocus);
+                
+                for(var i = 0; i < actionevents.length; ++i) {
+                    if(actionevents[i].mouse.includes(event.which)) {
+                        actionevents[i].oneventup(PLAYER);
+                    }
                 }
             }
         });
         
         function playerUpdate(player) {
-            if(keyList.value(27)) {
-                player.actions = [];
-            }
-            
             if(keyList.value(107)) {
-                ++this.cursorDistance;
+                ++player.cursorDistance;
             } if(keyList.value(109)) {
-                --this.cursorDistance;
+                --player.cursorDistance;
             }
             
-            /**
-            if(keyList.value(K_FOCUS)) {
-                player.addAction(new HoldFocus());
-            } else {
-                player.removeActionsWithConstructor(HoldFocus);
-            }
-            /**/
-            if(keyList.value(K_PRESSFOCUS) == 1) {
-                player.addAction(new PressFocus());
-            }
-            
-            if(keyList.value(K_CDIRECTION)) {
-                player.addAction(new FreeKeyFocus());
-            }
-            
-            if(keyList.value(71)) {
-                player.addAction(new RoundFocus(8));
-            }
-            
-            if(keyList.value(16)) {
-                player.addAction(new Still());
-            }
-            
-            if(keyList.value(K_FLURRY)) {
-                player.addAction(new ZyxeiFlurry());
-            }
-            
-            if(keyList.value(K_DIRECTION)) {
-                player.route = getKDirection().add(player.getPositionM());
-                player.addAction(new MoveFocus());
-                player.addAction(new Movement());
-            }
-            
-            if(keyList.value(K_JUMP)) {
-                // player.drag(Vector.from(player.gravityDirection).normalize(-16));
-                player.addAction(new Jump());
-            }
-            
-            if(keyList.value(67) == 1) {
-                if(CAMERA.target == player) {
-                    CAMERA.target = null;
-                } else {
-                    CAMERA.target = player;
+            for(var i = 0; i < actionevents.length; ++i) {
+                if(keyList.value(actionevents[i].keys)) {
+                    actionevents[i].oneventdown(player);
+                } if(keyList.value(actionevents[i].presskeys) == 1) {
+                    actionevents[i].oneventdown(player);
+                } if(mouse.value(actionevents[i].mouse)) {
+                    actionevents[i].oneventdown(PLAYER);
                 }
             }
             
+            /**
             if(keyList.value(67)) {
                 player.addAction(new LCreation());
             } else {
                 player.removeActionsWithConstructor(LCreation);
             }
-            
-            if(keyList.value(84) == 1) {
-                player.addAction(new Teleportation(player.cursor.getPositionM(), 20, 20));
-            }
-            
-            if(keyList.value(66) == 1) {
-                player.addAction(new BlowoutShots(player.cursor.getPositionM()));
-            }
-            
-            if(keyList.value(77) == 1) {
-                player.addAction(new MultiaimShots());
-            } else {
-                player.removeActionsWithConstructor(MultiaimShots);
-            }
-            
-            if(keyList.value(69)) {
-                player.addAction(new ZoneEngage());
-            }
+            /**/
         }
         
-        var timenote = document.createElement("text");
-        document.body.appendChild(timenote);
-        var lastDate = new Date();
-        
         function worldLoop() {
+            if(!PLAYER) {
+                buildMaze();
+                <!-- buildTest(); -->
+            }
+            
+            let entities = EntityCollection.from(ENTITIES);
+            let collidables = EntityCollection.from(COLLIDABLE);
+            let drawables = EntityCollection.from(DRAWABLE);
+            
             playerUpdate(PLAYER);
             
-            for(var i = 0; i < ENTITIES.length; ++i) {
-            <!-- for(var i = ENTITIES.length - 1; i >= 0; --i) { -->
-                var entity = ENTITIES[i];
+            for(var i = 0; i < entities.length; ++i) {
+            <!-- for(var i = entities.length - 1; i >= 0; --i) { -->
+                var entity = entities[i];
                 
                 entity.update();
                 
@@ -285,19 +253,25 @@
                 }
             }
             
-            for(var i = 0; i < ENTITIES.length; ++i) {
-                var entity = ENTITIES[i];
+            for(var i = 0; i < entities.length; ++i) {
+                var entity = entities[i];
                 entity.updateReset();
             }
             
             keyList.increment();
             mouse.increment();
             
-            for(var i = 0; i < COLLIDABLE.length; ++i) {
-                for(var j = i + 1; j < COLLIDABLE.length; ++j) {
-                    if(COLLIDABLE[i].collides(COLLIDABLE[j])) {
-                        COLLIDABLE[i].oncollision(COLLIDABLE[j]);
-                        COLLIDABLE[j].oncollision(COLLIDABLE[i]);
+            collidables.sort(function(a, b) {
+                if(a.collide_priority > b.collide_priority) {return -1;}
+                if(a.collide_priority < b.collide_priority) {return +1;}
+                return 0;
+            });
+            
+            for(var i = 0; i < collidables.length; ++i) {
+                for(var j = i + 1; j < collidables.length; ++j) {
+                    if(collidables[i].collides(collidables[j])) {
+                        collidables[i].oncollision(collidables[j]);
+                        collidables[j].oncollision(collidables[i]);
                     }
                 }
             }
@@ -312,7 +286,7 @@
             
             /**/
             
-            DRAWABLE.sort(function(a, b) {
+            drawables.sort(function(a, b) {
                 if(a.getZIndex() > b.getZIndex()) {
                     return -1;
                 } if(a.getZIndex() < b.getZIndex()) {
@@ -322,70 +296,17 @@
                 return 0;
             });
             
-            for(var i = 0; i < DRAWABLE.length; ++i) {
+            for(var i = 0; i < drawables.length; ++i) {
                 /**
-                if(i < DRAWABLE.length - 1 && DRAWABLE[i].getZIndex() < DRAWABLE[i + 1].getZIndex()) {
-                    var drawable = DRAWABLE[i + 1];
-                    DRAWABLE[i + 1] = DRAWABLE[i];
-                    DRAWABLE[i] = drawable;
+                if(i < drawables.length - 1 && drawables[i].getZIndex() < drawables[i + 1].getZIndex()) {
+                    var drawable = drawables[i + 1];
+                    drawables[i + 1] = drawables[i];
+                    drawables[i] = drawable;
                 }
                 /**/
-                var drawable = DRAWABLE[i];
-                
-                var x = drawable.getX();
-                var y = drawable.getY();
-                var width = drawable.getWidth();
-                var height = drawable.getHeight();
-                
-                var wprop = CANVAS.width / CAMERA.width;// BASEWIDTH;
-                var hprop = CANVAS.height / CAMERA.height;// BASEHEIGHT;
-                
-                x += -CAMERA.getOffsetX();
-                y += -CAMERA.getOffsetY();
-                
-                x *= wprop;
-                y *= hprop;
-                width *= wprop;
-                height *= hprop;
-                
-                if(x == -Infinity) {
-                    x = 0;
-                } if(y == -Infinity) {
-                    y = 0;
-                } if(width == Infinity) {
-                    width = CANVAS.width;
-                } if(height == Infinity) {
-                    height = CANVAS.height;
-                }
-                
-                var style = drawable.getStyle();
-                
-                if(style instanceof HTMLImageElement) {
-                    context.drawImage(style, x, y, width, height);
-                } else {
-                    context.fillStyle = style;
-                    // context.fillRect(x, y, width, height);
-                    context.translate(x, y);
-                    context.fillRect(0, 0, width, height);
-                    context.translate(-x, -y);
-                }
+                var drawable = drawables[i];
+                drawable.draw(context);
             }
-            
-            if(PLAYER) {
-                context.fillStyle = "#EFEFEF";
-                context.fillText("Energy : " + PLAYER.energy, 0, 0);
-                context.fillStyle = "rgba(255, " + (255 * PLAYER.getEnergyRatio()) + ", 0)";
-                context.fillText(PLAYER.energy, 66.75 * CANVAS.height / BASEHEIGHT, 0);
-                <!-- context.fillText(PLAYER.energy, 0, 16); -->
-                <!-- context.fillText(PLAYER.energy, 0, 32); -->
-                <!-- context.fillText(PLAYER.energy, 0, 48); -->
-                <!-- context.fillText(PLAYER.energy, 0, 64); -->
-            } else {
-                mapTest();
-            }
-            
-            <!-- timenote.innerHTML = new Date() - lastDate; -->
-            <!-- lastDate = new Date(); -->
         }
         
         const BATTLERS = new EntityCollection();
@@ -471,7 +392,6 @@
                     }
                 }
                 
-                mapTest();
                 switchLoop(nextLoop, nextPace);
             }
         }

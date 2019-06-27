@@ -8,6 +8,19 @@ const ACT_PROJECTILE = ++actionid;
 const ACT_TARGETATTACK = ++actionid;
 const ACT_MOVEMENT = ++actionid;
 
+var actionsIds = [];
+
+function registerAction(id, ActionClass) {
+    for(var i = 0; i < actionsIds.length; ++i) {
+        if(actionsIds[i].id == id) {
+            actionsIds[i].class = ActionClass;
+            return;
+        }
+    }
+    
+    actionsIds.push({"id" : id, "class" : ActionClass});
+}
+
 /**
  * The Action class represents any action that can be performed by a character.
  * Do not start anyhting that would change the game in the constructor, do it during the phase 0 in the use method instead.

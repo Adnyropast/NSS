@@ -9,9 +9,14 @@ class Character extends Entity {
         this.setZIndex(-100);
         
         this.cursor = Cursor.fromMiddle([this.getXM(), this.getYM()], [this.getWidth(), this.getHeight()]);
-        addEntity(this.cursor);
         
         this.addPossibleAction([FocusAction, Movement]);
+    }
+    
+    onadd() {
+        addEntity(this.cursor);
+        
+        return super.onadd();
     }
     
     onremove() {
@@ -28,6 +33,7 @@ class PlayableCharacter extends Character {
         this.setEffectFactor("default", 1);
         
         this.cursor.setSizeM([256, 256]).setStyle("#00FFFF5F");
+        this.cursor.drawable.setSizeM([256, 256]);
         this.cursor.setBlacklist(this.getBlacklist());
         this.cursor.detect = function detect(other) {
             return other instanceof Enemy || other instanceof Target;
@@ -35,6 +41,27 @@ class PlayableCharacter extends Character {
         
         this.addPossibleAction([Jump, BackSmoke]);
         this.addImpossibleAction(MoveFocus);
+        
+        this.uiEnergy = new TextDrawable();
+    }
+    
+    onadd() {
+        addDrawable(this.uiEnergy);
+        
+        return super.onadd();
+    }
+    
+    onremove() {
+        removeDrawable(this.uiEnergy);
+        
+        return super.onremove();
+    }
+    
+    updateDrawable() {
+        this.uiEnergy.content = "Energy : " + this.energy;
+        this.uiEnergy.color = "rgba(" + (255 - 255 * this.getEnergyRatio()) + ", " + (255 * this.getEnergyRatio()) + ", 0)";
+        
+        return super.updateDrawable();
     }
 }
 
@@ -49,9 +76,14 @@ class Cursor extends Entity {
         this.targets = [];
         this.currentIndex = -1;
         this.detect;
+        this.targeted = [];
     }
     
     centerTarget() {
+        if(!ENTITIES.includes(this.target)) {
+            this.target = null;
+        }
+        
         if(this.target != null) {
             this.setPositionM(this.target.getPositionM());
         }
@@ -60,6 +92,25 @@ class Cursor extends Entity {
     }
     
     setNextTarget() {
+        var targets = [];
+        
+        for(var i = 0; i < this.collidedWith.length; ++i) {
+            if(this.detect(this.collidedWith[i])) {
+                if(!this.targeted.includes(this.collidedWith[i])) {
+                    targets.push(this.collidedWith[i]);
+                }
+            }
+        }
+        
+        if(targets.length == 0 && this.targeted.length > 0) {
+            this.targeted.splice(0, this.targeted.length);
+            return this.setNextTarget();
+        } if(targets.length > 0) {
+            this.targeted.push(this.target = targets[0]);
+        }
+        
+        /**
+        
         if(this.targets.length > 0) {
             ++this.currentIndex;
             this.currentIndex %= this.targets.length;
@@ -73,6 +124,8 @@ class Cursor extends Entity {
             }
         }
         
+        /**/
+        
         return this;
     }
     
@@ -82,16 +135,10 @@ class Cursor extends Entity {
         return this;
     }
     
-    _oncollision(other) {
-        if(typeof this.detect == "function" && this.detect(other)) {
-            // this.target = other;
-            var index = this.targets.indexOf(other);
-            if(index == -1) {
-                this.targets.push(other);
-            }
-        }
+    updateDrawable() {
+        this.drawable.setPositionM(this.getPositionM());
         
-        return this;
+        return super.updateDrawable();
     }
 }
 
@@ -125,6 +172,7 @@ class Enemy extends Character {
         this.setOffense("default", 1);
         
         this.cursor.setSizeM([256, 256]).setStyle("#FF7FFF5F");
+        this.cursor.drawable.setSizeM([256, 256]);
         this.cursor.setBlacklist(this.getBlacklist());
         this.cursor.detect = function detect(other) {
             return other instanceof PlayableCharacter;

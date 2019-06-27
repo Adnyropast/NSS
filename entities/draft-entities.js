@@ -4,7 +4,7 @@ const BRK_AIR = 1.03125;
 const BRK_WATER = 1.25;
 var THRUST_OBSTACLE = 1.125;
 var THRUST_OBSTACLE = 0.5;
-var _THRUST_AIR = 0.125;
+var THRUST_AIR = 0.125;
 var THRUST_WATER = 1.0;
 
 class ActorCollidable extends Entity {
@@ -35,6 +35,10 @@ class Obstacle extends ActorCollidable {
         this.replaceId = -1;
         this.otherBrake = BRK_OBST;
         this.otherThrust = THRUST_OBSTACLE;
+        
+        this.addInteraction(new ReplaceActor(-1));
+        this.addInteraction(new BrakeActor(BRK_OBST));
+        this.addInteraction(new ThrustActor(THRUST_OBSTACLE));
     }
 }
 
@@ -44,6 +48,8 @@ class Braker extends ActorCollidable {
         this.setReplaceId(0);
         this.otherBrake = otherBrake;
         this.setStyle(INVISIBLE);
+        
+        this.addInteraction(new BrakeActor(otherBrake));
     }
 }
 
@@ -54,6 +60,8 @@ class ForceField extends ActorCollidable {
         this.setReplaceId(0);
         this.setOtherBrake(1);
         this.setForce(force);
+        
+        this.addInteraction(new DragActor(force));
     }
 }
 
@@ -63,34 +71,35 @@ class GravityField extends ForceField {
     }
 }
 
-class MovingObstacle extends Obstacle {
-    constructor(position, size) {
-        super(position, size);
-        this.speed.set(0, 0.1);
-        this.ground = true;
-    }
-}
-
-class Bouncer extends Obstacle {
-    constructor(position, size) {
-        super(position, size);
-        this.bounce = 1;
-        this.ground = true;
-    }
-}
-
-class Hazard extends Obstacle {
-    constructor(position, size) {
-        super(position, size);
-        this.setOffense("default", 1);
-        this.ground = true;
-    }
-}
-
 class Ground extends Obstacle {
     constructor(position, size) {
         super(position, size);
         this.ground = true;
+        
+        this.addInteraction(new GroundActor());
+    }
+}
+
+class MovingObstacle extends Ground {
+    constructor(position, size) {
+        super(position, size);
+        this.speed.set(0, 0.1);
+    }
+}
+
+class Bouncer extends Ground {
+    constructor(position, size) {
+        super(position, size);
+        this.bounce = 1;
+        
+        this.addInteraction(new ReplaceActor(-1, 1));
+    }
+}
+
+class Hazard extends Ground {
+    constructor(position, size) {
+        super(position, size);
+        this.setOffense("default", 1);
     }
 }
 
@@ -101,14 +110,22 @@ class GroundArea extends Area {
         this.otherThrust = THRUST_OBSTACLE;
         this.setOtherBrake(BRK_OBST);
         this.ground = true;
+        
+        this.addInteraction(new ThrustActor(THRUST_OBSTACLE));
+        this.addInteraction(new BrakeActor(BRK_OBST));
+        this.addInteraction(new GroundActor());
     }
 }
 
 class AirArea extends Area {
     constructor(position, size) {
         super(position, size);
+        this.setOtherThrust(THRUST_AIR);
         this.setOtherBrake(BRK_AIR);
         this.setStyle(INVISIBLE);
+        this.collide_priority = +1;
+        
+        this.addInteraction(new BrakeActor(BRK_AIR));
     }
 }
 
@@ -118,6 +135,9 @@ class WaterArea extends Area {
         this.setOtherBrake(BRK_WATER);
         this.otherThrust = THRUST_WATER;
         this.setStyle("#007FFF3F");
+        
+        this.addInteraction(new BrakeActor(BRK_WATER));
+        this.addInteraction(new ThrustActor(THRUST_OBSTACLE));
     }
 }
 
@@ -152,24 +172,9 @@ class Particle extends Decoration {
         this.setZIndex(-1);
         this.setLifespan(1);
         
-        this.initialColor = INVISIBLE_VECTOR, this.endColor = WHITE_VECTOR;
-        // this.currentColor;
-        this.colorDuration = 1, this.colorStep = 0;
-        this.colorTiming = bezierEaseIn;
-        
         this.initialSize = 0, this.endSize = 1;
         this.sizeDuration = 1, this.sizeStep = 0;
         this.sizeTiming = bezierLinear;
-    }
-    
-    getColorAt(t) {
-        var color = new Vector();
-        
-        for(var dim = 0; dim < this.initialColor.length; ++dim) {
-            color[dim] = this.initialColor[dim] + this.colorTiming(t) * (this.endColor[dim] - this.initialColor[dim]);
-        }
-        
-        return color;
     }
     
     getSizeAt(t) {
@@ -182,49 +187,12 @@ class Particle extends Decoration {
         return size;
     }
     
-    setColorTransition(initialColor, endColor, colorDuration = this.colorDuration) {
-        this.initialColor = initialColor;
-        this.endColor = endColor;
-        
-        this.colorDuration = colorDuration;
-        this.colorStep = 0;
-        
-        return this;
-    }
-    
     setSizeTransition(initialSize, endSize, sizeDuration = this.sizeDuration) {
         this.initialSize = initialSize;
         this.endSize = endSize;
         
         this.sizeDuration = sizeDuration;
         this.sizeStep = 0;
-        
-        return this;
-    }
-    
-    convert(alpha) {
-        return ((alpha < 16) ? "0" : "") + Math.floor(alpha).toString(16);
-    }
-    
-    getHex(rgba) {
-        return "#" + this.convert(rgba[0]) + this.convert(rgba[1]) + this.convert(rgba[2]) + this.convert(rgba[3]);
-    }
-    
-    getRGBA(rgba) {
-        return "rgba(" + rgba[0] + ", " + rgba[1] + ", " + rgba[2] + ", " + (rgba[3] / 255) + ")";
-    }
-    
-    updateStyle() {
-        super.updateStyle()
-        
-        // var stepVector = Vector.from(this.endColor).subtract(this.initialColor).divide(this.colorDuration);
-        
-        // this.currentColor = this.currentColor.add(stepVector);
-        
-        if(this.colorStep <= this.colorDuration) {
-            this.style = this.getRGBA(this.getColorAt(this.colorStep / this.colorDuration));
-            ++this.colorStep;
-        }
         
         return this;
     }
@@ -256,7 +224,8 @@ class CSmokeParticle extends Particle {
         
         this.setSelfBrake(1.0625);
         this.setLifespan(60);
-        this.setColorTransition([0, 255, 255, 127], [0, 255, 255, 0], 60);
+        // this.setColorTransition([0, 255, 255, 127], [0, 255, 255, 0], 60);
+        this.setStyle(new TransitionColor([0, 255, 255, 127], [0, 255, 255, 0], 60));
     }
 }
 
@@ -266,7 +235,9 @@ class SmokeParticle extends Particle {
         
         this.setSelfBrake(1.0625);
         this.setLifespan(60);
-        this.setColorTransition([255, 255, 255, 191], [223, 223, 223, 31], 60);
+        // this.setColorTransition([255, 255, 255, 191], [223, 223, 223, 31], 60);
+        this.setStyle(new TransitionColor([255, 255, 255, 191 / 255], [223, 223, 223, 31 / 255], 60));
+        this.setStyle(AnimatedImages.from(PTRNS_SMOKE));
     }
 }
 
@@ -276,17 +247,18 @@ class FireSmokeParticle extends Particle {
         
         this.setSelfBrake(1.0625);
         this.setLifespan(60);
-        this.setColorTransition([255, 0, 0, 127], [0, 0, 0, 127], 60);
+        // this.setColorTransition([255, 0, 0, 127], [0, 0, 0, 127], 60);
+        this.setStyle(new TransitionColor([255, 0, 0, 127], [0, 0, 0, 127], 60));
     }
 }
 
 class Projectile extends Entity {
     constructor(position, size) {
         super(position, size);
-        this.style = "#FF0000";
-        this.setBlockable(true);
-        this.setBrakeExponent(0);
-        this.setForceFactor(0);
+        this.setStyle("#FF0000");
+        // this.setBlockable(true);
+        // this.setBrakeExponent(0);
+        // this.setForceFactor(0);
         this.setRegeneration(-1);
         this.setOffense(FX_PIERCING, 1);
     }
@@ -295,9 +267,8 @@ class Projectile extends Entity {
         super.oncollision(other);
         
         if(other.getReplaceId() != 0) {
-            var particle = new TpParticle(NaN, NaN, 32, 32);
-            particle.setPositionM(this.getPositionM());
-            particle.setColorTransition([255, 0, 0, 255], [255, 0, 0, 0], 10);
+            var particle = TpParticle.fromMiddle(this.getPositionM(), [32, 32]);
+            particle.setStyle(new TransitionColor([255, 0, 0, 255], [255, 0, 0, 0], 10));
             particle.setLifespan(10);
             
             addEntity(particle);
@@ -313,5 +284,13 @@ class Door extends Entity {
         super(position, size);
         
         this.nextMap = "";
+    }
+}
+
+class Collectible extends Entity {
+    constructor(position, size) {
+        super(position, size);
+        
+        this.item = null;
     }
 }

@@ -6,16 +6,6 @@ class SwordAbility extends BusyAction {
         super();
         this.setAbilityId("sword");
     }
-    
-    onadd() {
-        this.user.removeActionsWithConstructor(Movement);
-        
-        return this;
-    }
-    
-    preventsAddition(action) {
-        return action instanceof Movement;
-    }
 }
 
 class SlashEffect extends Entity {
@@ -24,14 +14,26 @@ class SlashEffect extends Entity {
         this.setOffense(FX_SHARP, 1);
     }
     
-    updateStyle() {
+    updateDrawable() {
         var grd = CANVAS.getContext("2d").createLinearGradient(0, 0, 0, this.getHeight());
         grd.addColorStop(0, "#00FFFF00");
         grd.addColorStop(1, "#00FFFFBF");
         
         this.setStyle(grd);
+        this.setStyle(INVISIBLE);
+        
+        this.drawable.setPositionM(this.getPositionM());
+        this.drawable.setSizeM(this.getSize());
         
         return this;
+    }
+}
+
+class SlashDrawable extends PolygonDrawable {
+    constructor(points) {
+        super(points);
+        
+        this.setStyle(new TransitionColor([0, 255, 255, 1], [0, 255, 255, 0], 12, bezierLinear));
     }
 }
 
@@ -45,6 +47,10 @@ class OverheadSlash extends SwordAbility {
         this.effect = null;
         this.face = null;
         this.center = null;
+        
+        this.effects = [];
+        
+        this.path = [];
     }
     
     use() {
@@ -72,13 +78,42 @@ class OverheadSlash extends SwordAbility {
             
             this.effect.setSize([s, s]);
             
-            this.effect.setPositionM(0, this.user.getXM() + Math.cos(angle) * 24);
-            this.effect.setPositionM(1, this.user.getYM() + Math.sin(angle) * 24);
-        } else {
+            var farX = this.user.getXM() + Math.cos(angle) * 24;
+            var farY = this.user.getYM() + Math.sin(angle) * 24;
+            
+            this.effect.setPositionM(0, farX);
+            this.effect.setPositionM(1, farY);
+            
+            farX = this.user.getXM() + Math.cos(angle) * 32;
+            farY = this.user.getYM() + Math.sin(angle) * 32;
+            
+            var closeX = this.user.getXM() + Math.cos(angle) * 12;
+            var closeY = this.user.getYM() + Math.sin(angle) * 12;
+            
+            this.path.push({far : [farX, farY], close : [closeX, closeY]});
+            
+            if(this.phase > 0) {
+                var last = this.path[this.path.length - 2];
+                var current = this.path[this.path.length - 1];
+                
+                var drawable = new SlashDrawable([last.far, current.far, current.close, last.close]);
+                
+                addDrawable(drawable);
+                this.effects.push(drawable);
+            }
+        } else if(this.phase > 22) {
             this.setRemovable(true);
             this.end();
         }
         
         return this;
+    }
+    
+    onend() {
+        for(var i = 0; i < this.effects.length; ++i) {
+            removeDrawable(this.effects[i]);
+        }
+        
+        return super.onend();
     }
 }

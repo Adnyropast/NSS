@@ -20,7 +20,27 @@ class Jump extends Action {
                 return this.end("!grounded");
             }
             
+            var actuallyGrounded = false;
+            
+            var side = 0;
+            
+            for(var i = 0; i < this.user.collidedWith.length; ++i) {
+                if(this.user.collidedWith[i].ground) {
+                    var locate = this.user.locate(this.user.collidedWith[i]);
+                    
+                    if(locate & 8) {
+                        actuallyGrounded = true;
+                    } else {
+                        side += !!(locate & 1) - !!(locate & 2);
+                    }
+                }
+            }
+            
             this.direction = Vector.from(this.user.gravityDirection).normalize(-this.initialForce);
+            
+            if(!actuallyGrounded) {
+                this.direction.rotate(Math.sign(side) / 3.5).multiply(1.25);
+            }
         }
         
         this.user.addState("jumping");
@@ -29,7 +49,7 @@ class Jump extends Action {
             this.user.drag(i, this.direction[i]);
             this.direction[i] /= (this.reduct);
             
-            if(Math.abs(this.direction[i]) < ALMOST_ZERO) {
+            if(isAlmostZero(this.direction[i])) {
                 this.direction[i] = 0;
             }
         }
@@ -38,11 +58,11 @@ class Jump extends Action {
             if(this.direction[dim] != 0) {
                 if(this.phase < 3) {
                     var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getY2()], [16, 16]).setSizeTransition([12, 12], [0, 0], 60);
-                    particle.setSpeed(this.user.speed.rotated(Math.PI/2 + this.phase).normalize());
+                    particle.setSpeed(this.user.speed.rotated(Math.PI/2 + -this.phase).normalize());
                     addEntity(particle);
-                    
+                    if(this.phase == 0) particle.drawable.ttt = true;
                     var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getY2()], [16, 16]).setSizeTransition([12, 12], [0, 0], 60);
-                    particle.setSpeed(this.user.speed.rotated(-Math.PI/2 - this.phase).normalize());
+                    particle.setSpeed(this.user.speed.rotated(-Math.PI/2 - -this.phase).normalize());
                     addEntity(particle);
                 }
                 
@@ -93,7 +113,7 @@ class EnergyJump extends Jump {
             this.user.drag(i, this.direction[i]);
             this.direction[i] /= (this.reduct);
             
-            if(Math.abs(this.direction[i]) < ALMOST_ZERO) {
+            if(isAlmostZero(this.direction[i])) {
                 this.direction[i] = 0;
             }
         }

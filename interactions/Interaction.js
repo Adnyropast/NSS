@@ -1,4 +1,6 @@
 
+/**
+
 class Interaction {
     constructor() {
         
@@ -13,21 +15,43 @@ class CollisionInteraction {
  *
  */
 
-class InteractionActor {
+class Interactor {
     constructor() {
+        this.id = -1;
         this.actor = null;
-        this.recipientClass;
     }
     
-    interact(other) {
+    matchId(id) {return this.id == id;}
+    getId() {return this.id;}
+    setId(id) {this.id = id; return this;}
+    
+    getActor() {return this.actor;}
+    setActor(actor) {this.actor = actor; return this;}
+    
+    interact(interrecipient) {
+        return this;
+    }
+    
+    interactDimension(interrecipient, dimension) {
         return this;
     }
 }
 
-class InteractionRecipient {
+class Interrecipient {
     constructor() {
+        this.id = -1;
         this.recipient = null;
-        this.actorClass;
+    }
+    
+    matchId(id) {return this.id == id;}
+    getId() {return this.id;}
+    setId(id) {this.id = id; return this;}
+    
+    getRecipient() {return this.recipient;}
+    setRecipient(recipient) {this.recipient = recipient; return this;}
+    
+    oninteraction(interactor) {
+        return this;
     }
 }
 
@@ -35,25 +59,28 @@ class InteractionRecipient {
  *
  */
 
-class ReplaceActor extends InteractionActor {
-    constructor() {
+class ReplaceActor extends Interactor {
+    constructor(replaceId = 0, bounce = 0) {
         super();
-        this.recipientClass = ReplaceRecipient;
+        this.setId("replace");
         
-        this.replaceId = 0;
+        this.replaceId = replaceId;
+        this.bounce = bounce;
     }
     
-    interact(other) {
+    interact(interrecipient) {
+        var actor = this.getActor();
+        
         
         
         return this;
     }
 }
 
-class ReplaceRecipient extends InteractionRecipient {
+class ReplaceRecipient extends Interrecipient {
     constructor() {
         super();
-        this.actorClass = ReplaceActor;
+        this.setId("replace");
     }
 }
 
@@ -61,25 +88,39 @@ class ReplaceRecipient extends InteractionRecipient {
  *
  */
 
-class BrakeActor extends InteractionActor {
-    constructor() {
+class BrakeActor extends Interactor {
+    constructor(brakeValue = 1) {
         super();
-        this.recipientClass = BrakeRecipient;
+        this.setId("brake");
         
-        this.brakeValue = 1;
+        this.brakeValue = brakeValue;
     }
     
-    interact(other) {
+    interact(interrecipient) {
+        var recipient = interrecipient.getRecipient();
+        
+        for(var dim = 0; dim < recipient.getDimension(); ++dim) {
+            recipient.speed[dim] /= interrecipient.negotiateBrake(this.brakeValue);
+            
+            if(isAlmostZero(recipient.speed[dim])) {
+                recipient.speed[dim] = 0;
+            }
+        }
+        
         return this;
     }
 }
 
-class BrakeRecipient extends InteractionRecipient {
-    constructor() {
+class BrakeRecipient extends Interrecipient {
+    constructor(brakeExponent = 1) {
         super();
-        this.actorClass = BrakeActor;
+        this.setId("brake");
         
-        this.brakeExponent = 1;
+        this.brakeExponent = brakeExponent;
+    }
+    
+    negotiateBrake(brakeValue) {
+        return Math.pow(brakeValue, this.brakeExponent)
     }
 }
 
@@ -87,24 +128,32 @@ class BrakeRecipient extends InteractionRecipient {
  *
  */
 
-class DragActor extends InteractionActor {
-    constructor() {
+class DragActor extends Interactor {
+    constructor(force = new Vector(0, 0)) {
         super();
-        this.recipientClass = DragRecipient;
+        this.setId("drag");
         
-        this.force = new Vector(0, 0);
-        this.vacuum = 0;
+        this.force = force;
     }
     
-    interact(other) {
+    interact(interrecipient) {
         return this;
     }
 }
 
-class DragRecipient extends InteractionRecipient {
+class VacuumDragActor extends Interactor {
+    constructor(vacuum = 0) {
+        super();
+        this.setId("drag");
+        
+        this.vacuum = vacuum;
+    }
+}
+
+class DragRecipient extends Interrecipient {
     constructor() {
         super();
-        this.actorClass = DragActor;
+        this.setId("drag");
         
         this.forceFactor = 1;
     }
@@ -114,21 +163,23 @@ class DragRecipient extends InteractionRecipient {
  *
  */
 
-class ThrustActor extends InteractionActor {
-    constructor() {
+class ThrustActor extends Interactor {
+    constructor(thrustValue = 0) {
         super();
-        this.recipientClass = ThrustRecipient;
+        this.setId("thrust");
+        
+        this.thrustValue = thrustValue;
     }
     
-    interact(other) {
+    interact(interrecipient) {
         return this;
     }
 }
 
-class ThrustRecipient extends InteractionRecipient {
+class ThrustRecipient extends Interrecipient {
     constructor() {
         super();
-        this.actorClass = ThrustActor;
+        this.setId("thrust");
     }
 }
 
@@ -136,20 +187,127 @@ class ThrustRecipient extends InteractionRecipient {
  *
  */
 
-class EffectDamager extends InteractionActor {
-    constructor() {
+class EffectDamager extends Interactor {
+    constructor(offenses = [{"type" : "example", "value" : 0}]) {
         super();
-        this.recipientClass = EffectDamageable;
+        this.setId("damage");
+        
+        this.offenses = offenses;
     }
     
-    interact(other) {
+    interact(interrecipient) {
+        var actor = this.getActor();
+        var recipient = interrecipient.getRecipient();
+        
+        for(var i = 0; i < this.offenses.length; ++i) {
+            var type = this.offenses[i].type;
+            
+            recipient.hurt(interrecipient.negotiateDamage(type, this.offenses[i].value));
+        }
+        
         return this;
     }
 }
 
-class EffectDamageable extends InteractionRecipient {
+class EffectDamageable extends Interrecipient {
+    constructor(factors = [{"type" : "example", "value" : 1}]) {
+        super();
+        this.setId("damage");
+        
+        this.factors = factors;
+    }
+    
+    negotiateDamage(type, damage) {
+        for(var i = 0; i < this.factors.length; ++i) {
+            if(this.factors[i].type == type) {
+                return this.factors[i].value * damage;
+            }
+        }
+        
+        return damage;
+    }
+}
+
+/**
+ *
+ */
+
+class GroundActor extends Interactor {
     constructor() {
         super();
-        this.actorClass = EffectDamager;
+        this.setId("ground");
+    }
+    
+    
+}
+
+class GroundRecipient extends Interrecipient {
+    constructor() {
+        super();
+        this.setId("ground");
+        
+        this.grounded = false;
+    }
+}
+
+/**
+ *
+ */
+
+class ItemPicker extends Interactor {
+    constructor() {
+        super();
+        this.setId("itemPick");
+        
+        this.items = [];
+    }
+    
+    interact(interrecipient) {
+        this.items.push(interrecipient.item);
+        interrecipient.item = null;
+        
+        return this;
+    }
+}
+
+class ItemPickable extends Interrecipient {
+    constructor(item) {
+        super();
+        this.setId("itemPick");
+        
+        this.item;
+    }
+    
+    oninteraction(interactor) {
+        removeEntity(this.getRecipient());
+        
+        return this;
+    }
+}
+
+/**
+ *
+ */
+
+class MapWarper extends Interactor {
+    constructor(mapname) {
+        super();
+        this.setId("mapwarp");
+        
+        this.mapname = mapname;
+    }
+    
+    interact(interrecipient) {
+        
+        removeEntity(interrecipient.getRecipient());
+        
+        return this;
+    }
+}
+
+class MapWarpable extends Interrecipient {
+    constructor() {
+        super();
+        this.setId("mapwarp");
     }
 }

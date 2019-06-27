@@ -1,10 +1,9 @@
 
 class TargetAttack extends Action {
-    constructor(targetPosition) {
+    constructor() {
         super();
         this.id = 3;
         
-        this.targetPosition = targetPosition;
         this.hit = null;
         this.t1 = 6;
         this.t2 = this.t1 + 20;
@@ -15,12 +14,11 @@ class TargetAttack extends Action {
         if(this.phase < this.t1) {
             
         } else if(this.phase == this.t1) {
-            this.hit = new Entity([NaN, NaN], [32, 32]);
-            this.hit.setPositionM(this.targetPosition);
+            this.hit = Entity.fromMiddle(this.user.getCursor().getPositionM(), [32, 32]);
             
             addEntity(this.hit);
         } else if(this.phase < this.t2) {
-            this.hit.multiplySize(1/1.03125);
+            this.hit.multiplySize(1.03125);
         } else if(this.phase == this.t2) {
             removeEntity(this.hit);
         } else if(this.phase < this.t3) {
@@ -136,7 +134,7 @@ class DashKick extends Action {
 class ZoneEngage extends Action {
     constructor() {
         super();
-        this.id = "engage";
+        this.id = "zoneEngage";
         
         this.zone = null;
     }
@@ -161,5 +159,32 @@ class ZoneEngage extends Action {
         engageBattle(this.zone.collidedWith);
         
         return this;
+    }
+}
+
+class FollowMe extends Action {
+    constructor() {
+        super();
+        this.setId("followMe");
+    }
+    
+    use() {
+        CAMERA.target = this.user;
+        
+        return this;
+    }
+    
+    preventsAddition(action) {
+        if(this.phase > 0 && action instanceof FollowMe) {
+            this.end();
+        }
+        
+        return super.preventsAddition(action);
+    }
+    
+    onend() {
+        CAMERA.target = null;
+        
+        return super.onend();
     }
 }

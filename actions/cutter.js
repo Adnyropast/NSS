@@ -16,10 +16,10 @@ class CutterBoomerang extends CutterAbility {
     
     use() {
         if(this.phase < 10) {
-            this.user.style = "#FFFFFF";
+            
         }
         if(this.phase == 10) {
-            var boomerang = Entity.fromMiddle(this.user.getXM(), this.user.getYM(), 16, 16);
+            var boomerang = Entity.fromMiddle(this.user.getPositionM(), [16, 16]);
             boomerang.setSpeed(Vector.subtraction(this.user.getCursor().getPositionM(), this.user.getPositionM()).normalize(16));
             boomerang.route = this.user.getPositionM();
             boomerang.addAction(new Movement(0.75));

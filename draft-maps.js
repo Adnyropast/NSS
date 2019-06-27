@@ -2,69 +2,84 @@
 // 
 
 function buildFromData(data) {
-    clearEntities();
+    var entities = [];
     
     for(var i = 0; i < data.length; ++i) {
-        addEntity(Entity.fromData(data[i]));
+        entities.push(Entity.fromData(data[i]));
     }
+    
+    buildFromEntities(entities);
+}
+
+function buildFromEntities(entities = [], drawables = []) {
+    clearEntities();
+    
+    for(var i = 0; i < entities.length; ++i) {
+        addEntity(entities[i]);
+    } for(var i = 0; i < drawables.length; ++i) {
+        addDrawable(drawables[i]);
+    }
+}
+
+function loadMap(mapname) {
+    
 }
 
 // 
 
-function mapTest() {
-    clearEntities();
+function buildTest() {
+    var entities = [], drawables = [];
     
     // 
     
-    addEntity(CAMERA);
-    addEntity(new CameraBoundary([-Infinity, -BASEHEIGHT], [Infinity, BASEHEIGHT]));
-    addEntity(new CameraBoundary([-Infinity, BASEHEIGHT], [Infinity, BASEHEIGHT]));
-    addEntity(new CameraBoundary([-640, -Infinity], [320, Infinity]));
-    addEntity(new CameraBoundary([960, -Infinity], [320, Infinity]));
+    entities.push(CAMERA);
+    entities.push(new CameraBoundary([-Infinity, -BASEHEIGHT], [Infinity, BASEHEIGHT]));
+    entities.push(new CameraBoundary([-Infinity, BASEHEIGHT], [Infinity, BASEHEIGHT]));
+    entities.push(new CameraBoundary([-640, -Infinity], [320, Infinity]));
+    entities.push(new CameraBoundary([960, -Infinity], [320, Infinity]));
     
     // 
     
-    addEntity((new Haple([80, 80], [16, 16])));
-    addEntity((new Enemy([320, 128], [16, 16])));
-    addEntity((new Enemy([384, 144], [16, 16])));
+    entities.push((new Adnyropast([80, 80], [16, 16])));
+    entities.push((new Enemy([320, 128], [16, 16])));
+    entities.push((new Enemy([384, 144], [16, 16])));
     
-    addEntity((new Target([320 - 64, 120], [16, 16])));
-    addEntity((new Target([0, 120], [16, 16])));
-    addEntity((new Target([32, 120], [16, 16])));
-    addEntity((new Target([64, 120], [16, 16])));
-    addEntity((new Target([96, 120], [16, 16])));
-    
-    // 
-    
-    addEntity((new GroundArea([0, 0], [320, 360])).setZIndex(1).setStyle(makeCTile("#00BF00", "#007F00")));
-    addEntity((new Area([320, 0], [320, 360])).setStyle("#00000000").setOtherThrust(0.125));
+    entities.push((new Target([320 - 64, 120], [16, 16])));
+    entities.push((new Target([0, 120], [16, 16])));
+    entities.push((new Target([32, 120], [16, 16])));
+    entities.push((new Target([64, 120], [16, 16])));
+    entities.push((new Target([96, 120], [16, 16])));
     
     // 
     
-    addEntity((new Ground([-640, 328], [1920, 32])).setStyle(makeCTile("#EFDF00", "#9F8F00")));
+    entities.push((new GroundArea([0, 0], [320, 360])).setZIndex(1).setStyle(makeCTile("#00BF00", "#007F00")));
     
-    addEntity((new Ground([360, 320], [64, 8])).setStyle("#0000FF").setSpeed([1, 0]).setReplaceable(true));
-    addEntity((new Bouncer([576, 320], [64, 16])).setStyle("#00FFBF"));
-    addEntity((new Bouncer([0, 320], [64, 16])).setStyle("#00FFBF"));
+    // 
     
-    <!-- addEntity((new Hazard([320, 160], [32, 16])).setStyle("#7F007F")); -->
+    entities.push((new Ground([-640, 328], [1920, 32])).setStyle(makeCTile("#EFDF00", "#9F8F00")));
     
-    addEntity((new Ground([360, 288], [64, 2])).setReplaceId(4));
-    addEntity((new Ground([424, 288], [64, 16])).setStyle("#7F7F00"));
-    addEntity((new Ground([488, 288], [64, 16])).setStyle("#007F7F"));
+    entities.push((new Ground([360, 320], [64, 8])).setStyle("#0000FF").setSpeed([1, 0]).setReplaceable(true));
+    entities.push((new Bouncer([576, 320], [64, 16])).setStyle("#00FFBF"));
+    entities.push((new Bouncer([0, 320], [64, 16])).setStyle("#00FFBF"));
     
-    <!-- addEntity((new Obstacle([600, 0], [16, Infinity]))); -->
+    <!-- entities.push((new Hazard([320, 160], [32, 16])).setStyle("#7F007F")); -->
+    
+    entities.push((new Ground([360, 288], [64, 2])).setReplaceId(4));
+    entities.push((new Ground([424, 288], [64, 16])).setStyle("#7F7F00"));
+    entities.push((new Ground([488, 288], [64, 16])).setStyle("#007F7F"));
+    
+    <!-- entities.push((new Obstacle([600, 0], [16, Infinity]))); -->
     
     
-    <!-- addEntity((new Obstacle([240, 0], [16, 160]))); -->
-    <!-- addEntity((new Obstacle([240, 176], [16, 160]))); -->
+    <!-- entities.push((new Obstacle([240, 0], [16, 160]))); -->
+    <!-- entities.push((new Obstacle([240, 176], [16, 160]))); -->
     
     /**
     
-    addEntity((new Obstacle([0, 64], BASEWIDTH, -Infinity)));
-    addEntity((new Obstacle(0, BASEHEIGHT - 64, BASEWIDTH, Infinity)));
-    addEntity((new Obstacle([64, 0], -Infinity, BASEHEIGHT)));
-    addEntity((new Obstacle(BASEWIDTH - 64, 0, Infinity, BASEHEIGHT)));
+    entities.push((new Obstacle([0, 64], BASEWIDTH, -Infinity)));
+    entities.push((new Obstacle(0, BASEHEIGHT - 64, BASEWIDTH, Infinity)));
+    entities.push((new Obstacle([64, 0], -Infinity, BASEHEIGHT)));
+    entities.push((new Obstacle(BASEWIDTH - 64, 0, Infinity, BASEHEIGHT)));
     
     /**/
     
@@ -72,18 +87,21 @@ function mapTest() {
     
     // 
     
-    addEntity((new AirArea([-Infinity, -Infinity], [Infinity, Infinity])));
-    addEntity((new GravityField([320, 0], [512, 320], [+0, +0.25])));
+    entities.push((new AirArea([-Infinity, -Infinity], [Infinity, Infinity])));
+    entities.push((new GravityField([320, 0], [512, 320], [+0, +0.25])));
     
     // 
     
-    addEntity((new Decoration([16, 304], [16, 80])).setZIndex(-2).setStyle("#9F3F00"));
-    addEntity((new Decoration([-640, 0], [640 * 3, 360])).setZIndex(1000).setStyle(makeCTile("#00CFFF", "#00BFEF")));
+    drawables.push((new RectangleDrawable([16, 304], [16, 80])).setZIndex(-2).setStyle("#9F3F00"));
+    // addEntity((new Decoration([-640, 0], [640 * 3, 360])).setZIndex(1000).setStyle(makeCTile("#00CFFF", "#00BFEF")));
+    drawables.push((new SkyDrawable([-640, 0], [640 * 3, 360])));
     
-    addEntity((new Decoration([0, 0], [64, 64])).setZIndex(1).setStyle(PTRN_GRASS1));
+    drawables.push((new RectangleDrawable([0, 0], [64, 64])).setZIndex(1).setStyle(PTRN_GRASS1));
+    
+    buildFromEntities(entities, drawables);
 }
 
-function mapTest2() {
+function buildTest2() {
     clearEntities();
     
     addEntity(CAMERA);
@@ -129,7 +147,7 @@ function mapTest2() {
     addEntity((new Braker([0, 0], [640, 360], 1.25)));
 }
 
-function mapTest3() {
+function buildTest3() {
     clearEntities();
     
     addEntity((new Haple([312, 32], [16, 16])));
@@ -190,3 +208,148 @@ maps["test"] = [
     {"position" : [32, 32], "size" : [16, 16], "style" : "#FFFF00"},
     {}
 ];
+
+var mazeStyle = makeCTile("#7F5F00", "#5F3F00");
+var cellStyle = makeCTile("#00BF00", "#007F00");// makeCTile("#00AF00", "#006F00");
+var wallStyle = makeCTile("#7F7F8F", "#3F3F7F", "#8F8F9F");
+mazeStyle = cellStyle;
+
+function makeMazeLevel(mazeSize, cellSize, wallSize) {
+    var actualMazeSize = [mazeSize[0] * (cellSize[0] + wallSize[0] * 2), mazeSize[1] * (cellSize[1] + wallSize[1] * 2)];
+    var fullCellSize = [cellSize[0] + wallSize[0] * 2, cellSize[1] + wallSize[1] * 2];
+    
+    var maze = makeMaze(mazeSize[0], mazeSize[1]);
+    var entities = [], drawables = [];
+    
+    entities.push(CAMERA);
+    
+    entities.push(new CameraBoundary([-Infinity, -BASEHEIGHT], [Infinity, BASEHEIGHT]));
+    entities.push(new CameraBoundary([-Infinity, actualMazeSize[1]], [Infinity, BASEHEIGHT]));
+    entities.push(new CameraBoundary([-BASEWIDTH, -Infinity], [BASEWIDTH, Infinity]));
+    entities.push(new CameraBoundary([actualMazeSize[0], -Infinity], [BASEWIDTH, Infinity]));
+    
+    entities.push(Haple.fromMiddle([wallSize[0] + cellSize[0] / 2, wallSize[1] + cellSize[1] / 2], [16, 16]).addAction(new FollowMe()));
+    
+    for(var x = 0; x < mazeSize[0]; ++x) {
+        for(var y = 0; y < mazeSize[1]; ++y) {
+            var cell = maze[y][x];
+            var cX = x * (wallSize[0] * 2 + cellSize[0]), cY = y * (wallSize[1] * 2 + cellSize[1]);
+            
+            if(cell.walls & 1) {
+                /**
+                entities.push(new Obstacle(
+                    [cX, cY],
+                    [wallSize[0], 2 * wallSize[1] + cellSize[1]]
+                ));
+                /**/
+                entities.push((new Ground(
+                    [cX - wallSize[0], cY - wallSize[1]],
+                    [wallSize[0] * 2, 4 * wallSize[1] + cellSize[1]]
+                )).setStyle(wallStyle));
+                /**/
+            } else {
+                /**
+                entities.push((new GroundArea(
+                    [cX, cY],
+                    [wallSize[0], 2 * wallSize[1] + cellSize[1]]
+                )).setZIndex(+10).setStyle(cellStyle));
+                /**/
+            }
+            
+            if(cell.walls & 2) {
+                /**
+                entities.push(new Obstacle(
+                    [cX + wallSize[0] + cellSize[0], cY],
+                    [wallSize[0], 2 * wallSize[1] + cellSize[1]]
+                ));
+                /**/
+                entities.push((new Ground(
+                    [cX + wallSize[0] + cellSize[0], cY - wallSize[0]],
+                    [wallSize[0] * 2, 4 * wallSize[1] + cellSize[1]]
+                )).setStyle(wallStyle));
+                /**/
+            } else {
+                /**
+                entities.push((new GroundArea(
+                    [cX + wallSize[0] + cellSize[0], cY],
+                    [wallSize[0], 2 * wallSize[1] + cellSize[1]]
+                )).setZIndex(+10).setStyle(cellStyle));
+                /**/
+            }
+            
+            if(cell.walls & 4) {
+                /**
+                entities.push(new Obstacle(
+                    [cX, cY],
+                    [2 * wallSize[0] + cellSize[0], wallSize[1]]
+                ));
+                /**/
+                entities.push((new Ground(
+                    [cX - wallSize[0], cY - wallSize[1]],
+                    [4 * wallSize[0] + cellSize[0], wallSize[1] * 2]
+                )).setStyle(wallStyle));
+                /**/
+            } else {
+                /**
+                entities.push((new GroundArea(
+                    [cX, cY],
+                    [2 * wallSize[0] + cellSize[0], wallSize[1]]
+                )).setZIndex(+10).setStyle(cellStyle));
+                /**/
+            }
+            
+            if(cell.walls & 8) {
+                /**
+                entities.push(new Obstacle(
+                    [cX, cY + wallSize[1] + cellSize[1]],
+                    [2 * wallSize[0] + cellSize[0], wallSize[1]]
+                ));
+                /**/
+                entities.push((new Ground(
+                    [cX - wallSize[0], cY + wallSize[1] + cellSize[1]],
+                    [4 * wallSize[0] + cellSize[0], wallSize[1] * 2]
+                )).setStyle(wallStyle));
+                /**/
+            } else {
+                /**
+                entities.push((new GroundArea(
+                    [cX, cY + wallSize[1] + cellSize[1]],
+                    [2 * wallSize[0] + cellSize[0], wallSize[1]]
+                )).setZIndex(+10).setStyle(cellStyle));
+                /**/
+            }
+            /**
+            entities.push((new GroundArea(
+                [cX + wallSize[0], cY + wallSize[1]],
+                cellSize
+            )).setZIndex(+9).setStyle(cellStyle));
+            /**/
+            
+            if((x > 0 || y > 0) && Math.floor(Math.random() * 3) == 0) {
+                var size = [Math.floor(Math.random() * cellSize[0] + 8), Math.floor(Math.random() * cellSize[1] + 8)];
+                
+                entities.push((new Enemy(
+                    [cX + wallSize[0] + Math.floor(Math.random() * (cellSize[0] - wallSize[0])), cY + wallSize[1] + Math.floor(Math.random() * (cellSize[1] - wallSize[1]))],
+                    size
+                )));
+            }
+        }
+    }
+    
+    if(Math.floor(Math.random() * 2) == 0) {
+        entities.push((new GroundArea([0, 0], [mazeSize[0] * (2 * wallSize[0] + cellSize[0]), mazeSize[1] * (2 * wallSize[1] + cellSize[1])])).setZIndex(+100).setStyle(mazeStyle));
+    } else {
+        entities.push((Ground.fromMiddle([fullCellSize[0] / 2, fullCellSize[1] - wallSize[1]], [32, 8])));
+        entities.push((new AirArea([0, 0], actualMazeSize)));
+        entities.push((new GravityField([0, 0], actualMazeSize)));
+        drawables.push((new SkyDrawable([0, 0], actualMazeSize)).setStyle(makeSkyPattern(actualMazeSize[1] * 2)));
+    }
+    
+    return {"entities" : entities, "drawables" : drawables};
+}
+
+function buildMaze(mazeSize = [10, 10], cellSize = [128, 96], wallSize = [32, 32]) {
+    var res = makeMazeLevel(mazeSize, cellSize, wallSize);
+    
+    buildFromEntities(res.entities, res.drawables);
+}

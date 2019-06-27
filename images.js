@@ -1,6 +1,107 @@
 
 const INVISIBLE = "#00000000";
 
+class TransitionColor {
+    constructor(initialColor, endColor, duration, timing = bezierEaseIn) {
+        this.initialColor = initialColor;
+        this.endColor = endColor;
+        this.duration = duration;
+        this.step = -1;
+        
+        this.timing = timing;
+    }
+    
+    static from(transitionColor) {
+        return new this(transitionColor.initialColor, transitionColor.endColor, transitionColor.duration, transitionColor.timing);
+    }
+    
+    at(t) {
+        var color = new Vector();
+        
+        for(var dim = 0; dim < this.initialColor.length; ++dim) {
+            color[dim] = this.initialColor[dim] + this.timing(t) * (this.endColor[dim] - this.initialColor[dim]);
+        }
+        
+        return color;
+    }
+    
+    getProgress() {
+        return this.step / this.duration;
+    }
+    
+    getNext() {
+        ++this.step;
+        
+        if(this.step > this.duration) {
+            this.step = this.duration;
+        }
+        
+        return this.at(this.getProgress());
+    }
+    
+    toString() {
+        var color = this.getNext();
+        
+        return "rgba(" + color[0] + ", " + color[1] + ", " + color[2] + ", " + color[3] + ")";
+    }
+}
+
+class AnimatedImages {
+    constructor(images = []) {
+        this.images = images;
+        
+        this.icpf = 12;
+        this.icount = 0;
+        this.iindex = 0;
+        
+        this.alpha = Array(images.length).fill(1);
+    }
+    
+    static from(anim) {
+        var res = new this(anim.images);
+        res.icpf = anim.icpf;
+        res.alpha = anim.alpha;
+        
+        return res;
+    }
+    
+    setIcpf(icpf) {this.icpf = icpf; return this;}
+    
+    getNext() {
+        if(this.images.length > 0) {
+            ++this.icount;
+            
+            if(this.icount >= this.icpf) {
+                this.icount = 0;
+                ++this.iindex; this.iindex %= this.images.length;
+            }
+            
+            return this.images[this.iindex];
+        }
+        
+        return null;
+    }
+    
+    setImages(images) {
+        this.icount = 0;
+        
+        return this;
+    }
+    
+    setAlphaAt(i, alpha) {
+        this.alpha[i] = alpha;
+        
+        return this;
+    }
+    
+    addImage(image, alpha = 1) {
+        this.images.push(image);
+        this.alpha.push(alpha);
+        
+        return this;
+    }
+}
+
 // 
 
 var loadCounter = 0;
@@ -30,28 +131,16 @@ var IMG_HPP_C0 = loadImage("images/hpp-c0.png");
 
 const IMG_FIST_LEFT = loadImage("images/fist-left-tp.png");
 
-var IMGS_HAPLE_RUN_RIGHT = [
-    loadImage("images/run-right0.png"),
-    loadImage("images/run-right1.png"),
-    loadImage("images/run-right2.png"),
-    loadImage("images/run-right3.png")
-];
-
-var IMGS_HAPLE_RUN_LEFT = [
-    loadImage("images/run-left0.png"),
-    loadImage("images/run-left1.png"),
-    loadImage("images/run-left2.png"),
-    loadImage("images/run-left3.png")
-];
-
-var IMG_HAPLE_STD_RIGHT = loadImage("images/std-right.png");
-var IMG_HAPLE_STD_LEFT = loadImage("images/std-left.png");
-
-var IMG_HAPLE_JUMP_RIGHT = loadImage("images/jump-right.png");
-var IMG_HAPLE_JUMP_LEFT = loadImage("images/jump-left.png");
-
-var IMG_HAPLE_FALL_RIGHT = loadImage("images/fall-right.png");
-var IMG_HAPLE_FALL_LEFT = loadImage("images/fall-left.png");
+var ANIM_HAPLE = {
+    "std-right" : new AnimatedImages([loadImage("images/std-right.png")]),
+    "std-left" : new AnimatedImages([loadImage("images/std-left.png")]),
+    "run-right" : (new AnimatedImages([loadImage("images/run-right0.png"), loadImage("images/run-right1.png"), loadImage("images/run-right2.png"), loadImage("images/run-right3.png")])).setIcpf(12),
+    "run-left" : (new AnimatedImages([loadImage("images/run-left0.png"), loadImage("images/run-left1.png"), loadImage("images/run-left2.png"), loadImage("images/run-left3.png")])).setIcpf(12),
+    "jump-right" : new AnimatedImages([loadImage("images/jump-right.png")]),
+    "jump-left" : new AnimatedImages([loadImage("images/jump-left.png")]),
+    "fall-right" : new AnimatedImages([loadImage("images/fall-right.png")]),
+    "fall-left" : new AnimatedImages([loadImage("images/fall-left.png")])
+};
 
 var IMG_MAP_DRAFT = loadImage("images/map-draft.png");
 var IMG_MAP_GRASS = loadImage("images/map-grassc.png");
@@ -91,15 +180,45 @@ IMG_OBSTACLETILE.addEventListener("load", function() {
     PTRN_OBSTACLE = CANVAS.makePattern(this, 8 * wprop, 8 * hprop, "repeat");
 });
 
-var PTRN_SMOKE;
+var PTRNS_SMOKE = new AnimatedImages([]).setIcpf(1);
 
-(function() {
-    var c = document.createElement("canvas");
+{
+    let c = document.createElement("canvas");
     c.width = 64, c.height = 64;
-    var ctx = c.getContext("2d");
-    ctx.beginPath();
-    ctx.arc(32, 32, 32, 0, Math.PI * 2);
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fill();
-    PTRN_SMOKE = CANVAS.makePattern(c, 16 * wprop, 16 * hprop, "no-repeat");
-})();
+    let ctx = c.getContext("2d");
+    
+    let count = 64;
+    
+    let tcolor = new TransitionColor([255, 255, 255, 191 / 255], [223, 223, 223, 31 / 255], count);
+    
+    for(var i = 0; i < count; ++i) {
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.beginPath();
+        ctx.arc(32, 32, 32 - 32 * (i / count), 0, Math.PI * 2);
+        ctx.fillStyle = tcolor + "";
+        // console.log(ctx.fillStyle, tcolor.at(tcolor.getProgress())[3]);
+        ctx.fill();
+        PTRNS_SMOKE.addImage(CANVAS.makePattern(c, 16 * wprop, 16 * hprop, "no-repeat"));
+        // document.body.appendChild(c);
+    }
+};
+
+var PTRN_SKY = makeSkyPattern(1024);
+
+function makeSkyPattern(height) {
+    let c = document.createElement("canvas");
+    c.width = 16; c.height = height;
+    let ctx = c.getContext("2d");
+    
+    let bgTransition = new TransitionColor([0, 31, 255, 1], [0, 255, 255, 1], c.height / c.width, bezierLinear);
+    let shTransition = new TransitionColor([0, 15, 239, 1], [0, 239, 239, 1], c.height / c.width, bezierLinear);
+    
+    for(var y = 0; y < c.height; y += c.width) {
+        ctx.fillStyle = makeCTile(bgTransition + "", shTransition + "");
+        ctx.translate(0, y);
+        ctx.fillRect(0, 0, c.width, c.width);
+        ctx.translate(0, -y);
+    }
+    
+    return CANVAS.makePattern(c, 8 * wprop, c.height / c.width * 8 * hprop, "repeat");
+}

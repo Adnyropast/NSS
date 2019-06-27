@@ -10,4 +10,27 @@ class Item {
         this.description = "";
         this.date = new Date();
     }
+    
+    getId() {return this.id;}
+    setId(id) {this.id = id; return this;}
+}
+
+class ConsumableItem extends Item {
+    constructor(name) {
+        super(name);
+    }
+}
+
+class Apple extends ConsumableItem {
+    constructor() {
+        super("apple");
+        
+        this.id = 0;
+    }
+}
+
+class WeaponItem extends Item {
+    constructor(name) {
+        super(name);
+    }
 }

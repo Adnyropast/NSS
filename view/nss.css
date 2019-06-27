@@ -30,7 +30,7 @@ body {
     height : 100%;
 }
 
-canvas {
+canvas#canv {
     background : #00AFFF;
     width : 100%;
     height : 100%;
