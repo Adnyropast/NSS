@@ -14,6 +14,8 @@
             <!-- <canvas id="canv", width=640, height=360></canvas> -->
         </div>
         
+        <script src="draft-menu.js"></script>
+        
         <script src="events.js"></script>
         <script src="Vector.js"></script>
         <script src="Rectangle.js"></script>
@@ -32,63 +34,41 @@
         <script src="Battler.js"></script>
         
         <script src="actions/draft-actions.js"></script>
+        <script src="entities/draft-entities.js"></script>
         <script src="actions/cursorControl.js"></script>
         <script src="actions/Jump.js"></script>
         <script src="actions/Teleport.js"></script>
-        <script src="actions/ProjectileShot.js"></script>
+        <script src="actions/heart_.js"></script>
         <script src="actions/Movement.js"></script>
         <script src="actions/cutter.js"></script>
         <script src="actions/lcreate.js"></script>
         <script src="actions/sword.js"></script>
-        <script src="actions/zyxei.js"></script>
+        <script src="actions/gold_.js"></script>
+        <script src="actions/Regeneration.js"></script>
         
-        <script src="entities/draft-entities.js"></script>
         <script src="entities/Camera.js"></script>
+        <script src="entities/Character.js"></script>
         <script src="entities/PlayableCharacter.js"></script>
+        <script src="entities/Enemy.js"></script>
         <script src="entities/Adnyropast.js"></script>
         <script src="entities/Haple.js"></script>
         <script src="entities/Ten.js"></script>
         
         <script id="entitycollections">
         
-        var entityClasses = {
-            "entity" : Entity,
-            "" : Entity
-        };
-        
-        class EntityCollection extends Array {
-            add(entity) {
-                if(this.indexOf(entity) == -1) {
-                    this.push(entity);
-                }
-                
-                return this;
-            }
-            
-            remove(entity) {
-                var index = this.indexOf(entity);
-                
-                if(index != -1) {
-                    this.splice(index, 1);
-                }
-                
-                return this;
-            }
-            
-            clear() {
-                this.splice(0, this.length);
-                
-                return this;
-            }
-        }
-        
-        const NOENTITY = [];
-        const ENTITIES = new EntityCollection();
-        const COLLIDABLE = new EntityCollection();
-        const DRAWABLE = new EntityCollection();
-        const PLAYABLE = new EntityCollection();
-        var CAMERA = TCamera.fromMiddle([BASEWIDTH / 2, BASEHEIGHT / 2], [640, 360]);
+        const NOENTITY = new SetArray();
+        const ENTITIES = new SetArray();
+        const COLLIDABLES = new SetArray();
+        const DRAWABLES = new SetArray();
+        const PLAYABLES = new SetArray();
+        var CAMERA = null;
         var PLAYER = null;
+        
+        const INTERACTORS = [];
+        const INTERRECIPIENTS = [];
+        
+        let ALLIES_ = new SetArray();
+        let OPPONENTS_ = new SetArray();
         
         function addEntity(entity) {
             entity.onadd();
@@ -96,16 +76,7 @@
             ENTITIES.add(entity);
             
             if(entity.isCollidable()) {
-                COLLIDABLE.add(entity);
-            }
-            
-            if(entity instanceof PlayableCharacter) {
-                PLAYABLE.add(entity);
-                PLAYER = entity;
-            }
-            
-            if(entity instanceof TCamera) {
-                CAMERA = entity;
+                COLLIDABLES.add(entity);
             }
         }
         
@@ -116,48 +87,172 @@
         }
         
         function removeEntity(entity) {
-            entity.onremove();
+            if(entity instanceof Entity) {
+                entity.onremove();
+            }
             
             ENTITIES.remove(entity);
-            COLLIDABLE.remove(entity);
-            DRAWABLE.remove(entity);
-            PLAYABLE.remove(entity);
+            COLLIDABLES.remove(entity);
+            // DRAWABLES.remove(entity);
             
-            if(entity == PLAYER) {
+            if(entity == PLAYER && entity.getEnergy() <= 0) {
+                setGameTimeout(function() {
+                    transitionIn();
+                }, 48);
+                setGameTimeout(function() {
+                    loadMap("hub");
+                    transitionOut();
+                }, 64);
+                
                 PLAYER = null;
             }
         }
         
-        function clearEntities() {
+        function clearMap() {
             ENTITIES.clear();
-            COLLIDABLE.clear();
-            DRAWABLE.clear();
-            PLAYABLE.clear();
+            COLLIDABLES.clear();
+            DRAWABLES.clear();
+            
+            ALLIES_.clear();
+            OPPONENTS_.clear();
         }
         
         function addDrawable(drawable) {
-            DRAWABLE.add(drawable);
+            if(drawable != null) {
+                DRAWABLES.add(drawable);
+            }
         }
         
         function removeDrawable(drawable) {
-            DRAWABLE.remove(drawable);
+            DRAWABLES.remove(drawable);
+            BATTLEDRAWABLES.remove(drawable);
+            GLOBALDRAWABLES.remove(drawable);
+            
+            if(drawable == COVERDRAWABLE) {
+                COVERDRAWABLE = null;
+            }
+        }
+        
+        function addInteractor(interactor) {
+            for(var i = 0; i < INTERACTORS.length; ++i) {
+                if(INTERACTORS[i].id == interactor.getId()) {
+                    INTERACTORS[i].array.add(interactor);
+                    return;
+                }
+            }
+            
+            INTERACTORS.push({"id" : interactor.getId(), "array" : new SetArray(interactor)});
+            /**
+            if(INTERACTORS.hasOwnProperty(interactor.getId())) {
+                INTERACTORS[interactor.getId()].add(interactor);
+            } else {
+                INTERACTORS[interactor.getId()] = new SetArray(interactor);
+            }
+            /**/
+        }
+        
+        function addInterrecipient(interrecipient) {
+            for(var i = 0; i < INTERRECIPIENTS.length; ++i) {
+                if(INTERRECIPIENTS[i].id == interrecipient.getId()) {
+                    INTERRECIPIENTS[i].array.add(interrecipient);
+                    return;
+                }
+            }
+            
+            INTERRECIPIENTS.push({"id" : interrecipient.getId(), "array" : new SetArray(interrecipient)});
+            /**
+            if(INTERRECIPIENTS.hasOwnProperty(interrecipient.getId())) {
+                INTERRECIPIENTS[interrecipient.getId()].add(interrecipient);
+            } else {
+                INTERRECIPIENTS[interrecipient.getId()] = new SetArray(interrecipient);
+            }
+            /**/
+        }
+        
+        function removeInteractor(interactor) {
+            for(var i = INTERACTORS.length - 1; i >= 0; --i) {
+                if(INTERACTORS[i].id == interactor.getId()) {
+                    var array = INTERACTORS[i].array;
+                    
+                    for(var j = array.length - 1; j >= 0; --j) {
+                        if(array[j] == interactor) {
+                            array.splice(j, 1);
+                        }
+                    }
+                    
+                    if(array.length == 0) {
+                        INTERACTORS.splice(i, 1);
+                    }
+                }
+            }
+            
+            /**
+            if(INTERACTORS.hasOwnProperty(interactor.getId())) {
+                INTERACTORS[interactor.getId()].remove(interactor);
+            }
+            /**/
+        }
+        
+        function removeInterrecipient(interrecipient) {
+            for(var i = INTERRECIPIENTS.length - 1; i >= 0; --i) {
+                if(INTERRECIPIENTS[i].id == interrecipient.getId()) {
+                    var array = INTERRECIPIENTS[i].array;
+                    
+                    for(var j = array.length - 1; j >= 0; --j) {
+                        if(array[j] == interrecipient) {
+                            array.splice(j, 1);
+                        }
+                    }
+                    
+                    if(array.length == 0) {
+                        INTERRECIPIENTS.splice(i, 1);
+                    }
+                }
+            }
+            
+            /**
+            if(INTERRECIPIENTS.hasOwnProperty(interrecipient.getId())) {
+                INTERRECIPIENTS[interrecipient.getId()].remove(interrecipient);
+            }
+            /**/
+        }
+        
+        function setPlayer(entity) {
+            if(PLAYER instanceof Entity) {
+                PLAYER.controller = noController;
+            }
+            
+            PLAYER = entity;
+            entity.controller = playerController;
+            entity.addInteraction(new MapWarpable);
+            entity.battler.setPlayable(true);
+            entity.addAction(new FollowMe());
+            
+            addEntity(entity);
+        }
+        
+        function setCamera(camera) {
+            CAMERA = camera;
+            addEntity(camera);
         }
         
         </script>
         <script src="draft-controls.js"></script>
+        <script src="draft-controllers.js"></script>
         <script>
         
+        /*  *
         window.addEventListener("keydown", function(event) {
             if(PLAYER != null) {
-                /**
                 for(var i = 0; i < actionevents.length; ++i) {
                     if(actionevents[i].keys.includes(event.keyCode)) {
                         actionevents[i].oneventdown(PLAYER);
                     }
                 }
-                /**/
             }
         });
+        
+        /**
         
         window.addEventListener("keyup", function(event) {
             if(PLAYER != null) {
@@ -169,28 +264,28 @@
             }
         });
         
+        /**
+        
         window.addEventListener("mousemove", function(event) {
             if(PLAYER != null) {
                 PLAYER.addAction(new MouseFocus());
             }
         });
         
-        window.addEventListener("contextmenu", function(event) {
-            <!-- event.preventDefault(); -->
-        });
+        /**
         
         window.addEventListener("mousedown", function(event) {
             if(PLAYER != null) {
                 PLAYER.addAction(new MouseFocus());
-                /**
                 for(var i = 0; i < actionevents.length; ++i) {
                     if(actionevents[i].mouse.includes(event.which)) {
                         actionevents[i].oneventdown(PLAYER);
                     }
                 }
-                /**/
             }
         });
+        
+        /**
         
         window.addEventListener("mouseup", function(event) {
             if(PLAYER != null) {
@@ -204,81 +299,135 @@
             }
         });
         
-        function playerUpdate(player) {
-            if(keyList.value(107)) {
-                ++player.cursorDistance;
-            } if(keyList.value(109)) {
-                --player.cursorDistance;
-            }
-            
-            for(var i = 0; i < actionevents.length; ++i) {
-                if(keyList.value(actionevents[i].keys)) {
-                    actionevents[i].oneventdown(player);
-                } if(keyList.value(actionevents[i].presskeys) == 1) {
-                    actionevents[i].oneventdown(player);
-                } if(mouse.value(actionevents[i].mouse)) {
-                    actionevents[i].oneventdown(PLAYER);
+        /**
+        
+        window.addEventListener("blur", function(event) {
+            if(PLAYER != null) {
+                for(let i = 0; i < actionevents.length; ++i) {
+                    actionevents[i].oneventup(PLAYER);
                 }
             }
-            
-            /**
-            if(keyList.value(67)) {
-                player.addAction(new LCreation());
-            } else {
-                player.removeActionsWithConstructor(LCreation);
-            }
-            /**/
-        }
+        });
         
-        function worldLoop() {
-            if(!PLAYER) {
-                buildMaze();
-                <!-- buildTest(); -->
+        /**/
+        
+        let worldCounter = 0;
+        
+        let worldSlowdown = 1;
+        let worldFreeze = 0;
+        
+        let loadZone = new Entity([NaN, NaN, NaN], [896, 504, 16]);
+        
+        function worldUpdate() {
+            let entitiesUpdate = true;
+            
+            if(worldCounter % worldSlowdown != 0) {
+                // return;
+                entitiesUpdate = false;
+            } if(worldFreeze > 0) {
+                --worldFreeze;
+                // return;
+                entitiesUpdate = false;
             }
             
-            let entities = EntityCollection.from(ENTITIES);
-            let collidables = EntityCollection.from(COLLIDABLE);
-            let drawables = EntityCollection.from(DRAWABLE);
+            loadZone.setPositionM(CAMERA.getPositionM());
             
-            playerUpdate(PLAYER);
+            let entities = SetArray.from(ENTITIES);
             
             for(var i = 0; i < entities.length; ++i) {
-            <!-- for(var i = entities.length - 1; i >= 0; --i) { -->
                 var entity = entities[i];
                 
-                entity.update();
-                
-                if(entity.isRemovable()) {
-                    removeEntity(entity);
+                if(entity.collides(loadZone)) {
+                    entity.controller(entity);
+                    if(entitiesUpdate) entity.update();
                 }
             }
             
+            if(entitiesUpdate)
             for(var i = 0; i < entities.length; ++i) {
                 var entity = entities[i];
                 entity.updateReset();
             }
             
-            keyList.increment();
-            mouse.increment();
+            /**/
             
-            collidables.sort(function(a, b) {
-                if(a.collide_priority > b.collide_priority) {return -1;}
-                if(a.collide_priority < b.collide_priority) {return +1;}
+            COLLIDABLES.sort(function(a, b) {
+                if(a.collide_priority < b.collide_priority) {return -1;}
+                if(a.collide_priority > b.collide_priority) {return +1;}
                 return 0;
             });
             
+            let collidables = SetArray.from(COLLIDABLES);
+            if(entitiesUpdate)
             for(var i = 0; i < collidables.length; ++i) {
-                for(var j = i + 1; j < collidables.length; ++j) {
-                    if(collidables[i].collides(collidables[j])) {
-                        collidables[i].oncollision(collidables[j]);
-                        collidables[j].oncollision(collidables[i]);
+                if(collidables[i].collides(loadZone)) {
+                    for(var j = i + 1; j < collidables.length; ++j) {
+                        if(collidables[i].collides(collidables[j])) {
+                            collidables[i].oncollision(collidables[j]);
+                            collidables[j].oncollision(collidables[i]);
+                        }
                     }
                 }
             }
             
+            /**
+            
+            for(var id in INTERACTORS) {
+                for(var i = 0; i < INTERACTORS[id].length; ++i) {
+                    if(INTERRECIPIENTS.hasOwnProperty(id)) {
+                        for(var j = 0; j < INTERRECIPIENTS[id].length; ++j) {
+                            if(INTERACTORS[id][i].collides(INTERRECIPIENTS[id][j])) {
+                                INTERACTORS[id][i].interact(INTERRECIPIENTS[id][j]);
+                                INTERRECIPIENTS[id][j].oninteraction(INTERACTORS[id][i]);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            /**
+            
+            INTERACTORS.sort(function(a, b) {
+                let a_priority = interactionPriorities.hasOwnProperty(a.id) ? interactionPriorities[a.id] : 0;
+                let b_priority = interactionPriorities.hasOwnProperty(b.id) ? interactionPriorities[b.id] : 0;
+                
+                if(a_priority < b_priority) return -1;
+                if(a_priority > b_priority) return +1;
+                return 0;
+            });
+            
+            for(let i = 0; i < INTERRECIPIENTS.length; ++i) {
+                for(let ii = 0; ii < INTERRECIPIENTS[i].array.length; ++ii) {
+                    INTERRECIPIENTS[i].array[ii].recipient.collidedWith.clear();
+                }
+            }
+            
+            for(let i = 0; i < INTERACTORS.length; ++i) {
+                for(let ii = 0; ii < INTERACTORS[i].array.length; ++ii) {
+                    INTERACTORS[i].array[ii].actor.collidedWith.clear();
+                    
+                    for(let j = 0; j < INTERRECIPIENTS.length; ++j) {
+                        if(INTERRECIPIENTS[j].id == INTERACTORS[i].id) {
+                            for(var jj = 0; jj < INTERRECIPIENTS[j].array.length; ++jj) {
+                                if(INTERACTORS[i].array[ii].collides(INTERRECIPIENTS[j].array[jj])) {
+                                    INTERACTORS[i].array[ii].interact(INTERRECIPIENTS[j].array[jj]);
+                                    INTERRECIPIENTS[j].array[jj].oninteraction(INTERACTORS[i].array[ii]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            /**/
+            
+            
+            
+            /**/
+            
             var context = CANVAS.getContext("2d");
             
-            /** DRAWING UPDATE **
+            /** DRAWING UPDATE **/
             
             context.fillStyle = "#FFFFFF3F";
             context.fillRect(0, 0, CANVAS.width, CANVAS.height);
@@ -286,7 +435,7 @@
             
             /**/
             
-            drawables.sort(function(a, b) {
+            DRAWABLES.sort(function(a, b) {
                 if(a.getZIndex() > b.getZIndex()) {
                     return -1;
                 } if(a.getZIndex() < b.getZIndex()) {
@@ -295,6 +444,8 @@
                 
                 return 0;
             });
+            
+            let drawables = SetArray.from(DRAWABLES);
             
             for(var i = 0; i < drawables.length; ++i) {
                 /**
@@ -305,19 +456,24 @@
                 }
                 /**/
                 var drawable = drawables[i];
+                if(entitiesUpdate) drawable.update();
                 drawable.draw(context);
             }
         }
         
-        const BATTLERS = new EntityCollection();
-        const SKILLS = new EntityCollection();
+        const BATTLERS = new SetArray();
+        const SKILLS_QUEUE = new SetArray();
         
         var battleturn = 0;
         var actorIndex = 0;
         
-        function addBattler(battler) {
-            if(battler instanceof Entity && battler.isBattler()) {
-                BATTLERS.add(Battler.fromEntity(battler));
+        function addBattler(entity) {
+            if(entity instanceof Entity && entity.isBattler()) {
+                var battler = entity.getBattler();// Battler.fromEntity(entity);
+                
+                battler.onadd();
+                
+                BATTLERS.add(battler);
             }
         }
         
@@ -327,12 +483,21 @@
             }
         }
         
+        function removeBattler(battler) {
+            if(battler == MAINBATTLER) {
+                MAINBATTLER = null;
+            }
+            
+            battler.onremove();
+            BATTLERS.remove(battler);
+        }
+        
         function addSkill(skill) {
-            SKILLS.add(skill);
+            SKILLS_QUEUE.add(skill);
         }
         
         function removeSkill(skill) {
-            SKILLS.remove(skill);
+            SKILLS_QUEUE.remove(skill);
         }
         
         /**
@@ -345,46 +510,371 @@
         
         /**/
         
-        function battlePreparingLoop() {
-            for(var i = 0; i < BATTLERS.length; ++i) {
-                var battler = BATTLERS[i];
+        var battleMode = "everyone";
+        
+        class CommandsPage extends Array {
+            constructor() {
+                super(...arguments);
                 
-                if(!battler.isReady()) {
-                    return;
+                this.commandIndex = 0;
+                this.drawables = [];
+            }
+            
+            getIndex() {return this.commandIndex;}
+            
+            decIndex() {
+                --this.commandIndex;
+                
+                if(this.commandIndex < 0) {
+                    this.commandIndex = 0;
+                }
+                
+                return this;
+            }
+            
+            incIndex() {
+                ++this.commandIndex;
+                
+                if(this.commandIndex >= this.length) {
+                    this.commandIndex = this.length - 1;
+                }
+                
+                return this;
+            }
+            
+            confirm() {
+                this[this.getIndex()].onselect();
+                
+                return this;
+            }
+            
+            draw(context) {
+                let blockWidth = CANVAS.width / 2;
+                let blockHeight = CANVAS.height / 9;
+                let x = CANVAS.width / 2;
+                
+                context.fillStyle = "#EFEFEF";
+                context.fillRect(x, 6 * CANVAS.height / 9, blockWidth, CANVAS.height / 2);
+                
+                for(let i = 0; i < this.length; ++i) {
+                    let y = (6 + i) * CANVAS.height / 9;
+                    
+                    context.translate(x, y);
+                    
+                    if(i == this.getIndex()) {
+                        this[i].label.drawSelect(context);
+                    } else {
+                        this[i].label.draw(context);
+                    }
+                    
+                    context.translate(-x, -y);
+                }
+                
+                return this;
+            }
+            
+            update() {
+                if(keyList.value(K_UP) == 1) {this.decIndex();}
+                if(keyList.value(K_DOWN) == 1) {this.incIndex();}
+                if(keyList.value(K_RIGHT) == 1 || keyList.value(13) == 1) {this.confirm();}
+                if(keyList.value(K_LEFT) == 1) {commands.pop();}
+                
+                return this;
+            }
+        }
+        
+        let commands = [];
+        
+        let MAINBATTLER = null;
+        
+        const BATTLEDRAWABLES = new SetArray();
+        
+        const BATTLECAMERA = new Camera([0, 0]);
+        
+        function setBattleViewPoint(mainBattler) {
+            let allies = mainBattler.getAllies();
+            let opponents = mainBattler.getOpponents();
+            
+            for(let j = 0; j < allies.length; ++j) {
+                allies[j].drawable.setX((5 - j) * CANVAS.width / 16);
+                allies[j].drawable.setY(4 * CANVAS.height / 9);
+            } for(let j = 0; j < opponents.length; ++j) {
+                opponents[j].drawable.setX((9 + j) * CANVAS.width / 16);
+                opponents[j].drawable.setY(3 * CANVAS.height / 9);
+            }
+        }
+        
+        let battlePhase = "act";
+        
+        let actIC = 0;
+        
+        function battleUpdate() {
+            if(battlePhase == "strategy") {
+                var battlers;
+                
+                if(battleMode == "everyone") {
+                    battlers = BATTLERS;
+                } else if(battleMode == "single") {
+                    battlers = new SetArray(BATTLERS[actorIndex]);
+                }
+                
+                if(MAINBATTLER == null) {
+                    for(let i = battlers.length - 1; i >= 0; --i) {
+                        if(battlers[i].isPlayable()) {
+                            MAINBATTLER = battlers[i];
+                            setBattleViewPoint(MAINBATTLER);
+                        }
+                    }
+                }
+                
+                if(commands.length < 1 && MAINBATTLER != null) {
+                    commands.push(MAINBATTLER.getCommandsPage());
+                }
+                
+                // 
+                
+                let lastPage = commands[commands.length - 1];
+                
+                if(commands.length > 0) {
+                    lastPage.update();
+                }
+                
+                for(var i = 0; i < battlers.length; ++i) {
+                    if(!battlers[i].isPlayable()) {
+                        battlers[i].setReady(true);
+                    }
+                }
+                
+                // 
+                
+                if(BATTLERS.length == 0) {
+                    transitionIn();
+                    switchPhase("world");
+                    transitionOut();
+                } else {
+                    let allReady = true;
+                    
+                    for(var i = 0; i < battlers.length; ++i) {
+                        var battler = battlers[i];
+                        
+                        if(!battler.isReady()) {
+                            allReady = false;
+                        }
+                    }
+                    
+                    if(allReady) {
+                        for(let i = 0; i < battlers.length; ++i) {
+                            battlers[i].setReady(false);
+                        }
+                        
+                        battlePhase = "act"
+                    }
                 }
             }
             
-            switchLoop(battleActingLoop, WORLD_PACE);
-        }
-        
-        function battleActingLoop() {
-            SKILLS.sort(function() {
-                return 0;
-            });
+            else if(battlePhase == "act") {
+                if(SKILLS_QUEUE.length > 0) {
+                    SKILLS_QUEUE.sort(function() {
+                        return 0;
+                    });
+                    
+                    let skill = SKILLS_QUEUE[0];
+                    
+                    skill.use(actIC);
+                    
+                    ++actIC;
+                    
+                    if(!SKILLS_QUEUE.includes(skill)) {
+                        actIC = 0;
+                    }
+                } else {
+                    ++actorIndex;
+                    actorIndex %= BATTLERS.length;
+                    battlePhase = "strategy";
+                }
+                
+                for(let i = BATTLERS.length - 1; i >= 0; --i) {
+                    if(BATTLERS[i].getEnergy() <= 0) {
+                        removeBattler(BATTLERS[i]);
+                    }
+                }
+            }
             
-            SKILLS[0].use();
+            // 
+            
+            for(let i = BATTLERS.length - 1; i >= 0; --i) {
+                let opponents = BATTLERS[i].getOpponents();
+                
+                if(opponents.length == 0) {
+                    removeBattler(BATTLERS[i]);
+                }
+            }
+            
+            // 
+            
+            for(let i = 0; i < BATTLERS.length; ++i) {
+                BATTLERS[i].update();
+            }
+            
+            // 
+            
+            var context = CANVAS.getContext("2d");
+            context.clearRect(0, 0, CANVAS.width, CANVAS.height);
+            
+            context.fillStyle = "#0000003F";
+            context.fillRect(0, 0, CANVAS.width, 2 * CANVAS.height / 9);
+            context.fillRect(0, 7 * CANVAS.height / 9, CANVAS.width, 2 * CANVAS.height / 9);
+            
+            context.fillStyle = "#EFEFEF";
+            context.fillRect(0, 0 * CANVAS.height / 9, CANVAS.width / 2, 3 * CANVAS.height / 9);
+            context.fillRect(CANVAS.width / 2, 6 * CANVAS.height / 9, CANVAS.width / 2, 3 * CANVAS.height / 9);
+            
+            // 
+            
+            for(let i = 0; i < BATTLEDRAWABLES.length; ++i) {
+                BATTLEDRAWABLES[i].draw(context);
+            }
+            
+            for(let i = 0; i < commands.length; ++i) {
+                commands[i].draw(context);
+            }
         }
         
-        function endofturn() {
-            ++actorIndex;
-            actorIndex %= BATTLERS.length;
+        const DMENU_ESC = new DirectionalMenu();
+        DMENU_ESC.addButton([64, 64]);
+        DMENU_ESC.addButton([208, 64]);
+        DMENU_ESC.addButton([352, 64]);
+        
+        function escapeMenu() {
+            if(keyList.value(K_DIRECTION) == 1) {
+                DMENU_ESC.move(getKDirection());
+            }
+            
+            if(keyList.value(K_ESC) == 1) {
+                switchPhase(backupPhase);
+            }
+            
+            if(keyList.value(K_CONFIRM) == 1) {
+                let positionM = PLAYER.getPositionM();
+                removeEntity(PLAYER);
+                setPlayerClassId(PIDC[DMENU_ESC.buttons.indexOf(DMENU_ESC.focus)]);
+                setPlayer(getPlayerClass().fromMiddle(positionM));
+                
+                switchPhase(backupPhase);
+            }
+            
+            let context = CANVAS.getContext("2d");
+            
+            context.fillStyle = "#00003F";
+            context.fillRect(0, 0, CANVAS.width, CANVAS.height);
+            
+            context.fillStyle = "#DFDFDF";
+            
+            for(let i = 0; i < DMENU_ESC.buttons.length; ++i) {
+                let button = DMENU_ESC.buttons[i];
+                
+                context.fillRect(button[0] - 64, button[1] - 64, 128, 128);
+            }
+            
+            let focus = DMENU_ESC.focus;
+            
+            context.fillStyle = "#FFFF00";
+            context.fillRect(focus[0] - 64, focus[1] - 64, 128, 128);
+        }
+        
+        const GLOBALDRAWABLES = new SetArray();
+        let COVERDRAWABLE = null;
+        
+        function transitionIn(duration = 16) {
+            if(COVERDRAWABLE == null) {
+                COVERDRAWABLE = new RectangleDrawable([0, 0], [CANVAS.width, CANVAS.height]);
+                COVERDRAWABLE.setCameraMode("none");
+                COVERDRAWABLE.setStyle(new ColorTransition(CV_INVISIBLE, CV_BLACK, duration));
+            }
+        }
+        
+        function transitionOut(duration = 16) {
+            if(COVERDRAWABLE != null) {
+                COVERDRAWABLE.setStyle(new ColorTransition(CV_BLACK, CV_INVISIBLE, duration));
+                COVERDRAWABLE.lifespan = duration + 1;
+            }
+        }
+        
+        let gameTimeouts = [];
+        
+        function setGameTimeout(f, timeout) {
+            gameTimeouts.push({"function" : f, "timeout" : timeout});
+        }
+        
+        function gameUpdate() {
+            if(gamePhase == "world") {
+                worldUpdate();
+            } else if(gamePhase == "battle") {
+                battleUpdate();
+            }
+            
+            if(gamePhase == "escapeMenu") {
+                escapeMenu();
+            } else {
+                if(keyList.value(K_ESC) == 1) {
+                    backupPhase = gamePhase;
+                    switchPhase("escapeMenu");
+                }
+            }
+            
+            // 
+            
+            ++worldCounter;
+            
+            // 
+            
+            for(let i = gameTimeouts.length - 1; i >= 0; --i) {
+                let gameTimeout = gameTimeouts[i];
+                
+                if(gameTimeouts[i].timeout > 0) {
+                    --gameTimeouts[i].timeout;
+                } else if(gameTimeouts[i].timeout == 0) {
+                    gameTimeouts[i].function();
+                    gameTimeouts.splice(i, 1);
+                }
+            }
+            
+            // 
+            
+            eventsRecordersUpdate();
+            
+            for(let i = 0; i < GLOBALDRAWABLES.length; ++i) {
+                let drawable = GLOBALDRAWABLES[i];
+                
+                drawable.update();
+                drawable.draw(CANVAS.getContext("2d"));
+            }
+            
+            if(COVERDRAWABLE != null) {
+                COVERDRAWABLE.update().draw(CANVAS.getContext("2d"));
+            }
         }
         
         var gameInterval;
-        var gameLoop = worldLoop;
+        var gamePhase = "world";
+        var gamePace = WORLD_PACE;
         
-        function switchLoop(loopF, pace) {
+        function switchPhase(phase) {
+            gamePhase = phase;
+        }
+        
+        function switchLoop(loopF, pace = gamePace) {
             gameLoop = loopF;
+            gamePace = pace;
             clearInterval(gameInterval);
             gameInterval = setInterval(loopF, pace);
         }
         
         function repaceLoop(pace) {
-            clearInterval(gameInterval);
-            gameInterval = setInterval(gameLoop, pace);
+            switchLoop(gameLoop, pace);
         }
         
-        function loadCheck(nextLoop, nextPace) {
+        function loadCheck() {
             if(loadCounter == 0) {
                 for(var i = 0; i < IMGS.length; ++i) {
                     if(!IMGS[i].complete || IMGS[i].naturalWidth === 0) {
@@ -392,16 +882,18 @@
                     }
                 }
                 
-                switchLoop(nextLoop, nextPace);
+                switchLoop(gameUpdate, WORLD_PACE);
             }
         }
         
         function engageBattle(battlers = NOENTITY) {
+            transitionIn();
             addBattlers(battlers);
-            switchLoop(battlePreparingLoop, WORLD_PACE);
+            switchPhase("battle");
+            transitionOut();
         }
         
-        switchLoop(loadCheck.bind(this, gameLoop, WORLD_PACE), 16);
+        switchLoop(loadCheck, WORLD_PACE);
         
         </script>
         <script src="draft-maps.js"></script>

@@ -1,44 +1,144 @@
 
-var controls = [
-    {"id" : "example", "keys" : [], "presskeys" : [], "mouse" : []},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {}
-];
+/**/
+const K_ESC = [27];
+const K_CONFIRM = [13];
+
+var K_LEFT = [37, 65, 81];
+var K_UP = [38, 87, 90];
+var K_RIGHT = [39, 68];
+var K_DOWN = [40, 83];
+
+var K_CLEFT = [72];
+var K_CUP = [85];
+var K_CDOWN = [74];
+var K_CRIGHT = [75];
+/**/
+var K_DIRECTION = K_LEFT.concat(K_UP).concat(K_RIGHT).concat(K_DOWN);
+var K_JUMP = [32];
+var K_FOCUS = [223];
+var K_PRESSFOCUS = [191];
+
+var K_CDIRECTION = K_CLEFT.concat(K_CUP).concat(K_CDOWN).concat(K_CRIGHT);
+
+var K_FLURRY = [70];
+/**/
+
+function actionAdder(action) {
+    return function(entity) {
+        entity.addAction(action);
+    };
+}
+
+function actionNewAdder(actionClass) {
+    return function(entity) {
+        entity.addAction(new actionClass());
+    }
+}
+
+function actionConstructorRemover(actionClass) {
+    return function(entity) {
+        entity.removeActionsWithConstructor(actionClass);
+    };
+}
+
+function addClickAction(which, actionClass) {
+    if(Array.isArray(which)) {
+        for(let i = 0; i < which.length; ++i) {
+            addClickAction(which[i], actionClass);
+        }
+    } else {
+        controls.click[which].push(actionNewAdder(actionClass));
+        controls.mouseup[which].push(actionConstructorRemover(actionClass));
+    }
+}
+
+function removeClickAction() {
+    
+}
+
+function addKeyAction(keyCode, actionClass) {
+    if(Array.isArray(keyCode)) {
+        for(let i = 0; i < keyCode.length; ++i) {
+            addKeyAction(keyCode[i], actionClass);
+        }
+    } else {
+        if(!controls.keys.hasOwnProperty(keyCode)) {
+            controls.keys[keyCode] = [];
+        } if(!controls.keyup.hasOwnProperty(keyCode)) {
+            controls.keyup[keyCode] = [];
+        }
+        
+        controls.keys[keyCode].push(actionNewAdder(actionClass));
+        controls.keyup[keyCode].push(actionConstructorRemover(actionClass));
+    }
+}
+
+var controls = {
+    click : {
+        1 : [
+            function(entity) {
+                // console.log("left click");
+            }
+        ],
+        2 : [function(entity) {
+            // console.log("middle click");
+        }],
+        3 : [function(entity) {
+            // console.log("right click");
+        }]
+    },
+    mouseup : {
+        1 : [function(entity) {
+            
+        }],
+        2 : [function(entity) {
+            
+        }],
+        3 : [function(entity) {
+            
+        }]
+    },
+    keys : {
+        226 : [
+            function(entity) {
+                
+            }
+        ]
+    },
+    keyup : {
+        
+    },
+    mousemove : [function(entity) {
+        // console.log("mouse move");
+    }]
+};
+
+addClickAction(1, LCreate);
+addClickAction(2, LSelect);
+addKeyAction(46, LDelete);
+addClickAction(3, LResize);
+addKeyAction(49, LSelect);
 
 var actionevents = [
-    {"id" : "left", "keys" : [37, 65, 81], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.route = getKDirection().add(player.getPositionM());
-        player.addAction(new MoveFocus());
-        player.addAction(new Movement());
+    {"id" : "left", "keys" : K_LEFT, "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
+        player.addAction(new MovementLeft());
     }, "oneventup" : function oneventup(player) {
-        player.removeActionsWithConstructor(Movement);
+        player.removeActionsWithConstructor(MovementLeft);
     }},
-    {"id" : "up", "keys" : [38, 87, 90], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.route = getKDirection().add(player.getPositionM());
-        player.addAction(new MoveFocus());
-        player.addAction(new Movement());
+    {"id" : "up", "keys" : K_UP, "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
+        player.addAction(new MovementUp());
     }, "oneventup" : function oneventup(player) {
-        player.removeActionsWithConstructor(Movement);
+        player.removeActionsWithConstructor(MovementUp);
     }},
-    {"id" : "right", "keys" : [39, 68], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.route = getKDirection().add(player.getPositionM());
-        player.addAction(new MoveFocus());
-        player.addAction(new Movement());
+    {"id" : "right", "keys" : K_RIGHT, "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
+        player.addAction(new MovementRight());
     }, "oneventup" : function oneventup(player) {
-        player.removeActionsWithConstructor(Movement);
+        player.removeActionsWithConstructor(MovementRight);
     }},
-    {"id" : "down", "keys" : [40, 83], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.route = getKDirection().add(player.getPositionM());
-        player.addAction(new MoveFocus());
-        player.addAction(new Movement());
+    {"id" : "down", "keys" : K_DOWN, "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
+        player.addAction(new MovementDown());
     }, "oneventup" : function oneventup(player) {
-        player.removeActionsWithConstructor(Movement);
+        player.removeActionsWithConstructor(MovementDown);
     }},
     {"id" : "jump", "keys" : [32], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
         player.addAction(new Jump());
@@ -55,13 +155,13 @@ var actionevents = [
     }, "oneventup" : function oneventup(player) {
         
     }},
-    {"id" : "zyxeiFlurry", "keys" : [70], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new ZyxeiFlurry());
+    {"id" : "goldFlurry", "keys" : [70], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
+        player.addAction(new GoldFlurry());
     }, "oneventup" : function oneventup(player) {
-        player.removeActionsWithConstructor(ZyxeiFlurry);
+        player.removeActionsWithConstructor(GoldFlurry);
     }},
-    {"id" : "projectileShot", "keys" : [80], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new ProjectileShot());
+    {"id" : "bloodShot", "keys" : [80], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
+        player.addAction(new BloodShot());
     }, "oneventup" : function oneventup(player) {
         
     }},
@@ -75,59 +175,34 @@ var actionevents = [
     }, "oneventup" : function oneventup(player) {
         player.removeActionsWithConstructor(BlowoutShots);
     }},
-    {"id" : "multi-aimShots", "keys" : [77], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new MultiaimShots());
-    }, "oneventup" : function oneventup(player) {
-        player.removeActionsWithConstructor(MultiaimShots);
-    }},
     {"id" : "zoneEngage", "keys" : [69], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
         player.addAction(new ZoneEngage());
     }, "oneventup" : function oneventup(player) {
         
     }},
     {"id" : "teleportation", "keys" : [84], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new Teleportation(20, 20));
+        player.addAction(new Teleportation());
     }, "oneventup" : function oneventup(player) {
         
     }},
-    {"id" : "overheadSlash", "keys" : [79], "presskeys" : [], "mouse" : [1], "oneventdown" : function oneventdown(player) {
+    {"id" : "overheadSlash", "keys" : [], "presskeys" : [79], "mouse" : [1], "oneventdown" : function oneventdown(player) {
         player.addAction(new OverheadSlash());
     }, "oneventup" : function oneventup(player) {
         
     }},
     
-    {"id" : "cutterBoomerang", "keys" : [], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
+    {"id" : "cutterBoomerang", "keys" : [73], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
         player.addAction(new CutterBoomerang());
     }, "oneventup" : function oneventup(player) {
         
     }},
-    {"id" : "cutterDash", "keys" : [], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
+    {"id" : "cutterDash", "keys" : [85], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
         player.addAction(new CutterDash());
     }, "oneventup" : function oneventup(player) {
         
     }},
     {"id" : "finalCutter", "keys" : [], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
         player.addAction(new FinalCutter());
-    }, "oneventup" : function oneventup(player) {
-        
-    }},
-    {"id" : "cleft", "keys" : [72], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new FreeKeyFocus());
-    }, "oneventup" : function oneventup(player) {
-        
-    }},
-    {"id" : "cup", "keys" : [85], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new FreeKeyFocus());
-    }, "oneventup" : function oneventup(player) {
-        
-    }},
-    {"id" : "cright", "keys" : [75], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new FreeKeyFocus());
-    }, "oneventup" : function oneventup(player) {
-        
-    }},
-    {"id" : "cdown", "keys" : [74], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new FreeKeyFocus());
     }, "oneventup" : function oneventup(player) {
         
     }},
@@ -142,8 +217,8 @@ var actionevents = [
         
     }},
     
-    {"id" : "test", "keys" : [], "presskeys" : [], "mouse" : [1], "oneventdown" : function oneventdown(player) {
-        // player.addAction(new RocketPunch());
+    {"id" : "test", "keys" : [80, 82], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
+        player.addAction(new RocketPunch());
         // player.addAction(new BulletShot());
     }, "oneventup" : function oneventup(player) {
         
@@ -155,27 +230,6 @@ function findActionevent(id) {
         return actionevent.id == id;
     });
 }
-
-/**/
-var K_LEFT = findActionevent("left").keys;
-var K_UP = findActionevent("up").keys;
-var K_RIGHT = findActionevent("right").keys;
-var K_DOWN = findActionevent("down").keys;
-
-var K_CLEFT = findActionevent("cleft").keys;
-var K_CUP = findActionevent("cup").keys;
-var K_CDOWN = findActionevent("cdown").keys;
-var K_CRIGHT = findActionevent("cright").keys;
-/**
-var K_DIRECTION = LEFT.concat(UP).concat(RIGHT).concat(DOWN);
-var K_JUMP = [32];
-var K_FOCUS = [223];
-var K_PRESSFOCUS = [191];
-
-var K_CDIRECTION = CLEFT.concat(CUP).concat(CDOWN).concat(CRIGHT);
-
-var K_FLURRY = [70];
-/**/
 
 function updateActionevents(data) {
     for(var j = 0; j < data.length; ++j) {
@@ -229,11 +283,15 @@ function getKDirection(kleft = K_LEFT, kup = K_UP, kright = K_RIGHT, kdown = K_D
 }
 
 function getMousePosition(dimension) {
-    const position = Vector.subtraction(mouse.position, [CANVAS.offsetLeft, CANVAS.offsetTop]).multiply([CANVAS.width / CANVAS.clientWidth, CANVAS.height / CANVAS.clientHeight]);
+    const positionOnCanvas = Vector.subtraction(mouse.position, [CANVAS.offsetLeft, CANVAS.offsetTop]).multiply([CANVAS.width / CANVAS.clientWidth, CANVAS.height / CANVAS.clientHeight]);
     
     if(arguments.length == 1) {
-        return position[dimension] / [wprop, hprop][dimension] + CAMERA.getOffset()[dimension];
+        let offset = CAMERA != null ? CAMERA.getOffset()[dimension] : 0;
+        
+        return positionOnCanvas[dimension] / CAMERA.getSizeProp(dimension) + offset;
     }
     
-    return position.divide([wprop, hprop]).add(CAMERA.getOffset());
+    let offset = CAMERA != null ? CAMERA.getOffset() : 0;
+    
+    return positionOnCanvas.divide(CAMERA.getSizeProp()).add(offset);
 }

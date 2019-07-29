@@ -8,19 +8,39 @@ class Rectangle {
         this.position = [];
         this.size = [];
         
+        /**
+        
         if(Array.isArray(position) && Array.isArray(size)) {
             if(position.length == size.length) {
                 this.setDimension(position.length);
                 
                 for(var dim = 0; dim < this.getDimension(); ++dim) {
-                    this.position[dim] = position[dim];
-                    this.size[dim] = size[dim];
+                    this.position[dim] = Number(position[dim]);
+                    this.size[dim] = Number(size[dim]);
                 }
             } else {
                 throw "Dimension error : position and size dimensions are not equal";
             }
         } else {
             
+        }
+        
+        /**/
+        
+        this.setDimension(0);
+        
+        if(Array.isArray(position)) {
+            if(position.length > this.getDimension()) {this.setDimension(position.length);}
+            
+            for(let dim = 0; dim < position.length; ++dim) {
+                this.position[dim] = Number(position[dim]);
+            }
+        } if(Array.isArray(size)) {
+            if(size.length > this.getDimension()) {this.setDimension(size.length);}
+            
+            for(let dim = 0; dim < size.length; ++dim) {
+                this.size[dim] = Number(size[dim]);
+            }
         }
     }
     
@@ -79,15 +99,23 @@ class Rectangle {
         Object.assign(clone, data);
         data = clone;
         
-        var position = [], size = [];
+        var position = undefined, size = undefined;
         
         if(data.hasOwnProperty("width")) {
+            if(typeof size == "undefined") {size = [];}
             size[0] = data.width;
+            delete data.width;
         } if(data.hasOwnProperty("height")) {
+            if(typeof size == "undefined") {size = [];}
             size[1] = data.height;
+            delete data.height;
         } if(data.hasOwnProperty("depth")) {
+            if(typeof size == "undefined") {size = [];}
             size[2] = data.depth;
+            delete data.depth;
         } if(Array.isArray(data.size)) {
+            if(typeof size == "undefined") {size = [];}
+            
             for(var dim = 0; dim < data.size.length; ++dim) {
                 size[dim] = data.size[dim];
             }
@@ -95,98 +123,150 @@ class Rectangle {
             delete data.size;
         }
         
+        var rectangle = new this(position, size);
+        
         if(data.hasOwnProperty("x")) {
-            position[0] = data.x;
+            rectangle.setX(data.x);
+            
+            // if(typeof position == "undefined") {position = [];}
+            // position[0] = data.x;
             delete data.x;
         } if(data.hasOwnProperty("y")) {
-            position[1] = data.y;
+            rectangle.setY(data.y);
+            
+            // if(typeof position == "undefined") {position = [];}
+            // position[1] = data.y;
             delete data.y;
         } if(data.hasOwnProperty("z")) {
-            position[2] = data.z;
+            rectangle.setZ(data.z);
+            
+            // if(typeof position == "undefined") {position = [];}
+            // position[2] = data.z;
             delete data.z;
         } if(data.hasOwnProperty("x1")) {
-            position[0] = data.x1;
+            rectangle.setX(data.x1);
+            
+            // if(typeof position == "undefined") {position = [];}
+            // position[0] = data.x1;
             delete data.x1;
         } if(data.hasOwnProperty("y1")) {
-            position[1] = data.y1;
+            rectangle.setY(data.y1);
+            
+            // if(typeof position == "undefined") {position = [];}
+            // position[1] = data.y1;
             delete data.y1;
         } if(data.hasOwnProperty("z1")) {
-            position[2] = data.z1;
+            rectangle.setZ(data.z1);
+            
+            // if(typeof position == "undefined") {position = [];}
+            // position[2] = data.z1;
             delete data.z1;
         } if(data.hasOwnProperty("xM")) {
-            if(typeof size[0] != "undefined") {
-                position[0] = data.xM - size[0] / 2;
-            } else {
-                throw "error : width not defined";
-            }
+            rectangle.setXM(data.xM);
+            
+            // if(typeof position == "undefined") {position = [];}
+            
+            // if(typeof size[0] != "undefined") {
+                // position[0] = data.xM - size[0] / 2;
+            // } else {
+                // throw "error : width not defined";
+            // }
             
             delete data.xM;
         } if(data.hasOwnProperty("yM")) {
-            if(typeof size[1] != "undefined") {
-                position[1] = data.yM - size[1] / 2;
-            } else {
-                throw "error : height not defined";
-            }
+            rectangle.setYM(data.yM);
+            
+            // if(typeof position == "undefined") {position = [];}
+            
+            // if(typeof size[1] != "undefined") {
+                // position[1] = data.yM - size[1] / 2;
+            // } else {
+                // throw "error : height not defined";
+            // }
             
             delete data.yM;
         } if(data.hasOwnProperty("zM")) {
-            if(typeof size[2] != "undefined") {
-                position[2] = data.zM - size[2] / 2;
-            } else {
-                throw "error : depth not defined";
-            }
+            rectangle.setZM(data.zM);
+            
+            // if(typeof position == "undefined") {position = [];}
+            
+            // if(typeof size[2] != "undefined") {
+                // position[2] = data.zM - size[2] / 2;
+            // } else {
+                // throw "error : depth not defined";
+            // }
             
             delete data.zM;
         } if(data.hasOwnProperty("x2")) {
-            if(typeof size[0] != "undefined") {
-                position[0] = data.x2 - size[0];
-            } else {
-                throw "error : width not defined";
-            }
+            rectangle.setX2(data.x2);
+            
+            // if(typeof position == "undefined") {position = [];}
+            
+            // if(typeof size[0] != "undefined") {
+                // position[0] = data.x2 - size[0];
+            // } else {
+                // throw "error : width not defined";
+            // }
             
             delete data.x2;
         } if(data.hasOwnProperty("y2")) {
-            if(typeof size[1] != "undefined") {
-                position[1] = data.y2 - size[1];
-            } else {
-                throw "error : height not defined";
-            }
+            rectangle.setY2(data.y2);
+            
+            // if(typeof position == "undefined") {position = [];}
+            
+            // if(typeof size[1] != "undefined") {
+                // position[1] = data.y2 - size[1];
+            // } else {
+                // throw "error : height not defined";
+            // }
             
             delete data.y2;
         } if(data.hasOwnProperty("z2")) {
-            if(typeof size[2] != "undefined") {
-                position[2] = data.z2 - size[2];
-            } else {
-                throw "error : depth not defined";
-            }
+            rectangle.setZ2(data.z2);
+            
+            // if(typeof position == "undefined") {position = [];}
+            
+            // if(typeof size[2] != "undefined") {
+                // position[2] = data.z2 - size[2];
+            // } else {
+                // throw "error : depth not defined";
+            // }
             
             delete data.z2;
         } if(Array.isArray(data.position)) {
-            for(var dim = 0; dim < data.position.length; ++dim) {
-                position[dim] = data.position[dim];
-            }
+            rectangle.setPosition(data.position);
+            
+            // if(typeof position == "undefined") {position = [];}
+            
+            // for(var dim = 0; dim < data.position.length; ++dim) {
+                // position[dim] = data.position[dim];
+            // }
             
             delete data.position;
         } if(Array.isArray(data.positionM)) {
-            for(var dim = 0; dim < data.positionM.length; ++dim) {
-                if(typeof size[dim] != "undefined") {
-                    position[dim] = data.positionM[dim] - size[dim] / 2;
-                } else {
-                    throw "Dimension error";
-                }
-            }
+            rectangle.setPositionM(data.positionM);
+            
+            // if(typeof position == "undefined") {position = [];}
+            
+            // for(var dim = 0; dim < data.positionM.length; ++dim) {
+                // if(typeof size[dim] != "undefined") {
+                    // position[dim] = data.positionM[dim] - size[dim] / 2;
+                // } else {
+                    // throw "Dimension error";
+                // }
+            // }
             
             delete data.positionM;
         }
         
-        var entity = new this(position, size);
+        Object.assign(rectangle, data);
         
-        Object.assign(entity, data);
-        
-        return entity;
+        return rectangle;
     }
     
     static fromMiddle(positionM, size) {
+        /**
+        
         var position = [];
         
         for(var dim = 0; dim < positionM.length; ++dim) {
@@ -194,9 +274,43 @@ class Rectangle {
         }
         
         return new this(position, size);
+        
+        /**/
+        
+        let rectangle = new this(positionM, size);
+        rectangle.setPositionM(positionM);
+        
+        return rectangle;
     }
     
+    static from(rectangle) {
+        return new this(rectangle.position, rectangle.size);
+    }
     
+    static shared(rectangle) {
+        let res = new this(rectangle.position, rectangle.size);
+        res.setDimension(rectangle.getDimension());
+        res.sharePosition(rectangle.position);
+        res.shareSize(rectangle.size);
+        
+        return res;
+    }
+    
+    /**
+     *
+     */
+    
+    sharePosition(position) {
+        this.position = position;
+        
+        return this;
+    }
+    
+    shareSize(size) {
+        this.size = size;
+        
+        return this;
+    }
     
     /**
      * 26/04/2019
@@ -213,7 +327,7 @@ class Rectangle {
     
     setPosition1(position1) {
         if(Array.isArray(position1)) {
-            this.position = [];
+            this.position.length = position1.length;
             
             for(var i = 0; i < position1.length; ++i) {
                 this.position[i] = position1[i];
@@ -236,7 +350,7 @@ class Rectangle {
     
     setPositionM(positionM) {
         if(Array.isArray(positionM)) {
-            this.position = [];
+            this.position.length = positionM.length;
             
             for(var i = 0; i < positionM.length; ++i) {
                 this.position[i] = positionM[i] - this.size[i] / 2;
@@ -259,7 +373,7 @@ class Rectangle {
     
     setPosition2(position2) {
         if(Array.isArray(position2)) {
-            this.position = [];
+            this.position.length = position2.length;
             
             for(var i = 0; i < position2.length; ++i) {
                 this.position[i] = position2[i] - this.size[i];
@@ -277,7 +391,7 @@ class Rectangle {
     
     setSize(size) {
         if(Array.isArray(size)) {
-            this.size = [];
+            this.size.length = size.length;
             
             for(var i = 0; i < size.length; ++i) {
                 this.size[i] = size[i];
@@ -290,10 +404,16 @@ class Rectangle {
     /* 18/06/2019 */
     
     setSizeM(size) {
-        for(var i = 0; i < size.length; ++i) {
-            this.position[i] = this.position[i] + this.size[i] / 2;
-            this.size[i] = size[i];
-            this.position[i] = this.position[i] - this.size[i] / 2;
+        if(arguments.length == 2) {
+            let dimension = arguments[0], width = arguments[1];
+            
+            this.position[dimension] = this.position[dimension] + this.size[dimension] / 2;
+            this.size[dimension] = width;
+            this.position[dimension] = this.position[dimension] - this.size[dimension] / 2;
+        } else if(Array.isArray(size)) {
+            for(var i = 0; i < size.length; ++i) {
+                this.setSizeM(i, size[i]);
+            }
         }
         
         return this;
@@ -302,6 +422,18 @@ class Rectangle {
     roundPosition(gridunit = 8) {
         for(var dim = 0; dim < this.getDimension(); ++dim) {
             this.position[dim] = Math.round(this.position[dim] / gridunit) * gridunit;
+        }
+        
+        return this;
+    }
+    
+    /* 03/07/2019 */
+    
+    fillPositionM(positionM) {
+        let minDim = Math.min(this.getDimension(), positionM.length);
+        
+        for(let dim = 0; dim < minDim; ++dim) {
+            this.position[dim] = positionM[dim] - this.size[dim] / 2;
         }
         
         return this;
@@ -346,7 +478,7 @@ class Rectangle {
      */
     
     setDimension(dimension) {
-        Object.defineProperty(this, "dimension", {"enumerable" : false, "value" : dimension});
+        Object.defineProperty(this, "dimension", {"enumerable" : false, "value" : dimension, "writable" : true});
         this.position.length = dimension;
         this.size.length = dimension;
         

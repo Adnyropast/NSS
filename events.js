@@ -1,5 +1,5 @@
 
-class KeyList {
+class KeyboardEventsRecorder {
     constructor() {
         Object.defineProperty(this, "array", {"value" : [], "enumerable" : false, "writable" : true});
         Object.defineProperty(this, "limit", {"value" : 255, "enumerable" : false, "writable" : true});
@@ -17,6 +17,8 @@ class KeyList {
         Object.defineProperty(this, "eventBlur", {"enumerable" : false, "writable" : true, "value" : (function(event) {
             this.clear();
         }).bind(this)});
+        
+        this.addEventsListenerTo(arguments[0]);
     }
     
     /**
@@ -60,20 +62,29 @@ class KeyList {
             if(this.array[i].keyCode == keyCode) {
                 if(value > this.array[i].value) {
                     this.array[i].value = value;
+                    this.array[i].released = 0;
                 }
                 
                 return this;
             }
         }
         
-        this.array.push({"keyCode" : keyCode, "value" : value});
+        this.array.push({"keyCode" : keyCode, "value" : value, "released" : 0});
         
         return this;
     }
     
     increment() {
-        for(var i = 0; i < this.array.length; ++i) {
-            if(this.array[i].value < this.limit) {
+        for(var i = this.array.length - 1; i >= 0; --i) {
+            if(this.array[i].value == 0) {
+                if(this.array[i].released > 0) {
+                    if(this.array[i].released < this.limit) {
+                        ++this.array[i].released;
+                    } else {
+                        this.array.splice(i, 1);
+                    }
+                }
+            } else if(this.array[i].value < this.limit) {
                 ++this.array[i].value;
             }
         }
@@ -84,7 +95,9 @@ class KeyList {
     release(keyCode) {
         for(var i = 0; i < this.array.length; ++i) {
             if(this.array[i].keyCode == keyCode) {
-                this.array.splice(i, 1);
+                // this.array.splice(i, 1);
+                this.array[i].value = 0;
+                this.array[i].released = 1;
             }
         }
         
@@ -118,25 +131,53 @@ class KeyList {
     }
     
     addEventsListenerTo(element) {
-        element.addEventListener("keydown", this.eventKeydown);
-        element.addEventListener("keyup", this.eventKeyup);
-        element.addEventListener("blur", this.eventBlur);
+        if(typeof element == "object" && typeof element.addEventListener == "function") {
+            element.addEventListener("keydown", this.eventKeydown);
+            element.addEventListener("keyup", this.eventKeyup);
+            element.addEventListener("blur", this.eventBlur);
+        }
+        
+        return this;
     }
     
     removeEventsListenerFrom(element) {
-        element.removeEventListener("keydown", this.eventKeydown);
-        element.removeEventListener("keyup", this.eventKeyup);
-        element.removeEventListener("blur", this.eventBlur);
+        if(typeof element == "object" && typeof element.removeEventListener == "function") {
+            element.removeEventListener("keydown", this.eventKeydown);
+            element.removeEventListener("keyup", this.eventKeyup);
+            element.removeEventListener("blur", this.eventBlur);
+        }
+        
+        return this;
+    }
+    
+    justReleased() {
+        if(arguments.length > 1) {
+            for(let i = 0; i < arguments.length; ++i) {
+                if(this.justReleased(arguments[i])) {
+                    return true;
+                }
+            }
+        } else if (arguments.length == 1 && Array.isArray(arguments[0])) {
+            for(let i = 0; i < arguments[0].length; ++i) {
+                if(this.justReleased(arguments[0][i])) {
+                    return true;
+                }
+            }
+        } else if(arguments.length == 1) {
+            for(let i = 0; i < this.array.length; ++i) {
+                if(this.array[i].keyCode == arguments[0]) {
+                    return this.array[i].released == 1;
+                }
+            }
+        }
+        
+        return false;
     }
 }
 
-var keyList = new KeyList();
-var keyCodes = keyList;
-
-keyList.addEventsListenerTo(window);
-
 //* 12/01/2019 * class KeyelBoard */
 //* 06/03/2019 * KMap : associates keyCodes with functions */
+// 23/07/2019 : EventsRecorder
 
 /**
  * 25/09/2018
@@ -144,7 +185,7 @@ keyList.addEventsListenerTo(window);
  * 
  */
 
-class Mouse {
+class MouseEventsRecorder {
     constructor() {
         Object.defineProperty(this, "position", {"value" : [], "enumerable" : false, "writable" : true});
         Object.defineProperty(this, "array", {"value" : [], "enumerable" : false, "writable" : true});
@@ -168,6 +209,8 @@ class Mouse {
             
             this.moveValue = 1;
         }).bind(this)});
+        
+        this.addEventsListenerTo(arguments[0]);
     }
     
     getX() {
@@ -217,14 +260,19 @@ class Mouse {
         return 0;
     }
     
-    hold(which) {
+    hold(which, value = 1) {
         for(var i = 0; i < this.array.length; ++i) {
             if(this.array[i].which == which) {
+                if(value > this.array[i].value) {
+                    this.array[i].value = value;
+                    this.array[i].released = 0;
+                }
+                
                 return this;
             }
         }
         
-        this.array.push({"which" : which, "value" : 1});
+        this.array.push({"which" : which, "value" : value, "released" : 0});
         
         return this;
     }
@@ -232,7 +280,9 @@ class Mouse {
     release(which) {
         for(var i = 0; i < this.array.length; ++i) {
             if(this.array[i].which == which) {
-                this.array.splice(i, 1);
+                // this.array.splice(i, 1);
+                this.array[i].value = 0;
+                this.array[i].released = 1;
             }
         }
         
@@ -240,8 +290,16 @@ class Mouse {
     }
     
     increment() {
-        for(var i = 0; i < this.array.length; ++i) {
-            if(this.array[i].value < this.limit) {
+        for(var i = this.array.length - 1; i >= 0; --i) {
+            if(this.array[i].value == 0) {
+                if(this.array[i].released > 0) {
+                    if(this.array[i].released < this.limit) {
+                        ++this.array[i].released;
+                    } else {
+                        this.array.splice(i, 1);
+                    }
+                }
+            } else if(this.array[i].value < this.limit) {
                 ++this.array[i].value;
             }
         }
@@ -268,19 +326,108 @@ class Mouse {
     }
     
     addEventsListenerTo(element) {
-        element.addEventListener("mousedown", this.eventMousedown);
-        element.addEventListener("mouseup", this.eventMouseup);
-        element.addEventListener("mousemove", this.eventMousemove);
+        if(typeof element == "object" && typeof element.addEventListener == "function") {
+            element.addEventListener("mousedown", this.eventMousedown);
+            element.addEventListener("mouseup", this.eventMouseup);
+            element.addEventListener("mousemove", this.eventMousemove);
+        }
+        
+        return this;
     }
     
     removeEventsListenerFrom(element) {
-        element.removeEventListener("mousedown", this.eventMousedown);
-        element.removeEventListener("mouseup", this.eventMouseup);
-        element.removeEventListener("mousemove", this.eventMousemove);
+        if(typeof element == "object" && typeof element.removeEventListener == "function") {
+            element.removeEventListener("mousedown", this.eventMousedown);
+            element.removeEventListener("mouseup", this.eventMouseup);
+            element.removeEventListener("mousemove", this.eventMousemove);
+        }
+        
+        return this;
+    }
+    
+    justReleased() {
+        if(arguments.length > 1) {
+            for(let i = 0; i < arguments.length; ++i) {
+                if(this.justReleased(arguments[i])) {
+                    return true;
+                }
+            }
+        } else if(arguments.length == 1) {
+            if(Array.isArray(arguments[0])) {
+                for(let i = 0; i < arguments[0].length; ++i) {
+                    if(this.justReleased(arguments[0][i])) {
+                        return true;
+                    }
+                }
+            } else {
+                for(let i = 0; i < this.array.length; ++i) {
+                    if(this.array[i].which == arguments[0]) {
+                        return this.array[i].released == 1;
+                    }
+                }
+            }
+        }
+        
+        return false;
     }
 }
 
-// var mouse = {x : undefined, y : undefined, keys : {}};
-var mouse = new Mouse();
+class BlurEventRecorder {
+    constructor() {
+        Object.defineProperty(this, "blurValue", {"value" : 0, "enumerable" : false, "writable" : true});
+        Object.defineProperty(this, "eventBlur", {"enumerable" : false, "writable" : true, "value" : (function(event) {
+            this.blurValue = 1;
+        }).bind(this)});
+        
+        this.addEventsListenerTo(arguments[0]);
+    }
+    
+    addEventsListenerTo(element) {
+        if(typeof element == "object" && typeof element.addEventListener == "function") {
+            element.addEventListener("blur", this.eventBlur);
+        }
+        
+        return this;
+    }
+    
+    removeEventsListenerFrom(element) {
+        if(typeof element == "object" && typeof element.removeEventListener == "function") {
+            element.removeEventListener("blur", this.eventBlur);
+        }
+        
+        return this;
+    }
+    
+    blurred() {
+        return this.blurValue == 1;
+    }
+    
+    update() {
+        if(this.blurValue == 1) {
+            this.blurValue = 0;
+        }
+        
+        return this;
+    }
+}
 
-mouse.addEventsListenerTo(window);
+var keyList = new KeyboardEventsRecorder(window);
+var keyCodes = keyList;
+
+// var mouse = {x : undefined, y : undefined, keys : {}};
+var mouse = new MouseEventsRecorder(window);
+
+let blurEvrec = new BlurEventRecorder(window);
+
+function eventsRecordersUpdate() {
+    keyList.increment();
+    mouse.increment();
+    blurEvrec.update();
+}
+
+function eventPreventDefault(event) {event.preventDefault();}
+
+function disableRightClick() {window.addEventListener("contextmenu", eventPreventDefault);}
+function enableRightClick() {window.removeEventListener("contextmenu", eventPreventDefault);}
+
+disableRightClick();

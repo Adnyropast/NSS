@@ -7,6 +7,8 @@ function isAlmostZero(x) {
     return Math.abs(x) < ALMOST_ZERO;
 }
 
+const BIG = 1048576;// Math.pow(2, 20);
+
 var WORLD_PACE = 16;
 
 const BASEWIDTH = 640;
@@ -29,6 +31,27 @@ const FX_METAL = effectsCount++;
 const FX_LIGHT = effectsCount++;
 const FX_DARK = effectsCount++;
 const FX_POISON = effectsCount++;
+const FX_GOLD_ = effectsCount++;
+
+let playerClassId = "haple";
+
+function getPlayerClass() {
+    if(EC.hasOwnProperty(playerClassId)) {
+        return EC[playerClassId];
+    }
+    
+    return PlayableCharacter;
+}
+
+function setPlayerClassId(id) {
+    playerClassId = id;
+}
+
+let hitsCount = 0;
+
+let playerPositionM = new Vector(0, 0);
+
+// 
 
 function getDD(bits) {
     var directions = [];
@@ -168,7 +191,7 @@ function makeMaze(width, height) {
         // console.log("(" + x + ", " + y + "), walls :", cell.walls, "visited :", cell.visited);
         
         if(cell.visited == 1) {
-            console.log(maze_toString(maze));
+            // console.log(maze_toString(maze));
             
             var directions = getDD(15 - cell.borders);
             var s = Array.from(directions);
@@ -190,7 +213,7 @@ function makeMaze(width, height) {
                 cell.visited = 2;
                 
                 if(path.length == 0) {
-                    console.log("end");
+                    // console.log("end");
                     
                     break; break; break;
                 }
@@ -242,46 +265,9 @@ function makeMaze(width, height) {
                 path.push(direction);
             }
         }
-        
-        
-        /**
-        else if(cell.visited == 2) {
-            
-        } else {
-            break;
-        }
-        /**/
     }
-    
-    console.log("IIII " + i + " IIII");
-    
-    
     
     return maze;
-}
-
-function rsAddEntity(rectangle) {
-    return "addEntity((new " + rectangle.constructor.name + "(" + rectangle.getX() + ", " + rectangle.getY() + ", " + rectangle.getWidth() + ", " + rectangle.getHeight() + ")))";
-}
-
-function rsJSON(rectangle) {
-    return "{}";
-}
-
-function getMap(rectangles, rsFunction = rsAddEntity) {
-    var prefix = "", suffix = ";", separator = "\n";
-    
-    var string = "";
-    
-    for(var i = 0; i < rectangles.length; ++i) {
-        string += prefix + rsFunction(rectangles[i]) + suffix;
-        
-        if(i < rectangles.length - 1) {
-            string += separator;
-        }
-    }
-    
-    return string;
 }
 
 function camelToSentence(string) {
@@ -292,15 +278,15 @@ function camelToSentence(string) {
     });
 }
 
-function gather() {
+function set_gather() {
     let res = [];
     
     if(arguments.length > 1) {
         let arrays = [];
         
         for(var i = 0; i < arguments.length; ++i) {
-            // res.push.apply(res, gather(arguments[i]));
-            arrays[i] = gather(arguments[i]);
+            // res.push.apply(res, set_gather(arguments[i]));
+            arrays[i] = set_gather(arguments[i]);
             
             for(var j = 0; j < arrays[i].length; ++j) {
                 if(res.indexOf(arrays[i][j]) == -1) {
@@ -312,8 +298,8 @@ function gather() {
         let arrays = [];
         
         for(var i = 0; i < arguments[0].length; ++i) {
-            // res.push.apply(res, gather(arguments[0][i]));
-            arrays[i] = gather(arguments[0][i]);
+            // res.push.apply(res, set_gather(arguments[0][i]));
+            arrays[i] = set_gather(arguments[0][i]);
             
             for(var j = 0; j < arrays[i].length; ++j) {
                 if(res.indexOf(arrays[i][j]) == -1) {
@@ -345,3 +331,193 @@ const bezierEase = cubicBezier(.25,.1,.25,1);
 const bezierEaseIn = cubicBezier(.42,0,1,1);
 const bezierEaseOut = cubicBezier(0,0,.58,1);
 const bezierEaseInOut = cubicBezier(.42,0,.58,1);
+
+const backForthTiming = function backForthTiming(t) {
+    return (0.5-Math.abs(t-0.5))/0.5;
+};
+const forthBackTiming = function forthBackTiming(t) {
+    return Math.abs(t-0.5)/0.5;
+};
+
+function makeCellsD(size) {
+    var cells = [];
+    
+    if(size.length == 1) {
+        for(var x = 0; x < size[0]; ++x) {
+            cells.push({"position" : [x]});
+        }
+    } else if(size.length > 1) {
+        var subcells = makeCellsD(size.slice(0, size.length - 1));
+        
+        for(var i = 0; i < subcells.length; ++i) {
+            for(var x = 0; x < size[size.length - 1]; ++x) {
+                cells.push({"position" : subcells[i].position.concat(x)});
+            }
+        }
+    }
+    
+    return cells;
+}
+
+function makeMazeD(size) {
+    let maze = makeCellsD(size);
+    
+    let totalD = Math.pow(2, 2 * size.length) - 1;
+    
+    for(let i = 0; i < maze.length; ++i) {
+        maze[i].borders = 0;
+        
+        for(let dim = 0; dim < size.length; ++dim) {
+            if(maze[i].position[dim] == 0) {
+                maze[i].borders += 1 << (2 * dim);
+            } else if(maze[i].position[dim] == size[dim] - 1) {
+                maze[i].borders += 1 << (2 * dim) + 1;
+            }
+        }
+        
+        maze[i].walls = totalD;
+        maze[i].doors = totalD ^ maze[i].walls;
+        maze[i].visited = 0;
+    }
+    
+    let position = Array(size.length).fill(0);
+    
+    let path = [];
+    
+    let smthg = 2;
+    
+    for(let dim = 0; dim < size.length; ++dim) {smthg *= size[dim]}
+    
+    for(let i = 0; i < smthg; ++i) {
+        let cell = maze.find(function(cell) {
+            for(let dim = 0; dim < cell.position.length; ++dim) {
+                if(cell.position[dim] != position[dim]) {
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+        
+        console.log(position, cell);
+        
+        ++cell.visited;
+        
+        if(cell.visited == 1) {
+            let directions = getDD(totalD - cell.borders);
+            
+            for(let j = directions.length - 1; j >= 0; --j) {
+                let direction = directions[j];
+                
+                let otherPosition = Array.from(position);
+                
+                otherPosition[direction.dimension] += direction.sign;
+                
+                let otherCell = maze.find(function(cell) {
+                    for(let dim = 0; dim < cell.position.length; ++dim) {
+                        if(cell.position[dim] != otherPosition[dim]) {
+                            return false;
+                        }
+                    }
+                    
+                    return true;
+                });
+                
+                if(otherCell.visited > 0) {
+                    directions.splice(j, 1);
+                }
+            }
+            
+            if(directions.length == 0) {
+                cell.visited = 2;
+                
+                if(path.length == 0) {
+                    break; break; break;
+                }
+                
+                let direction = path.pop();
+                
+                let opener = 1 << 2 * direction.dimension + (direction.sign == -1);
+                cell.walls -= opener;
+                
+                position[direction.dimension] -= direction.sign;
+                
+                --maze.find(function(cell) {
+                    for(let dim = 0; dim < cell.position.length; ++dim) {
+                        if(cell.position[dim] != position[dim]) {
+                            return false;
+                        }
+                    }
+                    
+                    return true;
+                }).visited;
+            } else {
+                let direction = array_random(directions);
+                
+                cell.walls -= 1 << 2 * direction.dimension + (direction.sign == +1);
+                
+                position[direction.dimension] += direction.sign;
+                
+                path.push(direction);
+            }
+        }
+    }
+    
+    return maze;
+}
+
+function makeGradientMatrix(width, height) {
+    let matrix = [];
+    
+    let n = width + height - 1;
+    
+    /**
+    
+    for(let i = 0; i < n; ++i) {
+        for(let x = i, y = 0; x >= 0 && y < height; --x, ++y) {
+            if(typeof matrix[y] == "undefined") {matrix[y] = []}
+            
+            matrix[y][x] = i / (n - 1);
+        }
+    }
+    
+    /**/
+    
+    for(let y = 0; y < height; ++y) {
+        matrix[y] = [];
+        
+        for(let x = 0; x < width; ++x) {
+            matrix[y][x] = (x + y) / (n - 1);
+        }
+    }
+    
+    return matrix;
+}
+
+function tlog(x) {console.log(x); return x;}
+
+class SetArray extends Array {
+    add(element) {
+        if(this.indexOf(element) == -1) {
+            this.push(element);
+        }
+        
+        return this;
+    }
+    
+    remove(element) {
+        var index = this.indexOf(element);
+        
+        if(index != -1) {
+            this.splice(index, 1);
+        }
+        
+        return this;
+    }
+    
+    clear() {
+        this.splice(0, this.length);
+        
+        return this;
+    }
+}

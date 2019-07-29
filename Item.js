@@ -5,7 +5,7 @@ class Item {
         this.name = name;
         this.effects = [];
         
-        this.count = 1;
+        this.durability = 1;
         
         this.description = "";
         this.date = new Date();
@@ -13,6 +13,16 @@ class Item {
     
     getId() {return this.id;}
     setId(id) {this.id = id; return this;}
+    
+    getEffect(type) {
+        for(var i = 0; i < this.effects.length; ++i) {
+            if(this.effects[i].type === type) {
+                return this.effects[i].value;
+            }
+        }
+        
+        return 0;
+    }
 }
 
 class ConsumableItem extends Item {
@@ -32,5 +42,13 @@ class Apple extends ConsumableItem {
 class WeaponItem extends Item {
     constructor(name) {
         super(name);
+        
+        
+        
     }
+    
 }
+
+var items = {
+    "apple"
+};

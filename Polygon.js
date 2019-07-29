@@ -99,7 +99,7 @@ class Polygon extends Array {
      * @return the polygon itself.
      */
     
-    push(point) {
+    push_(point) {
         return this.setPoint(this.size(), point);
     }
     
@@ -247,6 +247,28 @@ class Polygon extends Array {
         ctx.lineWidth = 0.5;
         ctx.stroke();
         ctx.fill();
+        
+        return this;
+    }
+    
+    /**
+     * 21/07/2019
+     */
+    
+    setDimension(dimension) {
+        Object.defineProperty(this, "dimension", {"value":dimension});
+        
+        return this;
+    }
+    
+    /**
+     * 21/07/2019
+     */
+    
+    setPoints(points) {
+        this.splice(0, this.size());
+        
+        this.push.apply(this, points);
         
         return this;
     }

@@ -66,37 +66,47 @@ class BackSmoke extends Action {
         this.smokeLifespan = 60;
         this.smokeWidth = 16;
         this.smokeHeight = 16;
+        
+        this.smokeClass = SmokeParticle;
     }
     
     use() {
         ++this.t;
         
-        var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getYM()], [16, 16]);// .setCollidable(true).setReplaceable(true);
-        particle.setSizeTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 2, this.smokeHeight / 2], this.smokeLifespan);
+        var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getYM()], [16, 16]);
+        particle.setSizeTransition(new ColorTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 2, this.smokeHeight / 2], this.smokeLifespan));
         
         var angle = Math.sin(this.t) * this.angleVariation;
         particle.setSpeed(this.user.speed.rotated(angle + Math.PI).normalize(2));
+        particle.shareBlacklist(this.user.getBlacklist());
+        
         addEntity(particle);
         
-        var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getYM()], [16, 16]);// .setCollidable(true).setReplaceable(true);
-        particle.setSizeTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 4, this.smokeHeight / 4], this.smokeLifespan);
+        var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getYM()], [16, 16]);
+        particle.setSizeTransition(new ColorTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 4, this.smokeHeight / 4], this.smokeLifespan));
         
         var angle = Math.sin(this.t) * this.angleVariation;
         particle.setSpeed(this.user.speed.rotated(angle + Math.PI).normalize(2));
+        particle.shareBlacklist(this.user.getBlacklist());
+        
         addEntity(particle);
         
-        var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getYM()], [16, 16]);// .setCollidable(true).setReplaceable(true);
-        particle.setSizeTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 8, this.smokeHeight / 8], this.smokeLifespan);
+        var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getYM()], [16, 16]);
+        particle.setSizeTransition(new ColorTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 8, this.smokeHeight / 8], this.smokeLifespan));
         
         var angle = Math.sin(this.t) * -this.angleVariation;
         particle.setSpeed(this.user.speed.rotated(angle + Math.PI).normalize(2));
+        particle.shareBlacklist(this.user.getBlacklist());
+        
         addEntity(particle);
         
-        var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getYM()], [16, 16]);// .setCollidable(true).setReplaceable(true);
-        particle.setSizeTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 2, this.smokeHeight / 2], this.smokeLifespan);
+        var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getYM()], [16, 16]);
+        particle.setSizeTransition(new ColorTransition([this.smokeWidth, this.smokeHeight], [this.smokeWidth / 2, this.smokeHeight / 2], this.smokeLifespan));
         
         var angle = Math.sin(this.t) * 0.125;
         particle.setSpeed(this.user.speed.rotated(angle + Math.PI).normalize(2));
+        particle.shareBlacklist(this.user.getBlacklist());
+        
         addEntity(particle);
         
         return this;
@@ -137,28 +147,63 @@ class ZoneEngage extends Action {
         this.id = "zoneEngage";
         
         this.zone = null;
+        this.wind = null;
+        
+        this.targets = new SetArray();
     }
     
     use() {
         if(this.phase == 0) {
-            this.zone = Entity.fromMiddle([this.user.getXM(), this.user.getYM()], [0, 0]).setZIndex(this.user.getZIndex() + 1);
+            this.zone = Entity.fromMiddle([this.user.getXM(), this.user.getYM()], [0, 0]).setZIndex(this.user.getZIndex() + ALMOST_ZERO/8);
             addEntity(this.zone);
-        } else if(this.phase == 100) {
-            return this.end();
+            this.wind = Entity.shared(this.zone);
+            this.wind.shareBlacklist(this.user.getBlacklist());
+            this.wind.addInteraction(new VacuumDragActor(-0.5));
+            this.wind.addInteraction(new TypeDamager([{"type" : FX_WIND, "value" : 0.5}]));
+            addEntity(this.wind);
         }
         
-        this.zone.setSizeM([this.phase * 8, this.phase * 8]);
-        this.zone.setStyle("rgba(0, 255, 255, " + (this.phase / 100) + ")");
+        // repaceLoop(WORLD_PACE + Math.pow(2, this.phase));
+        worldFreeze = Math.floor(Math.pow(this.phase, 1.5));
+        
+        this.zone.setSizeM([this.phase * 64, this.phase * 64]);
+        this.zone.setPositionM(this.user.getPositionM());
+        this.zone.setStyle("rgba(0, 255, 255, " + (this.phase / 10) + ")");
+        
+        for(let i = 0; i < this.zone.collidedWith.length; ++i) {
+            if(this.zone.collidedWith[i].isBattler()) {
+                this.targets.add(this.zone.collidedWith[i]);
+            }
+        }
+        
+        if(this.phase == 10) {
+            let opponentFound = false;
+            
+            for(let i = 0; i < this.targets.length; ++i) {
+                if(this.user.opponents.includes(this.targets[i])) {
+                    opponentFound = true;
+                }
+            }
+            
+            if(opponentFound) {
+                engageBattle(this.targets);
+            }
+            
+            this.end();
+            
+            worldFreeze = 0;
+        }
         
         return this;
     }
     
     onend() {
+        // repaceLoop(WORLD_PACE);
+        
         removeEntity(this.zone);
+        removeEntity(this.wind);
         
-        engageBattle(this.zone.collidedWith);
-        
-        return this;
+        return super.onend();
     }
 }
 
@@ -187,4 +232,74 @@ class FollowMe extends Action {
         
         return super.onend();
     }
+}
+
+class Summon extends Action {
+    constructor(entity) {
+        super();
+        this.setId("summon");
+        
+        this.entity = entity;
+    }
+    
+    use() {
+        addEntity(this.entity);
+        this.entity.allies = this.user.allies;
+        this.entity.allies.add(this.entity);
+        this.entity.opponents = this.user.opponents;
+        
+        return this.end();
+    }
+}
+
+class OnceTest extends Action {
+    
+}
+
+class RepeatTest extends Action {
+    
+}
+/**
+class HoldTest extends Action {
+    
+}
+/**/
+class ToggleTest extends Action {
+    
+}
+
+const AS_ROUTE = set_gather("tmprRoute");
+
+class TmprRoute extends Action {
+    constructor(vector) {
+        super();
+        this.setId("tmprRoute");
+        this.setOrder(-100);
+        
+        this.vector = vector;
+    }
+    
+    use() {
+        if(this.user.route == null) {
+            this.user.route = this.user.getPositionM();
+        }
+        
+        let minDim = Math.min(this.user.route.length, this.vector.length);
+        
+        let difference = new Vector();
+        
+        for(let dim = 0; dim < minDim; ++dim) {
+            this.user.route[dim] += this.vector[dim];
+            
+            difference[dim] = this.user.route[dim] - this.user.getPositionM(dim);
+            
+            if(isAlmostZero(difference[dim])) {
+                this.user.route[dim] = this.user.getPositionM(dim);
+            }
+        }
+        
+        return this.end();
+    }
+    
+    preventsAddition(action) {return false;}
 }

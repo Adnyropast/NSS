@@ -2,16 +2,17 @@
 const BRK_OBST = 1.25;
 const BRK_AIR = 1.03125;
 const BRK_WATER = 1.25;
-var THRUST_OBSTACLE = 1.125;
-var THRUST_OBSTACLE = 0.5;
-var THRUST_AIR = 0.125;
-var THRUST_WATER = 1.0;
+var THRUSTFACTOR_OBSTACLE = 1;
+var THRUSTFACTOR_AIR = 0.1875;
+var THRUSTFACTOR_WATER = 1.125;
 
 class ActorCollidable extends Entity {
     constructor(position, size) {
         super(position, size);
         this.collidable = true;
-        this.setEffectFactor("default", 0);
+        // this.setEffectFactor("default", 0);
+        
+        this.collide_priority = +1;
     }
 }
 
@@ -19,7 +20,7 @@ class Decoration extends Entity {
     constructor(position, size) {
         super(position, size);
         this.collidable = false;
-        this.setEffectFactor("default", 0);
+        // this.setEffectFactor("default", 0);
     }
 }
 
@@ -32,119 +33,179 @@ class Area extends ActorCollidable {
 class Obstacle extends ActorCollidable {
     constructor(position, size) {
         super(position, size);
-        this.replaceId = -1;
-        this.otherBrake = BRK_OBST;
-        this.otherThrust = THRUST_OBSTACLE;
+        // this.replaceId = -1;
+        // this.otherBrake = BRK_OBST;
+        // this.otherThrust = THRUST_OBSTACLE;
         
-        this.addInteraction(new ReplaceActor(-1));
+        this.addInteraction(new ReplaceActor());
         this.addInteraction(new BrakeActor(BRK_OBST));
-        this.addInteraction(new ThrustActor(THRUST_OBSTACLE));
+        this.addInteraction(new ThrustRecipient(THRUSTFACTOR_OBSTACLE));
+        this.addInteraction(new ContactVanishActor());
     }
 }
+
+EC["obstacle"] = Obstacle;
 
 class Braker extends ActorCollidable {
     constructor(position, size, otherBrake = 1) {
         super(position, size);
-        this.setReplaceId(0);
-        this.otherBrake = otherBrake;
+        // this.otherBrake = otherBrake;
         this.setStyle(INVISIBLE);
         
         this.addInteraction(new BrakeActor(otherBrake));
     }
 }
 
+EC["braker"] = Braker;
+
 class ForceField extends ActorCollidable {
     constructor(position, size, force = [0, 0]) {
         super(position, size);
         this.setStyle(INVISIBLE);
-        this.setReplaceId(0);
-        this.setOtherBrake(1);
-        this.setForce(force);
+        // this.setForce(force);
         
         this.addInteraction(new DragActor(force));
     }
 }
 
-class GravityField extends ForceField {
+EC["forceField"] = ForceField;
+
+class GravityField extends EC["forceField"] {
     constructor(position, size, force = [0, +0.25]) {
         super(position, size, force);
+        
+        this.addInteraction(new GravityActor(force));
+        
+        this.collide_priority = +2;
     }
 }
 
-class Ground extends Obstacle {
+EC["gravityField"] = GravityField;
+
+class Ground extends EC["obstacle"] {
     constructor(position, size) {
         super(position, size);
-        this.ground = true;
+        // this.ground = true;
         
         this.addInteraction(new GroundActor());
+        
+        this.setStyle(makeStyledCanvas(makeCTile("black", "gray", "#3F3F3F"), this.getWidth(), this.getHeight()));
+        
+        this.addInteraction(new WallActor());
+    }
+    
+    oncollision(other) {
+        /**
+        
+        if(other instanceof Character && other.speed.getNorm() > 4) {
+            // for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 3) {
+            for(let angle = -Math.PI/8; angle < 2*Math.PI - Math.PI/8; angle += Math.PI/4) {
+                var cos = Math.cos(angle), sin = Math.sin(angle);
+                var particle = SmokeParticle.fromMiddle(other.getPositionM());
+                particle.setSpeed([2*cos, 2*sin]);
+                addEntity(particle);
+            }
+            
+            var particle = SmokeParticle.fromMiddle(other.getPositionM(), [16, 16]);
+            addEntity(particle);
+        }
+        
+        /**/
+        
+        return super.oncollision(other);
     }
 }
+
+EC["ground"] = Ground;
 
 class MovingObstacle extends Ground {
     constructor(position, size) {
         super(position, size);
-        this.speed.set(0, 0.1);
     }
 }
+
+EC["movingObstacle"] = MovingObstacle;
 
 class Bouncer extends Ground {
     constructor(position, size) {
         super(position, size);
-        this.bounce = 1;
+        // this.bounce = 1;
         
         this.addInteraction(new ReplaceActor(-1, 1));
     }
 }
 
+EC["bouncer"] = Bouncer;
+
+class Director extends Area {
+    constructor(position, size, route = [0, 0]) {
+        super(position, size);
+        
+        this.addInteraction(new DirectActor());
+    }
+}
+
+EC["director"] = Director;
+
 class Hazard extends Ground {
     constructor(position, size) {
         super(position, size);
-        this.setOffense("default", 1);
+        // this.setOffense("default", 1);
+        this.addInteraction(new TypeDamager([{"type" : "default", "value" : 1}]));
     }
 }
 
 class GroundArea extends Area {
     constructor(position, size) {
         super(position, size);
-        this.setReplaceId(0);
-        this.otherThrust = THRUST_OBSTACLE;
-        this.setOtherBrake(BRK_OBST);
-        this.ground = true;
+        // this.otherThrust = THRUST_OBSTACLE;
+        // this.setOtherBrake(BRK_OBST);
+        // this.ground = true;
         
-        this.addInteraction(new ThrustActor(THRUST_OBSTACLE));
+        this.addInteraction(new ThrustRecipient(THRUSTFACTOR_OBSTACLE));
         this.addInteraction(new BrakeActor(BRK_OBST));
-        this.addInteraction(new GroundActor());
+        this.addInteraction(new GroundAreaActor());
     }
 }
+
+EC["groundArea"] = GroundArea;
 
 class AirArea extends Area {
     constructor(position, size) {
         super(position, size);
-        this.setOtherThrust(THRUST_AIR);
-        this.setOtherBrake(BRK_AIR);
+        // this.setOtherThrust(THRUST_AIR);
+        // this.setOtherBrake(BRK_AIR);
+        this.setStyle(makeGradientCTilesCanvas(1, this.getHeight() * 2 / 16, new ColorTransition([255, 255, 255, 0.5], [239, 239, 239, 0]), new ColorTransition([239, 239, 239, 0.5], [223, 223, 223, 0])));
         this.setStyle(INVISIBLE);
-        this.collide_priority = +1;
+        this.collide_priority = -1;
         
         this.addInteraction(new BrakeActor(BRK_AIR));
+        this.addInteraction(new ThrustRecipient(THRUSTFACTOR_AIR));
     }
 }
+
+EC["airArea"] = AirArea;
 
 class WaterArea extends Area {
     constructor(position, size) {
         super(position, size);
-        this.setOtherBrake(BRK_WATER);
-        this.otherThrust = THRUST_WATER;
+        // this.setOtherBrake(BRK_WATER);
+        // this.otherThrust = THRUST_WATER;
         this.setStyle("#007FFF3F");
         
         this.addInteraction(new BrakeActor(BRK_WATER));
-        this.addInteraction(new ThrustActor(THRUST_OBSTACLE));
+        this.addInteraction(new ThrustRecipient(THRUSTFACTOR_WATER));
+        this.addInteraction(new WaterActor());
     }
 }
+
+EC["waterArea"] = WaterArea;
 
 class Target extends Entity {
     constructor(position, size) {
         super(position, size);
-        this.setEffectFactor("default", 1);
+        // this.setEffectFactor("default", 1);
+        this.addInteraction(new TypeDamageable());
     }
 }
 
@@ -172,27 +233,11 @@ class Particle extends Decoration {
         this.setZIndex(-1);
         this.setLifespan(1);
         
-        this.initialSize = 0, this.endSize = 1;
-        this.sizeDuration = 1, this.sizeStep = 0;
-        this.sizeTiming = bezierLinear;
+        this.sizeTransition = new ColorTransition(this.size, this.size);
     }
     
-    getSizeAt(t) {
-        var size = new Vector();
-        
-        for(var dim = 0; dim < this.initialSize.length; ++dim) {
-            size[dim] = this.initialSize[dim] + this.sizeTiming(t) * (this.endSize[dim] - this.initialSize[dim]);
-        }
-        
-        return size;
-    }
-    
-    setSizeTransition(initialSize, endSize, sizeDuration = this.sizeDuration) {
-        this.initialSize = initialSize;
-        this.endSize = endSize;
-        
-        this.sizeDuration = sizeDuration;
-        this.sizeStep = 0;
+    setSizeTransition(sizeTransition) {
+        this.sizeTransition = sizeTransition;
         
         return this;
     }
@@ -200,13 +245,17 @@ class Particle extends Decoration {
     update() {
         super.update();
         
-        // 
+        /**
         
         var positionM = this.getPositionM();
         
         this.setSize(Vector.from(this.endSize).subtract(this.initialSize).divide(this.sizeDuration).add(this.getSize()));
         
         this.setPositionM(positionM);
+        
+        /**/
+        
+        this.setSizeM(this.sizeTransition.getNext());
         
         return this;
     }
@@ -218,26 +267,36 @@ class TpParticle extends Particle {
     }
 }
 
-class CSmokeParticle extends Particle {
+class GoldSmokeParticle extends Particle {
     constructor(position, size) {
         super(position, size);
         
         this.setSelfBrake(1.0625);
-        this.setLifespan(60);
+        this.setLifespan(32);
         // this.setColorTransition([0, 255, 255, 127], [0, 255, 255, 0], 60);
-        this.setStyle(new TransitionColor([0, 255, 255, 127], [0, 255, 255, 0], 60));
+        this.setStyle(new ColorTransition([0, 255, 255, 127], [0, 255, 255, 0], 60));
+        this.setStyle(new ColorTransition([0, 255, 255, 1], [127, 255, 255, 0.5], 32));
+        this.sizeTransition = new ColorTransition(size, [0, 0], 32);
     }
 }
 
 class SmokeParticle extends Particle {
-    constructor(position, size) {
+    constructor(position, size = [8, 8]) {
         super(position, size);
         
-        this.setSelfBrake(1.0625);
-        this.setLifespan(60);
+        this.collidable = true;
+        // this.forceFactor = 0.5;
+        // this.setSelfBrake(1.0625);
+        this.setLifespan(32);
         // this.setColorTransition([255, 255, 255, 191], [223, 223, 223, 31], 60);
-        this.setStyle(new TransitionColor([255, 255, 255, 191 / 255], [223, 223, 223, 31 / 255], 60));
-        this.setStyle(AnimatedImages.from(PTRNS_SMOKE));
+        this.setStyle(new ColorTransition([255, 255, 255, 255 / 255], [223, 223, 223, 191 / 255], 32));
+        // this.setStyle(AnimatedImages.from(PTRNS_SMOKE));
+        
+        // this.addInteraction(new ReplaceRecipient());
+        // this.addInteraction(new DragRecipient(1));
+        // this.addInteraction(new BrakeRecipient(1.5));
+        
+        this.sizeTransition = new ColorTransition(size, [0, 0], 32);
     }
 }
 
@@ -245,10 +304,33 @@ class FireSmokeParticle extends Particle {
     constructor(position, size) {
         super(position, size);
         
-        this.setSelfBrake(1.0625);
-        this.setLifespan(60);
+        this.collidable = true;
+        // this.forceFactor = 0.5;
+        // this.setSelfBrake(1.0625);
+        this.setLifespan(32);
         // this.setColorTransition([255, 0, 0, 127], [0, 0, 0, 127], 60);
-        this.setStyle(new TransitionColor([255, 0, 0, 127], [0, 0, 0, 127], 60));
+        this.setStyle(new ColorTransition([255, 0, 0, 127], [0, 0, 0, 127], 32));
+        this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
+        
+        this.addInteraction(new ReplaceRecipient());
+        this.addInteraction(new DragRecipient(-Math.pow(2, -10)));
+    }
+}
+
+class FireParticle extends Particle {
+    constructor(position, size) {
+        super(...arguments);
+        
+        this.collidable = true;
+        // this.forceFactor = 0.5;
+        // this.setSelfBrake(1.0625);
+        this.setLifespan(32);
+        // this.setColorTransition([255, 0, 0, 127], [0, 0, 0, 127], 60);
+        this.setStyle(new ColorTransition([255, 255, 0, 127], [255, 0, 0, 127], 32));
+        this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
+        
+        this.addInteraction(new ReplaceRecipient());
+        this.addInteraction(new DragRecipient(-Math.pow(2, -10)));
     }
 }
 
@@ -256,41 +338,229 @@ class Projectile extends Entity {
     constructor(position, size) {
         super(position, size);
         this.setStyle("#FF0000");
-        // this.setBlockable(true);
         // this.setBrakeExponent(0);
         // this.setForceFactor(0);
-        this.setRegeneration(-1);
-        this.setOffense(FX_PIERCING, 1);
-    }
-    
-    oncollision(other) {
-        super.oncollision(other);
+        // this.setRegeneration(-1);
+        // this.setOffense(FX_PIERCING, 1);
         
-        if(other.getReplaceId() != 0) {
-            var particle = TpParticle.fromMiddle(this.getPositionM(), [32, 32]);
-            particle.setStyle(new TransitionColor([255, 0, 0, 255], [255, 0, 0, 0], 10));
-            particle.setLifespan(10);
-            
-            addEntity(particle);
-            this.setEnergy(0);
-        }
+        this.setLifespan(16);
         
-        return this;
+        this.addInteraction(new TypeDamager([{"type" : FX_PIERCING, "value" : 1}]));
+        this.addInteraction(new ReplaceRecipient());
+        this.addInteraction(new ContactVanishRecipient());
     }
 }
 
-class Door extends Entity {
-    constructor(position, size) {
+EC["autoDoor"] = class AutoDoor extends Entity {
+    constructor(position, size, mapname = "hub", warpPositionM = [0, 0]) {
         super(position, size);
         
-        this.nextMap = "";
+        this.setMapwarp(mapname, warpPositionM);
+        
+        this.setStyle("#000000BF");
+        this.setZIndex(+10);
     }
-}
+    
+    setMapwarp(mapname, warpPositionM) {
+        this.addInteraction(new MapWarper(mapname, warpPositionM));
+        
+        return this;
+    }
+    
+    static fromData(data) {
+        let clone = {};
+        Object.assign(clone, data);
+        
+        let mapname = clone.mapname;
+        delete clone.mapname;
+        let warpPositionM = clone.warpPositionM;
+        delete clone.warpPositionM;
+        
+        let door = super.fromData(clone);
+        
+        door.setMapwarp(mapname, warpPositionM);
+        
+        return door;
+    }
+};
+
+EC["lookupDoor"] = class LookupDoor extends EC["autoDoor"] {
+    setMapwarp(mapname, warpPositionM) {
+        this.addInteraction(new LookupMapWarper(mapname, warpPositionM));
+    }
+};
 
 class Collectible extends Entity {
     constructor(position, size) {
         super(position, size);
         
         this.item = null;
+    }
+}
+
+EC["ladder"] = class Ladder extends Entity {
+    constructor(position, size) {
+        super(position, size);
+        this.setStyle(makeCTile(INVISIBLE, "#7F3F00"));
+        
+        this.setZIndex(+1);
+        
+        this.addInteraction(new LadderActor());
+    }
+};
+
+EC["softPlatform"] = class SoftPlatform extends ActorCollidable {
+    constructor(position, size) {
+        super(position, size);
+        
+        this.setStyle("#3F3F3F");
+        
+        this.addInteraction(new SoftReplaceActor());
+        this.addInteraction(new GroundActor());
+        this.addInteraction(new SoftThrustRecipient());
+    }
+};
+
+class PitArea extends Area {
+    constructor(position, size) {
+        super(position, size);
+        
+        this.addInteraction(new TypeDamager({"type" : "void", "value" : Infinity}));
+        this.setStyle(makeStyledCanvas(makeCTile("#3F3F3F3F", "#0000007F", "FFFFFF3F"), this.getWidth(), this.getHeight()));
+    }
+}
+
+EC["pitArea"] = PitArea;
+
+EC["mazeGenerator"] = class MazeGenerator extends Entity {
+    constructor(position, size) {
+        super(position, size);
+        this.mazeSize;
+        this.cellSize;
+        this.wallSize;
+        this.mode;
+    }
+    
+    static fromData(data) {
+        let mazeSize = data.mazeSize;
+        let cellSize = data.cellSize;
+        let wallSize = data.wallSize;
+        let mode = data.mode;
+        
+        let mazeGenerator = super.fromData(data);
+        
+        mazeGenerator.mazeSize = mazeSize;
+        mazeGenerator.cellSize = cellSize;
+        mazeGenerator.wallSize = wallSize;
+        mazeGenerator.mode = mode;
+        
+        return mazeGenerator;
+    }
+    
+    update() {
+        loadMaze(this.mazeSize, this.cellSize, this.wallSize, this.mode);
+        
+        return this;
+    }
+};
+
+class TransitionCover extends Entity {
+    constructor(mapname) {
+        super([0, 0], [CANVAS.width, CANVAS.height]);
+        
+        // this.setStyle(new ColorTransition([0, 0, 0, 0], [0, 0, 0, 1], 16));
+        // this.drawable.setCameraMode("none").setZIndex(-Infinity);
+        this.setLifespan(8);
+        this.mapname = mapname;
+    }
+    
+    onadd() {
+        transitionIn(this.energy);
+        
+        return super.onadd();
+    }
+    
+    onremove() {
+        transitionOut(8);
+        loadMap(this.mapname);
+        maptransitioning = false;
+        
+        return super.onremove();
+    }
+}
+
+EC["skyDecoration"] = class SkyDecoration extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.setZIndex(+16);
+        this.setStyle(makeGradientCanvas(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1]), 1, this.getWidth() / CTILE_WIDTH));
+        // this.getDrawable().setCameraMode("advanced");
+    }
+};
+
+EC["invisibleWall"] = class InvisibleWall extends ActorCollidable {
+    constructor() {
+        super(...arguments);
+        
+        this.addInteraction(new ReplaceActor());
+        this.addInteraction(new ContactVanishActor());
+    }
+};
+
+EC["sidewaysSetter"] = class SidewaysSetter extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.gravityField = new EC["gravityField"](...arguments);
+        this.airArea = new EC["airArea"](...arguments);
+    }
+    
+    onadd() {
+        addEntity(this.gravityField);
+        addEntity(this.airArea);
+        
+        return this;
+    }
+    
+    update() {
+        removeEntity(this);
+        
+        return this;
+    }
+}
+
+EC["sunlightDecoration"] = class SunlightDecoration extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.setZIndex(-16);
+        this.setStyle(makeGradientCanvas(new ColorTransition([255, 255, 255, 0.375], [255, 255, 0, 0]), this.getHeight() / CTILE_WIDTH, this.getWidth() / CTILE_WIDTH));
+        this.getDrawable().setCameraMode("none");
+    }
+};
+
+EC["treeTrunk"] = class TreeTrunk extends EC["ground"] {
+    constructor() {
+        super(...arguments);
+        
+        this.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_TREETRUNK, this.getWidth(), this.getWidth(), "repeat"), this.getWidth(), this.getHeight()));
+    }
+};
+
+EC["treeBackground"] = class TreeBackground extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_TREEBACKGROUND, CTILE_WIDTH/2, 4.5/2 * CTILE_WIDTH, "repeat"), this.getWidth(), this.getHeight()));
+        this.setZIndex(+16);
+    }
+}
+
+EC["treePlatform"] = class TreePlatform extends EC["softPlatform"] {
+    constructor(position, size = [64, 2]) {
+        super(position, size);
+        
+        this.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_TREETRUNK, this.getWidth(), this.getWidth(), "repeat"), this.getWidth(), this.getHeight()));
     }
 }

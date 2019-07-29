@@ -1,6 +1,8 @@
 
 var entityId = -1;
 
+const EC = {};
+
 class Entity extends Rectangle {
     constructor(position, size) {
         super(position, size);
@@ -9,41 +11,40 @@ class Entity extends Rectangle {
         
         Object.defineProperty(this, "speed", {"configurable" : true, "enumerable" : true, "value" : Vector.filled(this.getDimension(), 0), "writable" : true});
         this.selfBrake = 1;
-        
-        this.removable = false;
+        this.thrust = 0;
+        this.selfThrust = 0;
         
         // 
         
-        this.drawable = new RectangleDrawable(position, size);
+        this.drawable = RectangleDrawable.shared(this).setCameraMode("basic").setStyle(INVISIBLE);
         
         // 
         
         this.collidable = true;
         this.collide_priority = 0;
         
-        this.blockable = false;
         // this.solid = false;
         // this.crusher = false;
-        this.whitelist = COLLIDABLE;
-        this.blacklist = [this];
+        this.whitelist = COLLIDABLES;
+        this.blacklist = new SetArray(this);
         
-        this.collidedWith = [];
+        this.collidedWith = new SetArray();
         
-        this.replaceId = 0;
-        this.bounce = 0;
-        this.replaceable = false;
+        // this.replaceId = 0;
+        // this.bounce = 0;
+        // this.replaceable = false;
         
-        this.otherBrake = 1;
-        this.brakeExponent = 1;
+        // this.otherBrake = 1;
+        // this.brakeExponent = 1;
         
-        this.force = Vector.filled(this.getDimension(), 0);
-        this.forceFactor = 1;
-        this.vacuum = 0;
+        // this.blockable = false;
+        // this.force = Vector.filled(this.getDimension(), 0);
+        // this.forceFactor = 1;
+        // this.vacuum = 0;
         
-        this.thrust = 0;
-        this.otherThrust = 0;
-        this.thrustFactor = 1;
-        this.selfThrust = 0;
+        // this.otherThrust = 0;
+        // this.thrustFactor = 1;
+        
         
         this.interactors = [];
         this.interrecipients = [];
@@ -54,30 +55,35 @@ class Entity extends Rectangle {
         
         // this.focus;
         this.target = null;// Entity
-        this.targets = [];// Entity[]
+        this.targets = new SetArray();
         // this.destination = Vector.from(this.getPosition());
         this.route = null;// Vector
         this.cursor = null;// Entity
         
         this.effectiveEnergy = this.realEnergy = this.energy = 1;
-        this.regeneration = 0;
-        this.effects = [];
+        // this.regeneration = 0;
+        // this.effects = [];
         
         this.actions = [];
-        this.possibleActions = [];
-        this.impossibleActions = [];
-        this.abilities = [];
         this.actset = [];
-        this.stale = [];
         
         this.state = [];
         
         this.gravityDirection = Vector.filled(this.getDimension(), 0);
-        this.ground = false;
+        // this.ground = false;
         
         // 
         
-        this.battler = false;
+        this.battler = null;
+        
+        this.added = false;
+        
+        this.addActset("regeneration");
+        
+        this.allies = new SetArray(this);
+        this.opponents = new SetArray();
+        
+        this.controller = noController;
     }
     
     setSpeed(speed) {
@@ -104,18 +110,10 @@ class Entity extends Rectangle {
     }
     
     updateDrawable() {
-        this.drawable.setSize(this.getSize());
-        this.drawable.setPosition(this.getPosition());
-        
-        return this;
-    }
-    
-    isRemovable() {
-        return this.removable || this.energy <= 0;
-    }
-    
-    setRemovable(removable) {
-        this.removable = removable;
+        // if(this.drawable != null) {
+            // this.drawable.setSize(this.getSize());
+            // this.drawable.setPosition(this.getPosition());
+        // }
         
         return this;
     }
@@ -135,18 +133,22 @@ class Entity extends Rectangle {
     getWhitelist() {return this.whitelist;}
     getBlacklist() {return this.blacklist;}
     setWhitelist(whitelist) {this.whitelist = whitelist; return this;}
-    setBlacklist(blacklist) {this.blacklist = blacklist; this.addBlacklist(this); return this;}
+    shareBlacklist(blacklist) {this.blacklist = blacklist; this.addBlacklist(this); return this;}
     
     addBlacklist(entity) {
-        if(entity instanceof Entity) {
-            if(!this.findBlacklist(entity)) {
-                this.blacklist.push(entity);
+        if(arguments.length > 1) {
+            for(let i = 0; i < arguments.length; ++i) {
+                this.addBlacklist(arguments[i]);
             }
-        }
-        
-        else if(Array.isArray(entity)) {
-            for(var i = 0; i < entity.length; ++i) {
-                this.addBlacklist(entity[i]);
+        } else if(arguments.length == 1) {
+            if(entity instanceof Entity) {
+                this.blacklist.add(entity);
+            }
+            
+            else if(Array.isArray(entity)) {
+                for(var i = 0; i < entity.length; ++i) {
+                    this.addBlacklist(entity[i]);
+                }
             }
         }
         
@@ -155,11 +157,7 @@ class Entity extends Rectangle {
     
     removeBlacklist(entity) {
         if(entity instanceof Entity) {
-            var index = this.blacklist.indexOf(entity);
-            
-            if(index > -1) {
-                this.blacklist.splice(index, 1);
-            }
+            this.blacklist.remove(entity);
         }
         
         else if(Array.isArray(entity)) {
@@ -180,35 +178,35 @@ class Entity extends Rectangle {
     getSelfBrake() {return this.selfBrake;}
     setSelfBrake(selfBrake) {this.selfBrake = selfBrake; return this;}
     
-    getOtherBrake() {return this.otherBrake;}
-    setOtherBrake(otherBrake) {this.otherBrake = otherBrake; return this;}
+    // getOtherBrake() {return this.otherBrake;}
+    // setOtherBrake(otherBrake) {this.otherBrake = otherBrake; return this;}
     
-    getBrakeExponent() {return this.brakeExponent;}
-    setBrakeExponent(brakeExponent) {this.brakeExponent = brakeExponent; return this;}
+    // getBrakeExponent() {return this.brakeExponent;}
+    // setBrakeExponent(brakeExponent) {this.brakeExponent = brakeExponent; return this;}
     
-    getForce() {return this.force;}
-    setForce(force) {
-        for(var dim = 0; dim < this.getDimension(); ++dim) {
-            this.force.set(dim, force[dim]);
-        }
+    // getForce() {return this.force;}
+    // setForce(force) {
+        // for(var dim = 0; dim < this.getDimension(); ++dim) {
+            // this.force.set(dim, force[dim]);
+        // }
         
-        return this;
-    }
+        // return this;
+    // }
     
-    getForceFactor() {return this.forceFactor();}
-    setForceFactor(forceFactor) {this.forceFactor = forceFactor; return this;}
+    // getForceFactor() {return this.forceFactor();}
+    // setForceFactor(forceFactor) {this.forceFactor = forceFactor; return this;}
     
-    getReplaceId() {return this.replaceId;}
-    setReplaceId(replaceId) {this.replaceId = replaceId; return this;}
+    // getReplaceId() {return this.replaceId;}
+    // setReplaceId(replaceId) {this.replaceId = replaceId; return this;}
     
-    getVacuum() {return this.vacuum;}
-    setVacuum(vacuum) {this.vacuum = vacuum; return this;}
+    // getVacuum() {return this.vacuum;}
+    // setVacuum(vacuum) {this.vacuum = vacuum; return this;}
     
-    getOtherThrust() {return this.otherThrust;}
-    setOtherThrust(otherThrust) {this.otherThrust = otherThrust; return this;}
+    // getOtherThrust() {return this.otherThrust;}
+    // setOtherThrust(otherThrust) {this.otherThrust = otherThrust; return this;}
     
-    getThrustFactor() {return this.thrustFactor;}
-    setThrustFactor(thrustFactor) {this.thrustFactor = thrustFactor; return this;}
+    // getThrustFactor() {return this.thrustFactor;}
+    // setThrustFactor(thrustFactor) {this.thrustFactor = thrustFactor; return this;}
     
     getSelfThrust() {return this.selfThrust;}
     setSelfThrust(selfThrust) {this.selfThrust = selfThrust; return this;}
@@ -276,81 +274,87 @@ class Entity extends Rectangle {
         return this;
     }
     
-    regenerate(value = this.regeneration) {
+    regenerate(value = 1) {
         return this.heal(value);
     }
     
     setRegeneration(regeneration) {
-        this.regeneration = regeneration;
+        this.addAction(new Regeneration(regeneration));
         
         return this;
     }
     
     setLifespan(lifespan) {
         this.resetEnergy(lifespan);
-        this.regeneration = -1;
+        
+        this.removeActionsWithConstructor(Regeneration);
+        this.addAction(new Regeneration(-1));
         
         return this;
     }
     
-    setEffectFactor(type, factor) {
-        for(var i = 0; i < this.effects.length; ++i) {
-            var eff = this.effects[i];
+    // setEffectFactor(type, factor) {
+        // for(var i = 0; i < this.effects.length; ++i) {
+            // var eff = this.effects[i];
             
-            if(eff.type == type) {
-                eff.factor = factor;
+            // if(eff.type == type) {
+                // eff.factor = factor;
                 
-                return this;
-            }
-        }
+                // return this;
+            // }
+        // }
         
-        this.effects.push({"type" : type, "factor" : factor});
+        // this.effects.push({"type" : type, "factor" : factor});
         
-        return this;
-    }
+        // return this;
+    // }
     
-    setOffense(type, offense) {
-        for(var i = 0; i < this.effects.length; ++i) {
-            var eff = this.effects[i];
+    // setOffense(type, offense) {
+        // for(var i = 0; i < this.effects.length; ++i) {
+            // var eff = this.effects[i];
             
-            if(eff.type == type) {
-                eff.offense = offense;
+            // if(eff.type == type) {
+                // eff.offense = offense;
                 
-                return this;
-            }
-        }
+                // return this;
+            // }
+        // }
         
-        this.effects.push({"type" : type, "offense" : offense});
+        // this.effects.push({"type" : type, "offense" : offense});
         
-        return this;
-    }
+        // return this;
+    // }
     
-    getEffect(type) {
-        var def = {"type" : "default", "factor" : 0, "offense" : 0};
+    // getEffect(type) {
+        // var def = {"type" : "default", "factor" : 0, "offense" : 0};
         
-        for(var i = 0; i < this.effects.length; ++i) {
-            var eff = this.effects[i];
+        // for(var i = 0; i < this.effects.length; ++i) {
+            // var eff = this.effects[i];
             
-            if(eff.type == "default") {
-                def = eff;
-            } if(eff.type == type) {
-                return eff;
-            }
-        }
+            // if(eff.type == "default") {
+                // def = eff;
+            // } if(eff.type == type) {
+                // return eff;
+            // }
+        // }
         
-        return def;
-    }
+        // return def;
+    // }
     
     // 
     
     addState(statename, value = true) {
-        for(var i = 0; i < this.state.length; ++i) {
-            if(this.state[i].name == statename) {
+        return this.addStateObject({"name" : statename, "countdown" : 1, "value" : value});;
+    }
+    
+    addStateObject(object) {
+        for(let i = 0; i < this.state.length; ++i) {
+            if(this.state[i].name == object.name) {
                 return this;
             }
         }
         
-        this.state.push({"name" : statename, "countdown" : 1, "value" : value});
+        this.state.push(object);
         
         return this;
     }
@@ -365,29 +369,17 @@ class Entity extends Rectangle {
         return this;
     }
     
-    hasState(statename) {
+    findState(statename) {
         return this.state.find(function(state) {
             return state.name == statename;
-        }) != undefined;
+        });
     }
     
-    getStateValue(statename) {
-        for(var i = 0; i < this.state.length; ++i) {
-            if(this.state[i].name == statename) {
-                return this.state[i].value;
-            }
-        }
-        
-        return undefined;
+    hasState(statename) {
+        return this.findState(statename) != undefined;
     }
     
-    resetState(newState = []) {
-        this.state = newState;
-        
-        return this;
-    }
-    
-    countdownStates() {
+    updateState() {
         for(var i = this.state.length - 1; i >= 0; --i) {
             if(this.state[i].countdown > 0) {
                 --this.state[i].countdown;
@@ -405,8 +397,10 @@ class Entity extends Rectangle {
         if(arguments.length == 2) {
             this.speed[arguments[0]] += arguments[1];
         } else if(Array.isArray(force)) {
-            for(var i = 0; i < Math.min(this.getDimension(), force.length); ++i) {
-                this.speed[i] += force[i];
+            let minDim = Math.min(this.getDimension(), force.length);
+            
+            for(let dim = 0; dim < minDim; ++dim) {
+                this.speed[dim] += force[dim];
             }
         }
         
@@ -414,9 +408,10 @@ class Entity extends Rectangle {
     }
     
     advance() {
-        for(var dim = 0; dim < this.getDimension(); ++dim) {
+        let minDim = Math.min(this.getDimension(), this.speed.getDimension());
+        
+        for(var dim = 0; dim < minDim; ++dim) {
             this.position[dim] += this.speed[dim];
-            this.drawable.position[dim] += this.speed[dim];
             this.brake(dim, this.selfBrake);
         }
         
@@ -479,7 +474,7 @@ class Entity extends Rectangle {
         return this;
     }
     
-    heal(value = this.regeneration) {
+    heal(value = 1) {
         this.energy += value;
         
         if(this.energy > this.realEnergy) {
@@ -489,53 +484,11 @@ class Entity extends Rectangle {
         return this;
     }
     
-    dragOther(other, vector) {
-        
-    }
-    
-    dragOtherIO(other, norm) {
-        
-    }
-    
     oncollision(other) {
-        if(this.findWhitelist(other) && !this.findBlacklist(other)) {
-            if(other.blockable) {
-                for(var dim = 0; dim < Math.min(this.getDimension(), other.getDimension()); ++dim) {
-                    other.speed[dim] += this.force[dim] * other.forceFactor;
-                    
-                    if(this.vacuum != 0) {
-                        other.speed[dim] += this.vacuum * (this.getPositionM(dim) - other.getPositionM(dim));
-                    }
-                    
-                    other.speed[dim] /= Math.pow(this.otherBrake, other.brakeExponent);
-                    
-                    if(isAlmostZero(other.speed[dim])) {
-                        other.speed[dim] = 0;
-                    }
-                }
-            }
+        if(/*this.findWhitelist(other) && */!this.findBlacklist(other)) {
+            // other.hurt(this.effects);
             
-            if(other.replaceable && this.replaceId != 0) {
-                this.replace(other, this.replaceId);
-                for(var dim = 0; dim < Math.min(this.getDimension(), other.getDimension()); ++dim) {
-                    other.position[dim] += this.speed[dim];
-                    other.drawable.position[dim] += this.speed[dim];
-                }
-            }
-            
-            other.hurt(this.effects);
-            
-            if(this.otherThrust != 0) {
-                other.thrust = this.otherThrust * other.thrustFactor + other.selfThrust;
-            }
-            
-            if(other.ground) {
-                this.addState("grounded");
-            }
-            
-            this.gravityDirection.add(other.force);
-            
-            this.collidedWith.push(other);
+            this.collidedWith.add(other);
             
             for(var i = 0; i < this.interactors.length; ++i) {
                 var interactor = this.interactors[i];
@@ -555,9 +508,9 @@ class Entity extends Rectangle {
         return this;
     }
     
-    replace(other, type) {
+    replace(other, type, bounce = 0) {
         if(type == -1) {
-            return this.replace(other, this.locate(other));
+            return this.replace(other, this.locate(other), bounce);
         }
         
         var minDimension = Math.min(this.getDimension(), other.getDimension());
@@ -568,13 +521,11 @@ class Entity extends Rectangle {
             if((type & 1) == 1) {
                 if(negative && other.speed[dimension] >= 0) {
                     other.setPosition2(dimension, this.getPosition1(dimension));
-                    other.drawable.setPosition2(dimension, this.getPosition1(dimension));
                 } else if(!negative && other.speed[dimension] <= 0) {
                     other.setPosition1(dimension, this.getPosition2(dimension));
-                    other.drawable.setPosition1(dimension, this.getPosition2(dimension));
                 }
                 
-                other.speed[dimension] = -this.bounce * other.speed[dimension];
+                other.speed[dimension] = -bounce * other.speed[dimension];
             }
             
             
@@ -592,21 +543,27 @@ class Entity extends Rectangle {
     }
     
     update() {
-        this.heal();
-        this.updateStale();
+        // this.heal();
         this.updateActions();
         this.updateDrawable();
         this.advance();
+        this.thrust += this.selfThrust;
         
         // this.updateReset();
+        
+        if(this.energy <= 0) {
+            removeEntity(this);
+        }
         
         return this;
     }
     
     updateReset() {
-        this.resetState();
+        this.updateState();
         this.gravityDirection.fill(0);
         this.collidedWith.splice(0, this.collidedWith.length);
+        this.thrust = 0;
+        this.route = null;
         
         return this;
     }
@@ -614,7 +571,7 @@ class Entity extends Rectangle {
     addAction(action) {
         action.endid = "this message should be overwritten";
         
-        if(!this.canUseAction(action) && !this.hasAbility(action.getAbilityId()) && !this.containsActset(action.getId())) {
+        if(!this.canUseAction(action)) {
             action.end("User can't use the action.");
             
             return this;
@@ -622,10 +579,7 @@ class Entity extends Rectangle {
         
         for(var i = this.actions.length - 1; i >= 0; --i) {
             if(this.actions[i].allowsReplacement(action)) {
-                var replaced = this.actions[i];
-                
-                this.removeActionAt(i);
-                replaced.setEndid("Replaced from user with another action.");
+                this.removeActionAt(i, "Replaced from user with another action.");
                 
                 action.setUser(this);
                 this.actions.push(action);
@@ -648,12 +602,12 @@ class Entity extends Rectangle {
         return this;
     }
     
-    removeActionAt(index) {
-        if(index != -1 && this.actions[index].isRemovable()) {
+    removeActionAt(index, endid = "Removed from user.") {
+        if(this.actions[index] instanceof Action && this.actions[index].isRemovable()) {
             var action = this.actions[index];
             
             this.actions.splice(index, 1);
-            action.end("Removed from user.");
+            action.end(endid);
         }
         
         return this;
@@ -662,8 +616,7 @@ class Entity extends Rectangle {
     removeAction(action) {
         for(var i = this.actions.length - 1; i >= 0; --i) {
             if(this.actions[i] == action) {
-                // this.actions[i].end("Removed specifically from user (removeAction).");
-                this.removeActionAt(i);
+                this.removeActionAt(i, "Removed specifically from user (removeAction).");
             }
         }
         
@@ -673,8 +626,7 @@ class Entity extends Rectangle {
     removeActionsWithConstructor(constructor) {
         for(var i = this.actions.length - 1; i >= 0; --i) {
             if(/*this.actions[i] instanceof Action && */this.actions[i].constructor == constructor) {
-                // this.actions[i].end("Removed from user with a constructor match (removeActionsWithConstructor).");
-                this.removeActionAt(i);
+                this.removeActionAt(i, "Removed from user with a constructor match (removeActionsWithConstructor).");
             }
         }
         
@@ -684,8 +636,7 @@ class Entity extends Rectangle {
     removeActionsInstanceof(constructor) {
         for(var i = this.actions.length - 1; i >= 0; --i) {
             if(this.actions[i] instanceof constructor) {
-                // this.actions[i].end("Removed from user as instanceof (removeActionsInstanceof).");
-                this.removeActionAt(i);
+                this.removeActionAt(i, "Removed from user as instanceof (removeActionsInstanceof).");
             }
         }
         
@@ -696,8 +647,7 @@ class Entity extends Rectangle {
         for(var i = this.actions.length - 1; i >= 0; --i) {
             if(this.actions[i] instanceof Action)/**/
             if(this.actions[i].getId() == id) {
-                // this.actions[i].end("Removed from user with id (removeActionsWithId).");
-                this.removeActionAt(i);
+                this.removeActionAt(i, "Removed from user with id (removeActionsWithId).");
             }
         }
         
@@ -710,6 +660,8 @@ class Entity extends Rectangle {
             if(action1.order < action2.order) return +1;
             return 0;
         });
+        
+        let actions = Array.from(this.actions);
         
         for(var i = this.actions.length - 1; i >= 0; --i) {
             var action = this.actions[i];
@@ -737,89 +689,28 @@ class Entity extends Rectangle {
         return false;
     }
     
-    canUseAction(action) {
-        for(var i = 0; i < this.possibleActions.length; ++i) {
-            if(action instanceof this.possibleActions[i]) {
-                var impossible = false;
-                var j = 0;
-                
-                while(!impossible && j < this.impossibleActions.length) {
-                    if(action instanceof this.impossibleActions[j]) {
-                        impossible = true;
-                    }
-                    
-                    ++j;
-                }
-                
-                if(!impossible) {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    }
-    
-    addPossibleAction(action) {
-        if(Array.isArray(action)) {
-            for(var i = 0; i < action.length; ++i) {
-                this.addPossibleAction(action[i]);
-            }
-        } else if(this.possibleActions.indexOf(action) == -1) {
-            this.possibleActions.push(action);
-        }
-        
-        return this;
-    }
-    
-    addImpossibleAction(action) {
-        if(Array.isArray(action)) {
-            for(var i = 0; i < action.length; ++i) {
-                this.addImpossibleAction(action[i]);
-            }
-        } else if(this.impossibleActions.indexOf(action) == -1) {
-            this.impossibleActions.push(action);
-        }
-        
-        return this;
-    }
-    
-    addAbility(ability) {
-        var index = this.abilities.indexOf(ability);
-        
-        if(index == -1) {
-            this.abilities.push(ability);
-        }
-        
-        return this;
-    }
-    
-    addAbilities(abilities) {
-        for(var i = 0; i < abilities.length; ++i) {
-            this.addAbility(abilities[i]);
-        }
-        
-        return this;
-    }
-    
-    removeAbility(ability) {
-        for(var i = this.abilities.length - 1; i >= 0; --i) {
-            if(this.abilities[i] == ability) {
-                this.abilities.splice(i, 1);
-            }
-        }
-        
-        return this;
-    }
-    
-    hasAbility(ability) {
-        for(var i = 0; i < this.abilities.length; ++i) {
-            if(this.abilities[i] == ability) {
+    hasActionWithId(id) {
+        for(let i = 0; i < this.actions.length; ++i) {
+            if(this.actions[i].getId() == id) {
                 return true;
             }
         }
         
         return false;
+    }
+    
+    findActionWithId(id) {
+        for(let i = 0; i < this.actions.length; ++i) {
+            if(this.actions[i].getId() == id) {
+                return this.actions[i];
+            }
+        }
+        
+        return null;
+    }
+    
+    canUseAction(action) {
+        return this.containsActset(action.getId());
     }
     
     addActset() {
@@ -882,45 +773,10 @@ class Entity extends Rectangle {
         return false;
     }
     
-    makeStale(id, value) {
-        for(var i = 0; i < this.stale.length; ++i) {
-            if(this.stale[i].id == id) {
-                this.stale[i].value += value;
-                // this.stale[i].value = Math.max(this.stale[i].value, value);
-                
-                return this;
-            }
-        }
-        
-        this.stale.push({"id" : id, "value" : value});
-        
-        return this;
-    }
-    
-    getStale(id) {
-        for(var i = 0; i < this.stale.length; ++i) {
-            if(this.stale[i].id == id) {
-                return this.stale[i].value;
-            }
-        }
-        
-        return 0;
-    }
-    
-    updateStale() {
-        for(var i = this.stale.length - 1; i >= 0; --i) {
-            if(--this.stale[i].value <= 0) {
-                this.stale.splice(i, 1);
-            }
-        }
-        
-        return this;
-    }
-    
     // 
     
     isBattler() {
-        return this.battler;
+        return this.battler != null;
     }
     
     setBattler(battler) {
@@ -929,10 +785,24 @@ class Entity extends Rectangle {
         return this;
     }
     
+    getBattler() {
+        return this.battler;
+    }
+    
     // 
     
     onadd() {
         addDrawable(this.drawable);
+        
+        this.added = true;
+        
+        for(var i = 0; i < this.interactors.length; ++i) {
+            addInteractor(this.interactors[i]);
+        }
+        
+        for(var i = 0; i < this.interrecipients.length; ++i) {
+            addInterrecipient(this.interrecipients[i]);
+        }
         
         return this;
     }
@@ -940,6 +810,20 @@ class Entity extends Rectangle {
     onremove() {
         this.removeBlacklist(this);
         removeDrawable(this.drawable);
+        
+        this.added = false;
+        
+        for(var i = 0; i < this.interactors.length; ++i) {
+            removeInteractor(this.interactors[i]);
+        }
+        
+        for(var i = 0; i < this.interrecipients.length; ++i) {
+            removeInterrecipient(this.interrecipients[i]);
+        }
+        
+        for(let i = this.actions.length - 1; i >= 0; --i) {
+            this.removeActionAt(i);
+        }
         
         return this;
     }
@@ -949,6 +833,7 @@ class Entity extends Rectangle {
     addInteraction(interaction) {
         if(interaction instanceof Interactor) {
             interaction.setActor(this);
+            if(this.added) addInteractor(interaction);
             
             for(var i = 0; i < this.interactors.length; ++i) {
                 var interactor = this.interactors[i];
@@ -964,12 +849,13 @@ class Entity extends Rectangle {
             this.interactors.push(interaction);
         } else if(interaction instanceof Interrecipient) {
             interaction.setRecipient(this);
+            if(this.added) addInterrecipient(interaction);
             
             for(var i = 0; i < this.interrecipients.length; ++i) {
                 var interrecipient = this.interrecipients[i];
                 
                 if(interrecipient.matchId(interaction.getId())) {
-                    interrecipient.setActor(null);
+                    interrecipient.setRecipient(null);
                     this.interrecipients[i] = interaction;
                     
                     return this;
@@ -1000,5 +886,37 @@ class Entity extends Rectangle {
         }
         
         return null;
+    }
+    
+    collides(other) {
+        let minDim = Math.min(this.getDimension(), other.getDimension());
+        
+        for(let dim = 0; dim < minDim; ++dim) {
+            if(this.getPosition1(dim) >= other.getPosition2(dim) || this.getPosition2(dim) <= other.getPosition1(dim)) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    removeInteractorWithId(id) {
+        for(let i = this.interactors.length - 1; i >= 0; --i) {
+            if(this.interactors[i].matchId(id)) {
+                this.interactors.splice(i, 1);
+            }
+        }
+        
+        return this;
+    }
+    
+    removeInterrecipientWithId(id) {
+        for(let i = this.interrecipients.length - 1; i >= 0; --i) {
+            if(this.interrecipients[i].matchId(id)) {
+                this.interrecipients.splice(i, 1);
+            }
+        }
+        
+        return this;
     }
 }

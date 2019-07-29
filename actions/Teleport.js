@@ -29,8 +29,8 @@ class Teleportation extends Action {
         if(this.phase == 0) {
             var particle = new TpParticle([this.user.getX(), this.user.getY()], [64, 64]);
             particle.setPositionM(this.user.getPositionM());
-            particle.setSizeTransition([64, 64], [0, 0], 30);
-            particle.setStyle(new TransitionColor([0, 255, 255, 0], [0, 255, 255, 1], 30));
+            particle.setSizeTransition(new ColorTransition([64, 64], [0, 0], 30));
+            particle.setStyle(new ColorTransition([0, 255, 255, 0], [0, 255, 255, 1], 30));
             particle.setZIndex(this.user.getZIndex() - 1);
             particle.setLifespan(30);
             addEntity(particle);
@@ -40,13 +40,11 @@ class Teleportation extends Action {
             var targetPosition = this.user.getCursor().getPositionM();
             
             var particle = TpParticle.fromMiddle(targetPosition, [64, 64]);
-            particle.setStyle(new TransitionColor([0, 255, 255, 1], [0, 255, 255, 0], 30));
-            particle.setSizeTransition([0, 0], [64, 64], 30);
+            particle.setStyle(new ColorTransition([0, 255, 255, 1], [0, 255, 255, 0], 30));
+            particle.setSizeTransition(new ColorTransition([0, 0], [64, 64], 30));
             particle.setLifespan(30);
             particle.setZIndex(this.user.getZIndex() - 1);
             addEntity(particle);
-            
-            console.log();
             
             this.user.setPositionM(targetPosition);
             this.user.brake(Infinity);

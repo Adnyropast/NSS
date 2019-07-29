@@ -17,17 +17,19 @@ CANVAS.makePattern = function makePattern(image, width, height, repetition) {
 };
 
 function makeCTile(bgcolor, shcolor, shcolor2 = bgcolor) {
-    var tmpr = document.createElement("canvas");
-    tmpr.width = tmpr.height = 16;
-    var ctx = tmpr.getContext("2d");
-    ctx.fillStyle = bgcolor;
-    ctx.fillRect(0, 0, tmpr.width, tmpr.height);
-    ctx.fillStyle = shcolor2;
-    ctx.fillRect(tmpr.width/2 - 1, 0, 1, tmpr.height);
-    ctx.fillRect(0, tmpr.height/2 - 1, tmpr.width, 1);
-    ctx.fillStyle = shcolor;
-    ctx.fillRect(tmpr.width - 1, 0, 1, tmpr.height);
-    ctx.fillRect(0, tmpr.height - 1, tmpr.width, 1);
+    var ctile = document.createElement("canvas");
+    ctile.width = ctile.height = 16;
+    var ctx = ctile.getContext("2d");
+    let cb = 1;
     
-    return CANVAS.getContext("2d").createPattern(tmpr, "repeat");
+    ctx.fillStyle = bgcolor;
+    ctx.fillRect(0, 0, ctile.width, ctile.height);
+    ctx.fillStyle = shcolor2;
+    ctx.fillRect(ctile.width/2 - cb, 0, cb, ctile.height);
+    ctx.fillRect(0, ctile.height/2 - cb, ctile.width, cb);
+    ctx.fillStyle = shcolor;
+    ctx.fillRect(ctile.width - cb, 0, cb, ctile.height);
+    ctx.fillRect(0, ctile.height - cb, ctile.width, cb);
+    
+    return CANVAS.makePattern(ctile, CTILE_WIDTH, CTILE_WIDTH, "repeat");
 }

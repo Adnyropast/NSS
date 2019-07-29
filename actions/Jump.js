@@ -8,38 +8,36 @@ class Jump extends Action {
         
         this.direction = null;
         this.initialForce = 3.75;
-        this.initialForce = 1.75;
+        this.initialForce = 1.75 + 0.125;
         this.reduct = 1.375;// 1.4375;
+        
+        this.grounded = false;
+        this.wallState = undefined;
+        this.wallSide = 0;
     }
     
     use() {
         if(this.phase == 0) {
             jumps.push(this);
             
-            if(!this.user.hasState("grounded")) {
-                return this.end("!grounded");
+            this.grounded = this.user.hasState("actuallyGrounded");
+            this.wallState = this.user.findState("wall");
+            let ladder = this.user.hasState("ladder");
+            
+            if(!this.grounded && typeof this.wallState == "undefined" && !ladder) {
+                return this.end("No ground.");
             }
             
-            var actuallyGrounded = false;
-            
-            var side = 0;
-            
-            for(var i = 0; i < this.user.collidedWith.length; ++i) {
-                if(this.user.collidedWith[i].ground) {
-                    var locate = this.user.locate(this.user.collidedWith[i]);
-                    
-                    if(locate & 8) {
-                        actuallyGrounded = true;
-                    } else {
-                        side += !!(locate & 1) - !!(locate & 2);
-                    }
-                }
-            }
+            this.user.removeState("ladder").removeState("ladder-maintain");
             
             this.direction = Vector.from(this.user.gravityDirection).normalize(-this.initialForce);
             
-            if(!actuallyGrounded) {
-                this.direction.rotate(Math.sign(side) / 3.5).multiply(1.25);
+            if(this.grounded) {
+                
+            } else if(typeof this.wallState != "undefined") {
+                this.wallSide = this.wallState.side;
+                
+                this.direction.rotate(this.wallSide / 4.5).multiply(1.375);
             }
         }
         
@@ -56,21 +54,50 @@ class Jump extends Action {
         
         for(var dim = 0; dim < this.direction.length; ++dim) {
             if(this.direction[dim] != 0) {
-                if(this.phase < 3) {
-                    var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getY2()], [16, 16]).setSizeTransition([12, 12], [0, 0], 60);
-                    particle.setSpeed(this.user.speed.rotated(Math.PI/2 + -this.phase).normalize());
+                if(this.phase == 0) {
+                    if(this.grounded) {
+                        for(let i = -0.5; i < 1; i += 0.25) {
+                            let left = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getY2()]);
+                            left.setSpeed((new Vector(-1, 0)).normalized(Math.random()).rotated(i));
+                            addEntity(left);
+                            let right = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getY2()]);
+                            right.setSpeed((new Vector(+1, 0)).normalized(Math.random()).rotated(-i));
+                            addEntity(right);
+                        }
+                    } else {
+                        for(let i = -0.5; i < 1; i += 0.25) {
+                            let left = SmokeParticle.fromMiddle([this.user.getXM() - this.wallSide * this.user.getWidth()/2, this.user.getYM()]);
+                            left.setSpeed((new Vector(0, -1)).normalized(Math.random()).rotated(this.wallSide*i));
+                            addEntity(left);
+                            let right = SmokeParticle.fromMiddle([this.user.getXM() - this.wallSide * this.user.getWidth()/2, this.user.getYM()]);
+                            right.setSpeed((new Vector(0, +1)).normalized(Math.random()).rotated(-this.wallSide*i));
+                            addEntity(right);
+                        }
+                    }
+                    
+                    /**
+                    
+                    var positionM = this.user.getPositionM();
+                    
+                    // for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 3) {
+                    for(let angle = -Math.PI/8; angle < 2*Math.PI - Math.PI/8; angle += Math.PI/4) {
+                        var cos = Math.cos(angle), sin = Math.sin(angle);
+                        var particle = SmokeParticle.fromMiddle(positionM);
+                        particle.setSpeed([2*cos, 2*sin]);
+                        addEntity(particle);
+                    }
+                    
+                    var particle = SmokeParticle.fromMiddle(positionM, [16, 16]);
                     addEntity(particle);
-                    if(this.phase == 0) particle.drawable.ttt = true;
-                    var particle = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getY2()], [16, 16]).setSizeTransition([12, 12], [0, 0], 60);
-                    particle.setSpeed(this.user.speed.rotated(-Math.PI/2 - -this.phase).normalize());
-                    addEntity(particle);
+                    
+                    /**/
                 }
                 
                 return this;
             }
         }
         
-        // this.end("direction zero");
+        this.end("direction zero");
         
         return this;
     }
@@ -99,7 +126,14 @@ class MidairJump extends Jump {}
 class EnergyJump extends Jump {
     use() {
         if(this.phase == 0) {
-            this.initialForce /= this.user.getStale(this.id) + 1;
+            let state = this.user.findState("energyJump-stale");
+            let stale = 0;
+            
+            if(typeof state != "undefined") {
+                stale = state.countdown;
+            }
+            
+            this.initialForce /= stale + 1;
             this.direction = Vector.from(this.user.gravityDirection).normalize(-this.initialForce);
         }
         
@@ -133,9 +167,15 @@ class EnergyJump extends Jump {
     }
     
     onend() {
-        super.onend();
-        this.user.makeStale(this.id, 16);
+        let state = this.user.findState("energyJump-stale");
+        let stale = 0;
         
-        return this;
+        if(typeof state != "undefined") {
+            stale = state.countdown;
+        }
+        
+        this.user.addStateObject("energyJump-stale", stale + 16);
+        
+        return super.onend();
     }
 }

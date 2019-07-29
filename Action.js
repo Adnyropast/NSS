@@ -1,6 +1,4 @@
 
-var abilityId = -1;
-
 var actionid = -1;
 const ACT_JUMP = ++actionid;
 const ACT_TELEPORT = ++actionid;
@@ -21,6 +19,8 @@ function registerAction(id, ActionClass) {
     actionsIds.push({"id" : id, "class" : ActionClass});
 }
 
+const AC = {};
+
 /**
  * The Action class represents any action that can be performed by a character.
  * Do not start anyhting that would change the game in the constructor, do it during the phase 0 in the use method instead.
@@ -37,7 +37,6 @@ class Action {
     }
     
     constructor() {
-        this.abilityId = -1;
         this.user = null;
         this.phase = 0;
         this.id = -1;
@@ -49,9 +48,6 @@ class Action {
         
         this.removable = true;
     }
-    
-    getAbilityId() {return this.abilityId;}
-    setAbilityId(abilityId) {this.abilityId = abilityId; return this;}
     
     getUser() {
         return this.user;
@@ -154,6 +150,6 @@ class BusyAction extends Action {
     }
     
     preventsAddition(action) {
-        return super.preventsAddition(action) || action.id === ACT_JUMP || action.id === ACT_MOVEMENT;
+        return action instanceof BusyAction || super.preventsAddition(action) || action.id === ACT_JUMP || action.id === ACT_MOVEMENT;
     }
 }

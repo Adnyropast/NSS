@@ -1,8 +1,10 @@
 
-class ProjectileShot extends Action {
+const AS_HEART = set_gather("bloodShot", "heartBlowout");
+
+class BloodShot extends Action {
     constructor() {
         super();
-        this.id = "projectileShot";
+        this.id = "bloodShot";
         this.setUseCost(5);
         this.setUseCost(0);
         
@@ -19,7 +21,8 @@ class ProjectileShot extends Action {
             var projectile = Projectile.fromMiddle([initialPosition[0], initialPosition[1]], [12, 12]);
             
             projectile.setSpeed(Vector.subtraction(this.user.getCursor().getPositionM(), initialPosition).normalize(16));
-            projectile.setBlacklist(this.user.getBlacklist());
+            projectile.addInteraction(new DragActor(projectile.speed.normalized(1)));
+            projectile.shareBlacklist(this.user.getBlacklist());
             projectile.setLifespan(100);
             
             addEntity(projectile);
@@ -36,7 +39,7 @@ class ProjectileShot extends Action {
 class BlowoutShots extends Action {
     constructor() {
         super();
-        this.id = "blowoutShots";
+        this.id = "heartBlowout";
         
         this.angle = 0;
         this.inc = 6;
@@ -59,7 +62,7 @@ class BlowoutShots extends Action {
         if(this.phase % this.pace == 0) {
             var projectile = Projectile.fromMiddle(this.user.getPositionM(), [16, 16]);
             projectile.setSpeed(new Vector(Math.cos(this.angle), Math.sin(this.angle)).normalize(8));
-            projectile.setBlacklist(this.user.getBlacklist());
+            projectile.shareBlacklist(this.user.getBlacklist());
             projectile.setLifespan(20);
             addEntity(projectile);
         }

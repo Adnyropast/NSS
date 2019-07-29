@@ -39,10 +39,12 @@ class Vector extends Array {
         return res;
     }
     static subtraction(v1, v2) {
-        var res = new this(v1.length);
+        let minDim = Math.min(v1.length, v2.length);
         
-        for(var i = 0; i < v1.length; i++)
-            res[i] = v1[i] - v2[i];
+        var res = new this(minDim);
+        
+        for(var dim = 0; dim < minDim; ++dim)
+            res[dim] = v1[dim] - v2[dim];
         
         return res;
     }
@@ -182,6 +184,11 @@ class Vector extends Array {
         return vector;
     }
     
+    /* 23/07/2019 */
+    
+    static fromAngle(angle) {
+        return new this(Math.cos(angle), Math.sin(angle));
+    }
     
     
     
@@ -280,7 +287,7 @@ class Vector extends Array {
     
     translate(array) {
         if(Array.isArray(array) && array.length == this.size()) {
-            this.add(array);
+            this.add.apply(this, arguments);
         }
         
         return this;
@@ -311,9 +318,10 @@ class Vector extends Array {
         
         if(arguments.length == 1 && arguments[0] instanceof Array) {
             var array = arguments[0];
+            var minDim = Math.min(this.getDimension(), array.length);
             
-            for(var i = 0; i < this.size(); ++i) {
-                copy[i] = this[i] + array[i];
+            for(var dim = 0; dim < minDim; ++dim) {
+                copy[dim] = this[dim] + array[dim];
             }
         } else if(arguments.length == 1) {
             var x = arguments[0];
@@ -456,6 +464,20 @@ class Vector extends Array {
         return this.regulate(newNorm);
     } unit(newNorm) {
         return this.regulated(newNorm);
+    } normalized(norm = 1) {
+        let oldNorm = this.getNorm();
+        
+        if(oldNorm == 0) {
+            return Vector.from(this);
+        }
+        
+        let vector = new Vector();
+        
+        for(var dim = 0; dim < this.getDimension(); ++dim) {
+            vector.set(dim, this.get(dim) * norm / oldNorm);
+        }
+        
+        return vector;
     }
     
     scalar(vector) {

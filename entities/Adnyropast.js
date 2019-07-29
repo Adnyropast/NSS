@@ -10,18 +10,23 @@ class HitboxTrail extends Entity {
 class HitboxTrailing extends Action {
     constructor() {
         super();
+        this.setId("hitboxTrail");
+        
         this.lastPosition = null;
         this.i = 0;
     }
     
     use() {
         // console.log("trailing");
-        
+        /**
+        let t = Entity.fromMiddle(this.user.getPositionM(), [64, 64]);
+        t.setStyle("#007F7F7F");
+        t.setLifespan(3);
+        addEntity(t);
+        /**/
         if(this.lastPosition != null) {
-            // console.log(this.user.getPositionM());
-            
             var currentPosition = this.user.getPositionM();
-            // console.log(currentPosition);
+            // console.log(this.lastPosition, currentPosition);
             
             var vector = Vector.subtraction(this.lastPosition, currentPosition);
             var distance = vector.getNorm();
@@ -33,7 +38,8 @@ class HitboxTrailing extends Action {
                 trail.setLifespan(0);
                 trail.setStyle("rgba(" + (this.phase / 2 * 255) + ", 255, " + (step * 255 / distance) + ", 255)");
                 trail.i = this.i++;
-                trail.setBlacklist(this.user.getBlacklist());
+                trail.removeActionsWithConstructor(HitboxTrailing);
+                trail.shareBlacklist(this.user.getBlacklist());
                 
                 addEntity(trail);
                 
@@ -55,7 +61,11 @@ class Bullet extends Entity {
     constructor(position, size) {
         super(position, size);
         
-        this.setOffense(FX_PIERCING, 1);
+        // this.setOffense(FX_PIERCING, 1);
+        this.addInteraction(new TypeDamager([{"type" : FX_PIERCING, "value" : 1}]));
+        
+        this.addActset("hitboxTrail");
+        this.addAction(new HitboxTrailing());
     }
 }
 
@@ -64,13 +74,12 @@ class BulletShot extends Action {
         if(this.phase == 0) {
             var bullet = Bullet.fromMiddle(this.user.getPositionM(), [2, 2]);
             bullet.setSpeed(Vector.subtraction(this.user.getCursor().getPositionM(), this.user.getPositionM()).normalize(128));
-            bullet.setLifespan(3);
-            bullet.addPossibleAction(HitboxTrailing);
-            bullet.addAction(new HitboxTrailing());
-            bullet.setBlacklist(this.user.getBlacklist());
+            bullet.setLifespan(10);
+            
+            bullet.shareBlacklist(this.user.getBlacklist());
             
             addEntity(bullet);
-        } else if(this.phase == 3) {
+        } else if(this.phase == 5) {
             this.end();
         }
         
@@ -92,10 +101,11 @@ class BulletShot extends Action {
     }
 }
 
-class Adnyropast extends PlayableCharacter {
+EC["adnyropast"] = class Adnyropast extends PlayableCharacter {
     constructor(position, size) {
         super(position, size);
-        this.setRegeneration(0.0625);
+        // this.setRegeneration(0.0625);
+        this.addAction(new Regeneration(0.0625));
         
         this.cursorDistance = 32;
         
@@ -111,4 +121,4 @@ class Adnyropast extends PlayableCharacter {
     canUseAction() {
         return true;
     }
-}
+};

@@ -1,10 +1,9 @@
 
-const AS_FOCUS = gather("holdFocus", "pressFocus", "mouseFocus", "moveFocus", "freeKeyFocus");
+const AS_FOCUS = set_gather("holdFocus", "pressFocus", "mouseFocus", "moveFocus", "freeKeyFocus", "positionCursorTarget");
 
 class FocusAction extends Action {
     constructor() {
         super();
-        this.setAbilityId("cursorControl");
     }
 }
 
@@ -60,7 +59,7 @@ class PressFocus extends FocusAction {
             this.end();
         }
         
-        return action.getAbilityId() == "cursorControl" || super.preventsAddition(action);
+        return AS_FOCUS.includes(action.getId()) || super.preventsAddition(action);
     }
 }
 
@@ -133,13 +132,19 @@ class MoveFocus extends FocusAction {
             // this.end();
         // }
         
-        /**/
+        /**
         
         if(this.phase == 0) {
             this.user.addAction(this.keySteer);
         }
         
-        this.user.cursor.setPositionM(this.user.direction.plus(this.user.getPositionM()));
+        this.user.cursor.setPositionM(this.user.direction.times(1048576).add(this.user.getPositionM()));
+        
+        /**/
+        
+        if(this.user.route != null) {
+            this.user.cursor.setPositionM(this.user.route);
+        }
         
         return this;
     }
@@ -167,5 +172,18 @@ class FreeKeyFocus extends FocusAction {
         this.end();
         
         return this;
+    }
+}
+
+class PositionCursorTarget extends FocusAction {
+    constructor() {
+        super();
+        this.setId("positionCursorTarget");
+    }
+    
+    use() {
+        this.user.cursor.centerTarget();
+        
+        return this.end();
     }
 }
