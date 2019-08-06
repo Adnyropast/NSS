@@ -378,7 +378,7 @@ function makeGradientCTilesPattern(horizontalCount, verticalCount, bgTransition,
 
 function makeTextCanvas(content, font = "Luckiest Guy", fillStyle = "black", strokeStyle) {
     let c = document.createElement("canvas");
-    c.width, c.height;
+    c.width /= 2, c.height /= 2;
     let ctx = c.getContext("2d");
     
     ctx.textBaseline = "top";

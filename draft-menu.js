@@ -103,3 +103,13 @@ directionalMenu.addButton([16, 0]);
 directionalMenu.addButton([-16, 0]);
 directionalMenu.addButton([-16*Math.sqrt(2)/2, -16*Math.sqrt(2)/2]);
 directionalMenu.addButton([-16*Math.sqrt(2)/2, +16*Math.sqrt(2)/2]);
+
+class MenuButton extends Array {
+    constructor() {
+        super();
+        
+        this.text = "";
+        this.color = "black";
+        
+    }
+}

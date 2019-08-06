@@ -197,6 +197,8 @@ class WallCling extends Action {
     }
     
     use() {
+        this.user.setFace(this.user.cursor.getXM() - this.user.getXM());
+        
         return this;
     }
 }

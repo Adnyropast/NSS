@@ -114,7 +114,6 @@ class ReplaceActor extends Interactor {
         
         for(var dim = 0; dim < Math.min(actor.getDimension(), recipient.getDimension()); ++dim) {
             recipient.position[dim] += actor.speed[dim];
-            recipient.drawable.position[dim] += actor.speed[dim];
         }
         
         return this;
@@ -330,6 +329,8 @@ class TypeDamager extends Interactor {
                         vector[direction.dimension] += direction.sign;
                         particle.setSpeed(vector.rotate(Math.random() * 2 - 1).normalize(Math.random()));
                         
+                        particle.drawable.rotate(particle.speed.getAngle());
+                        
                         addEntity(particle);
                     }
                 }
@@ -474,6 +475,8 @@ class MapWarper extends Interactor {
     
     interact(interrecipient) {
         if(!maptransitioning) {
+            console.log("mapwarp");
+            
             // loadMap(this.mapname);
             maptransitioning = true;
             playerPositionM.set(this.warpPositionM);
@@ -664,36 +667,44 @@ class WaterRecipient extends Interrecipient {
 }
 
 class ContactVanishActor extends Interactor {
-    constructor() {
+    constructor(flags) {
         super();
         this.setId("contactVanish");
+        
+        this.flags = flags;
     }
     
     interact(interrecipient) {
-        let recipient = interrecipient.getRecipient();
-        
-        recipient.setEnergy(0);
+        if(interrecipient.flags & this.flags) {
+            let recipient = interrecipient.getRecipient();
+            
+            recipient.setEnergy(0);
+        }
         
         return this;
     }
 }
 
 class ContactVanishRecipient extends Interrecipient {
-    constructor() {
+    constructor(flags) {
         super();
         this.setId("contactVanish");
+        
+        this.flags = flags;
     }
     
     oninteraction(interactor) {
-        let recipient = this.getRecipient();
-        
-        for(let i = 0; i < 8; ++i) {
-            let angle = i * 2*Math.PI/8;
+        if(this.flags & interactor.flags) {
+            let recipient = this.getRecipient();
             
-            var particle = SmokeParticle.fromMiddle(recipient.getPositionM(), [8, 8]);
-            particle.setSpeed((new Vector(1, 0)).rotated(angle).normalize(Math.random()));
-            
-            addEntity(particle);
+            for(let i = 0; i < 8; ++i) {
+                let angle = i * 2*Math.PI/8;
+                
+                var particle = SmokeParticle.fromMiddle(recipient.getPositionM(), [8, 8]);
+                particle.setSpeed((new Vector(1, 0)).rotated(angle).normalize(Math.random()));
+                
+                addEntity(particle);
+            }
         }
         
         return this;

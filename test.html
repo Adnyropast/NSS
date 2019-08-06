@@ -786,11 +786,9 @@
         let COVERDRAWABLE = null;
         
         function transitionIn(duration = 16) {
-            if(COVERDRAWABLE == null) {
-                COVERDRAWABLE = new RectangleDrawable([0, 0], [CANVAS.width, CANVAS.height]);
-                COVERDRAWABLE.setCameraMode("none");
-                COVERDRAWABLE.setStyle(new ColorTransition(CV_INVISIBLE, CV_BLACK, duration));
-            }
+            COVERDRAWABLE = new RectangleDrawable([0, 0], [CANVAS.width, CANVAS.height]);
+            COVERDRAWABLE.setCameraMode("none");
+            COVERDRAWABLE.setStyle(new ColorTransition(CV_INVISIBLE, CV_BLACK, duration));
         }
         
         function transitionOut(duration = 16) {

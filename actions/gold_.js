@@ -11,13 +11,22 @@ class GoldSolid extends Entity {
     constructor(position, size) {
         super(position, size);
         
+        this.setDrawable(PolygonDrawable.from(flameparticle).multiplySize(1/4));
+        this.drawable.setPositionM(this.getPositionM());
         this.setStyle(new ColorTransition([255, 255, 0, 1], [0, 255, 255, 0.75], 16));
         // this.setOffense("gold", 1);
         this.setLifespan(16);
         this.setSelfBrake(1.09375);
         
         this.addInteraction(new TypeDamager([{"type" : FX_GOLD_, "value" : 1}]));
-        this.addInteraction(new ContactVanishRecipient());
+        this.addInteraction(new ContactVanishRecipient(1));
+    }
+    
+    updateDrawable() {
+        this.drawable.setPositionM(this.getPositionM());
+        this.drawable.multiplySize(1/1.025);
+        
+        return this;
     }
 }
 
@@ -46,6 +55,8 @@ class GoldFlurry extends GoldAbility {
             hitbox.setSpeed(Vector.subtraction(this.user.getCursor().getPositionM(), this.user.getPositionM()).rotate(Math.sin(this.t) * 0.25).normalize(4));
             hitbox.addInteraction(new DragActor(hitbox.speed.normalized(0.25)));
             
+            hitbox.drawable.rotate(hitbox.speed.getAngle());
+            
             addEntity(hitbox);
         }
         
@@ -69,6 +80,9 @@ class RocketPunchProjectile extends Projectile {
     constructor(position, size) {
         super(position, size);
         this.setStyle(IMG_FIST_LEFT);
+        this.setDrawable(PolygonDrawable.from(flameparticle).multiplySize(1/2));
+        this.drawable.setPositionM(this.getPositionM());
+        this.setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 255, 0.5], 24));
         // this.setBrakeExponent(0);
         // this.setForceFactor(0);
         // this.setRegeneration(-1);
@@ -78,6 +92,12 @@ class RocketPunchProjectile extends Projectile {
         this.setLifespan(24);
         
         this.addInteraction(new TypeDamager([{"type" : FX_GOLD_, "value" : 4}]));
+    }
+    
+    updateDrawable() {
+        this.drawable.setPositionM(this.getPositionM());
+        
+        return this;
     }
 }
 
@@ -106,11 +126,14 @@ class RocketPunch extends GoldAbility {
             projectile.addInteraction(new DragActor(projectile.speed.times(1)));
             projectile.shareBlacklist(this.user.getBlacklist());
             
+            projectile.getDrawable().rotate(projectile.speed.getAngle());
             
             addEntity(projectile);
             
+            this.user.setFace(projectile.speed[0]);
+            
             this.user.hurt(this.getUseCost());
-        } else if(this.phase > 32) {
+        } else if(this.phase > 16) {
             this.end();
         }
         

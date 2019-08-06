@@ -15,8 +15,6 @@ class PlayableCharacter extends Character {
         this.anim = null;
         this.lastAnim = "";
         
-        this.faceSave = "right";
-        
         this.defaultAnimStyle = "cyan";
     }
     
@@ -75,8 +73,8 @@ class PlayableCharacter extends Character {
             
             let face = this.faceSave;
             
-            if(faceDirection > 0) {face = "right";}
-            else if(faceDirection < 0) {face = "left"}
+            // if(faceDirection > 0) {face = "right";}
+            // else if(faceDirection < 0) {face = "left"}
             
             if(this.hasState("hurt")) {
                 if(face == "right") {

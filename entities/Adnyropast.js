@@ -121,4 +121,10 @@ EC["adnyropast"] = class Adnyropast extends PlayableCharacter {
     canUseAction() {
         return true;
     }
+    
+    addAction(action) {
+        action.setUseCost(0);
+        
+        return super.addAction(action);
+    }
 };

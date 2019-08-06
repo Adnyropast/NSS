@@ -60,6 +60,18 @@ class Camera extends Entity {
         return null;
     }
     
+    static fromMiddle(positionM, size) {
+        let camera = new this(positionM, size);
+        
+        for(let dim = 0; dim < 3; ++dim) {
+            positionM[dim] = typeof positionM[dim] == "undefined" ? DEF_CAMPOS[dim] + DEF_CAMSIZE[dim]/2 : positionM[dim];
+        }
+        
+        camera.setPositionM(positionM);
+        
+        return camera;
+    }
+    
     getOffsetX() {
         return this.getXM() - this.getWidth() / 2;
     }

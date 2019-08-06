@@ -70,11 +70,13 @@ class Character extends Entity {
         
         this.addActset(AS_CHARACTER);
         
-        this.addInteraction(new ContactVanishActor());
+        this.addInteraction(new ContactVanishActor(2));
         this.addInteraction(new SoftReplaceRecipient());
         
         this.addInteraction(new WallRecipient());
         this.addInteraction(new LadderRecipient());
+        
+        this.faceSave = "right";
     }
     
     onadd() {
@@ -120,6 +122,16 @@ class Character extends Entity {
         /**/
         
         return super.updateDrawable();
+    }
+    
+    setFace(face) {
+        if(face === "right" || face > 0) {
+            this.faceSave = "right";
+        } else if(face === "left" || face < 0) {
+            this.faceSave = "left";
+        }
+        
+        return this;
     }
 }
 

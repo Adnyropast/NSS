@@ -9,6 +9,8 @@ function isAlmostZero(x) {
 
 const BIG = 1048576;// Math.pow(2, 20);
 
+const DIAG = Math.sqrt(2) / 2;
+
 var WORLD_PACE = 16;
 
 const BASEWIDTH = 640;

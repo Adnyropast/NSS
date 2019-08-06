@@ -195,6 +195,10 @@ class Polygon extends Array {
             }
         }
         
+        for(let dim = 0; dim < minDimension; ++dim) {
+            this.center[dim] += vector[dim];
+        }
+        
         return this;
     }
     
@@ -269,6 +273,72 @@ class Polygon extends Array {
         this.splice(0, this.size());
         
         this.push.apply(this, points);
+        
+        return this;
+    }
+    
+    /**
+     * 05/08/2019
+     */
+    
+    rotate(angle) {
+        if(this.getDimension() != 2) {return this;}
+        
+        let center = Vector.from(this.getCenter());
+        
+        for(let i = 0; i < this.size(); ++i) {
+            let vector = Vector.subtraction(this.getPoint(i), center);
+            
+            this.setPoint(i, center.plus(vector.rotate(angle)));
+        }
+        
+        return this;
+    }
+    
+    /**
+     * 05/08/2019
+     */
+    
+    multiplySize(factor) {
+        let center = Vector.from(this.getCenter());
+        
+        for(let i = 0; i < this.size(); ++i) {
+            let vector = Vector.subtraction(this.getPoint(i), center);
+            
+            this.setPoint(i, center.plus(vector.multiply(factor)));
+        }
+        
+        return this;
+    }
+    
+    /**
+     * 05/08/2019
+     */
+    
+    static from(polygon) {
+        let points = [];
+        
+        for(let i = 0; i < polygon.size(); ++i) {
+            points.push(Array.from(polygon.getPoint(i)));
+        }
+        
+        return new this(points);
+    }
+    
+    setPositionM(positionM) {
+        let minDim = Math.min(this.getDimension(), positionM.length);
+        
+        for(let i = 0; i < this.size(); ++i) {
+            let point = this.getPoint(i);
+            
+            for(let dim = 0; dim < minDim; ++dim) {
+                point[dim] += positionM[dim] - this.center[dim];
+            }
+        }
+        
+        for(let dim = 0; dim < this.getDimension(); ++dim) {
+            this.center[dim] = positionM[dim];
+        }
         
         return this;
     }

@@ -7,13 +7,15 @@ class CutterAbility extends BusyAction {
     }
 }
 
+const cutterdrawable = new PolygonDrawable([[16, 0], [12, 4], [8, 8], [-8, 16], [0, 0], [-8, -16], [8, -8], [12, -4]]);
+
 class Cutter extends Entity {
     constructor() {
         super(...arguments);
         
         // this.setStyle("cyan");
         this.addInteraction(new TypeDamager({"type" : FX_SHARP, "value" : 1}));
-        // this.addInteraction(new ContactVanishRecipient());
+        this.addInteraction(new ContactVanishRecipient(1));
         
         this.addActset(AS_MOVEMENT);
         
@@ -33,6 +35,10 @@ class Cutter extends Entity {
                 this.addInteraction(new TypeDamager({"type" : FX_SHARP, "value" : 1}));
             }
         };
+        
+        this.bladeDrawable = PolygonDrawable.from(cutterdrawable).multiplySize(1/2);
+        this.bladeDrawable.setPositionM(this.getPositionM());
+        this.bladeDrawable.setStyle(new ColorTransition([0, 255, 255, 1], [0, 0, 255, 1], 64));
     }
     
     updateDrawable() {
@@ -42,10 +48,11 @@ class Cutter extends Entity {
         
         if(this.previousPositionM != null) {positionTransition = new ColorTransition(this.previousPositionM, positionM)}
         
+        let rotation = 2*Math.PI/6;
         let det = 12;
         
         for(let i = 0; i < det; ++i) {
-            this.angle += 2*Math.PI/6/det;
+            this.angle += rotation/det;
             
             let closePoint = positionTransition.at((i+1)/det);
             
@@ -54,6 +61,9 @@ class Cutter extends Entity {
             this.trailDrawable.addSized(closePoint, this.angle, farWidth, farWidth - 1);
         }
         
+        this.bladeDrawable.setPositionM(this.getPositionM());
+        this.bladeDrawable.rotate(rotation);
+        
         this.previousPositionM = positionM;
         
         return super.updateDrawable();
@@ -61,12 +71,14 @@ class Cutter extends Entity {
     
     onadd() {
         addDrawable(this.trailDrawable);
+        addDrawable(this.bladeDrawable);
         
         return super.onadd();
     }
     
     onremove() {
         removeDrawable(this.trailDrawable);
+        removeDrawable(this.bladeDrawable);
         
         return super.onremove();
     }
@@ -93,6 +105,8 @@ class CutterBoomerang extends CutterAbility {
             
             addEntity(boomerang);
             
+            this.user.setFace(speed[0]);
+            
             this.end();
         }
         
@@ -106,19 +120,38 @@ class CutterDash extends CutterAbility {
         this.setId("cutterDash");
         
         this.direction = null;
+        this.damageableSave = null;
+        this.cutterDamager = new TypeDamager([{"type" : FX_SHARP, "value" : 4}]);
     }
     
     use() {
         if(this.phase == 0) {
-            this.direction = Vector.subtraction(this.user.getCursor().getPositionM(), this.user.getPositionM()).normalize(this.user.thrust * 2);
+            this.direction = Vector.subtraction(this.user.getCursor().getPositionM(), this.user.getPositionM()).normalize(this.user.thrust * 4);
+            
+            this.user.setFace(this.direction[0]);
         }
         if(this.phase < 16) {
-            this.user.drag(this.direction);
+            this.user.drag(this.direction.normalize(this.user.thrust * 2));
         }
         
         if(this.phase == 24) {
             this.end();
         }
+        
+        return this;
+    }
+    
+    onadd() {
+        this.damageableSave = this.user.findInterrecipientWithId("typeDamage");
+        this.user.removeInterrecipientWithId("typeDamage");
+        this.user.addInteraction(this.cutterDamager);
+        
+        return this;
+    }
+    
+    onend() {
+        this.user.addInteraction(this.damageableSave);
+        this.user.removeInteractorWithId("typeDamage");
         
         return this;
     }

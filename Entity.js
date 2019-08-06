@@ -552,6 +552,7 @@ class Entity extends Rectangle {
         // this.updateReset();
         
         if(this.energy <= 0) {
+            this.ondefeat();
             removeEntity(this);
         }
         
@@ -917,6 +918,10 @@ class Entity extends Rectangle {
             }
         }
         
+        return this;
+    }
+    
+    ondefeat() {
         return this;
     }
 }

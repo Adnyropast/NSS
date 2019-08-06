@@ -141,7 +141,7 @@ class DashKick extends Action {
     }
 }
 
-class ZoneEngage extends Action {
+class ZoneEngage extends BusyAction {
     constructor() {
         super();
         this.id = "zoneEngage";
@@ -302,4 +302,18 @@ class TmprRoute extends Action {
     }
     
     preventsAddition(action) {return false;}
+}
+
+class TransitionSize extends Action {
+    constructor(sizeTransition) {
+        super();
+        this.setId("transitionSize");
+        this.sizeTransition = sizeTransition;
+    }
+    
+    use() {
+        this.user.setSizeM(this.sizeTransition.getNext());
+        
+        return this;
+    }
 }

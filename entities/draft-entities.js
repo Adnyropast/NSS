@@ -40,7 +40,7 @@ class Obstacle extends ActorCollidable {
         this.addInteraction(new ReplaceActor());
         this.addInteraction(new BrakeActor(BRK_OBST));
         this.addInteraction(new ThrustRecipient(THRUSTFACTOR_OBSTACLE));
-        this.addInteraction(new ContactVanishActor());
+        this.addInteraction(new ContactVanishActor(1));
     }
 }
 
@@ -233,29 +233,13 @@ class Particle extends Decoration {
         this.setZIndex(-1);
         this.setLifespan(1);
         
-        this.sizeTransition = new ColorTransition(this.size, this.size);
+        this.addActset("transitionSize");
+        this.setSizeTransition(new ColorTransition(this.size, this.size));
     }
     
     setSizeTransition(sizeTransition) {
-        this.sizeTransition = sizeTransition;
-        
-        return this;
-    }
-    
-    update() {
-        super.update();
-        
-        /**
-        
-        var positionM = this.getPositionM();
-        
-        this.setSize(Vector.from(this.endSize).subtract(this.initialSize).divide(this.sizeDuration).add(this.getSize()));
-        
-        this.setPositionM(positionM);
-        
-        /**/
-        
-        this.setSizeM(this.sizeTransition.getNext());
+        this.removeActionsWithId("transitionSize");
+        this.addAction(new TransitionSize(sizeTransition));
         
         return this;
     }
@@ -274,9 +258,18 @@ class GoldSmokeParticle extends Particle {
         this.setSelfBrake(1.0625);
         this.setLifespan(32);
         // this.setColorTransition([0, 255, 255, 127], [0, 255, 255, 0], 60);
+        this.setDrawable(PolygonDrawable.from(flameparticle).multiplySize(1/4));
+        this.drawable.setPositionM(this.getPositionM());
         this.setStyle(new ColorTransition([0, 255, 255, 127], [0, 255, 255, 0], 60));
         this.setStyle(new ColorTransition([0, 255, 255, 1], [127, 255, 255, 0.5], 32));
-        this.sizeTransition = new ColorTransition(size, [0, 0], 32);
+        this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
+    }
+    
+    updateDrawable() {
+        this.drawable.setPositionM(this.getPositionM());
+        this.drawable.multiplySize(1/1.03125);
+        
+        return this;
     }
 }
 
@@ -296,7 +289,7 @@ class SmokeParticle extends Particle {
         // this.addInteraction(new DragRecipient(1));
         // this.addInteraction(new BrakeRecipient(1.5));
         
-        this.sizeTransition = new ColorTransition(size, [0, 0], 32);
+        this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
     }
 }
 
@@ -347,7 +340,7 @@ class Projectile extends Entity {
         
         this.addInteraction(new TypeDamager([{"type" : FX_PIERCING, "value" : 1}]));
         this.addInteraction(new ReplaceRecipient());
-        this.addInteraction(new ContactVanishRecipient());
+        this.addInteraction(new ContactVanishRecipient(1));
     }
 }
 
@@ -504,7 +497,7 @@ EC["invisibleWall"] = class InvisibleWall extends ActorCollidable {
         super(...arguments);
         
         this.addInteraction(new ReplaceActor());
-        this.addInteraction(new ContactVanishActor());
+        this.addInteraction(new ContactVanishActor(1));
     }
 };
 
@@ -555,7 +548,7 @@ EC["treeBackground"] = class TreeBackground extends Entity {
         this.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_TREEBACKGROUND, CTILE_WIDTH/2, 4.5/2 * CTILE_WIDTH, "repeat"), this.getWidth(), this.getHeight()));
         this.setZIndex(+16);
     }
-}
+};
 
 EC["treePlatform"] = class TreePlatform extends EC["softPlatform"] {
     constructor(position, size = [64, 2]) {
@@ -563,4 +556,4 @@ EC["treePlatform"] = class TreePlatform extends EC["softPlatform"] {
         
         this.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_TREETRUNK, this.getWidth(), this.getWidth(), "repeat"), this.getWidth(), this.getHeight()));
     }
-}
+};

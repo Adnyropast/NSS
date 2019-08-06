@@ -89,6 +89,8 @@ class OverheadSlash extends SwordAbility {
                 this.face[0] = Math.sign(this.face[0]);
                 this.face[1] = 0;
                 this.effect = SlashEffect.fromMiddle([this.face.x + this.user.getXM(), this.face.y + this.user.getYM()], [32, 32]);
+                
+                this.user.setFace(this.face[0]);
             } else if(this.face[1] != 0) {
                 this.face[1] = Math.sign(this.face[1]);
                 this.effect = SlashEffect.fromMiddle([this.face.x + this.user.getXM(), this.face.y + this.user.getYM()], [32, 32]);
