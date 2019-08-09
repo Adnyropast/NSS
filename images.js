@@ -239,12 +239,14 @@ var ANIM_HAPLE = {
     "fall-left" : new AnimatedImages([loadImage("images/haple/fall-left.png")]),
     "cling-right" : new AnimatedImages([loadImage("images/haple/cling-right.png")]),
     "cling-left" : new AnimatedImages([loadImage("images/haple/cling-left.png")]),
-    "swim-right" : (new AnimatedImages([loadImage("images/haple/swim-right0.png"), loadImage("images/haple/swim-right1.png")])).setIcpf(32),
-    "swim-left" : (new AnimatedImages([loadImage("images/haple/swim-left0.png"), loadImage("images/haple/swim-left1.png")])).setIcpf(32),
+    "water-right" : (new AnimatedImages([loadImage("images/haple/swim-right0.png"), loadImage("images/haple/swim-right1.png")])).setIcpf(32),
+    "water-left" : (new AnimatedImages([loadImage("images/haple/swim-left0.png"), loadImage("images/haple/swim-left1.png")])).setIcpf(32),
     "hurt-right" : new AnimatedImages([loadImage("images/haple/hurt-right.png")]),
     "hurt-left" : new AnimatedImages([loadImage("images/haple/hurt-left.png")]),
     "crouch-right" : new AnimatedImages([loadImage("images/haple/crouch-right.png")]),
-    "crouch-left" : new AnimatedImages([loadImage("images/haple/crouch-left.png")])
+    "crouch-left" : new AnimatedImages([loadImage("images/haple/crouch-left.png")]),
+    "swim-right" : (new AnimatedImages([loadImage("images/haple/swim-right0.png"), loadImage("images/haple/swim-right1.png")])).setIcpf(12),
+    "swim-left" : (new AnimatedImages([loadImage("images/haple/swim-left0.png"), loadImage("images/haple/swim-left1.png")])).setIcpf(12)
 };
 
 let CT_TEN = (new ColorTransition(CV_WHITE, [0, 255, 255, 1], 32)).setLoop(true);
@@ -260,12 +262,14 @@ let ANIM_TEN = {
     "fall-left" : ColorTransition.from(CT_TEN).setDuration(8),
     "cling-right" : ColorTransition.from(CT_TEN).setDuration(24),
     "cling-left" : ColorTransition.from(CT_TEN).setDuration(24),
-    "swim-right" : ColorTransition.from(CT_TEN).setDuration(48),
-    "swim-left" : ColorTransition.from(CT_TEN).setDuration(48),
+    "water-right" : ColorTransition.from(CT_TEN).setDuration(48),
+    "water-left" : ColorTransition.from(CT_TEN).setDuration(48),
     "hurt-right" : ColorTransition.from(CT_TEN).setDuration(2),
     "hurt-left" : ColorTransition.from(CT_TEN).setDuration(2),
     "crouch-right" : (new ColorTransition([0, 255, 0, 1], [127, 255, 127, 1], 64)).setLoop(true),
-    "crouch-left" : (new ColorTransition([0, 255, 0, 1], [127, 255, 127, 1], 64)).setLoop(true)
+    "crouch-left" : (new ColorTransition([0, 255, 0, 1], [127, 255, 127, 1], 64)).setLoop(true),
+    "swim-right" : ColorTransition.from(CT_TEN).setDuration(12),
+    "swim-right" : ColorTransition.from(CT_TEN).setDuration(12)
 };
 
 var IMG_MAP_DRAFT = loadImage("images/map-draft.png");

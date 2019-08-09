@@ -21,7 +21,7 @@ class Camera extends Entity {
         this.accVal = 4;
         this.cameraControllable = true;
         
-        this.addActset(AS_MOVEMENT);
+        this.addActset(AS_MOVEMENT, "transitionSize");
         
         this.addInteraction(new CameraReplaceRecipient());
         

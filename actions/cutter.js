@@ -31,7 +31,7 @@ class Cutter extends Entity {
         this.controller = function controller(entity) {
             ++t;
             
-            if(t % 24 == 0) {
+            if(t % 9 == 0) {
                 this.addInteraction(new TypeDamager({"type" : FX_SHARP, "value" : 1}));
             }
         };

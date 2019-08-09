@@ -93,27 +93,6 @@ class Ground extends EC["obstacle"] {
         
         this.addInteraction(new WallActor());
     }
-    
-    oncollision(other) {
-        /**
-        
-        if(other instanceof Character && other.speed.getNorm() > 4) {
-            // for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 3) {
-            for(let angle = -Math.PI/8; angle < 2*Math.PI - Math.PI/8; angle += Math.PI/4) {
-                var cos = Math.cos(angle), sin = Math.sin(angle);
-                var particle = SmokeParticle.fromMiddle(other.getPositionM());
-                particle.setSpeed([2*cos, 2*sin]);
-                addEntity(particle);
-            }
-            
-            var particle = SmokeParticle.fromMiddle(other.getPositionM(), [16, 16]);
-            addEntity(particle);
-        }
-        
-        /**/
-        
-        return super.oncollision(other);
-    }
 }
 
 EC["ground"] = Ground;
@@ -557,3 +536,37 @@ EC["treePlatform"] = class TreePlatform extends EC["softPlatform"] {
         this.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_TREETRUNK, this.getWidth(), this.getWidth(), "repeat"), this.getWidth(), this.getHeight()));
     }
 };
+
+class DiamondParticle extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.setDrawable(PolygonDrawable.from(diamondparticle).setStyle(new ColorTransition(CV_WHITE, [255, 255, 0, 1], 12)));
+        this.drawable.rotate(Math.PI/2).setPositionM(this.getPositionM());
+        this.setLifespan(12);
+    }
+    
+    updateDrawable() {
+        this.drawable.setPositionM(this.getPositionM());
+        this.drawable.multiplySize(1/1.125);
+        
+        return this;
+    }
+}
+
+class OvalParticle extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.setDrawable(PolygonDrawable.from(roundparticle).setStyle(new ColorTransition([0, 0, 255, 1], [0, 0, 63, 1], 12)));
+        this.drawable.setPositionM(this.getPositionM());
+        this.setLifespan(12);
+    }
+    
+    updateDrawable() {
+        this.drawable.setPositionM(this.getPositionM());
+        this.drawable.multiplySize(1/1.125);
+        
+        return this;
+    }
+}

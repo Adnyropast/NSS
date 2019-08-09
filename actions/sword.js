@@ -101,7 +101,7 @@ class OverheadSlash extends SwordAbility {
             this.effect.setLifespan(16);
             this.effect.shareBlacklist(this.user.getBlacklist());
             // this.effect.setForce(this.face.multiply(2));
-            this.effect.addInteraction(new DragActor(this.face.multiply(2).minus(this.user.gravityDirection.times(4))));
+            this.effect.addInteraction(new DragActor(this.face.multiply(2)));
             
             addEntity(this.effect);
             

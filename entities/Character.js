@@ -42,7 +42,7 @@ class EnergyBarDrawable extends RectangleDrawable {
     setBorderWidth(borderWidth) {this.borderWidth = borderWidth;}
 }
 
-const AS_CHARACTER = set_gather(AS_FOCUS, "followMe", AS_MOVEMENT, AS_ROUTE, ACT_JUMP);
+const AS_CHARACTER = set_gather(AS_FOCUS, "followMe", AS_MOVEMENT, AS_ROUTE, ACT_JUMP, "stunState");
 
 class Character extends Entity {
     constructor(position, size) {
@@ -77,6 +77,14 @@ class Character extends Entity {
         this.addInteraction(new LadderRecipient());
         
         this.faceSave = "right";
+    }
+    
+    static fromData(data) {
+        let character = super.fromData(data);
+        
+        character.cursor.setPositionM(character.getPositionM());
+        
+        return character;
     }
     
     onadd() {

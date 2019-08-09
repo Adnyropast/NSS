@@ -317,3 +317,42 @@ class TransitionSize extends Action {
         return this;
     }
 }
+
+class StunState extends BusyAction {
+    constructor(timeout = 1) {
+        super();
+        this.setId("stunState");
+        
+        this.brakeRecipientSave = null;
+        this.timeout = timeout;
+    }
+    
+    onadd() {
+        this.brakeRecipientSave = this.user.findInterrecipientWithId("brake");
+        this.user.removeInterrecipientWithId("brake");
+        this.setRemovable(false);
+        
+        this.user.setSelfBrake(1.125);
+        
+        return super.onadd();
+    }
+    
+    onend() {
+        this.user.addInteraction(this.brakeRecipientSave);
+        
+        this.user.setSelfBrake(1);
+        
+        return super.onend();
+    }
+    
+    use() {
+        if(this.timeout == 0) {
+            this.setRemovable(true);
+            this.end();
+        } else {
+            --this.timeout;
+        }
+        
+        return this;
+    }
+}

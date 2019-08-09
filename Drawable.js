@@ -149,6 +149,9 @@ class PolygonDrawable extends Polygon {
         this.cameraMode = "basic";
         
         this.lifespan = -1;
+        
+        this.strokeStyle = INVISIBLE;
+        this.lineWidth = 1;
     }
     
     getZIndex() {return this.zIndex;}
@@ -203,23 +206,15 @@ class PolygonDrawable extends Polygon {
             } else {
                 context.lineTo(x, y);
             }
-            
-            if(this instanceof CutDrawable) {
-                // console.log(x, y);
-            }
-        }
-        
-        if(this instanceof CutDrawable) {
-            // console.log(")))))))))))))))");
         }
         
         context.closePath();
         
         context.fillStyle = this.getStyle();
-        // context.strokeStyle = 
-        context.lineWidth = 0.5;
-        // context.stroke();
         context.fill();
+        context.strokeStyle = this.getStrokeStyle();
+        context.lineWidth = this.lineWidth;
+        context.stroke();
         
         return this;
     }
@@ -235,12 +230,24 @@ class PolygonDrawable extends Polygon {
         
         if(this.style instanceof ColorTransition) {
             this.style.getNext();
+        } if(this.strokeStyle instanceof ColorTransition) {
+            this.strokeStyle.getNext();
         }
         
         return this;
     }
     
     setLifespan(lifespan) {this.lifespan = lifespan; return this;}
+    
+    getStrokeStyle() {
+        if(this.strokeStyle instanceof ColorTransition) {
+            return this.strokeStyle.getCurrentStyle();
+        }
+        
+        return this.strokeStyle;
+    }
+    
+    setStrokeStyle(strokeStyle) {this.strokeStyle = strokeStyle; return this;}
 }
 
 /**/
@@ -532,3 +539,20 @@ class CutDrawable extends PolygonDrawable {
 }
 
 let flameparticle = new PolygonDrawable([[16, 0], [14.782072520180588, 6.1229349178414365], [11.313708498984761, 11.31370849898476], [6.122934917841437 - 1, 14.782072520180588], [0, 14], [-16, 8], [-8, 4], [-24, 0], [-8, -4], [-16, -8], [0, -14], [6.122934917841437 - 1, -14.782072520180588], [11.313708498984761, -11.31370849898476], [14.782072520180588, -6.1229349178414365]]);
+
+let diamondparticle = new PolygonDrawable([[0, -16], [2, 0], [0, 16], [-2, 0]]);
+
+let roundparticle;
+
+{
+    let count = 12;
+    let points = [];
+    
+    for(let i = 0; i < count; ++i) {
+        let angle = i * 2*Math.PI/count;
+        
+        points.push([16 * Math.cos(angle), 16 * Math.sin(angle)]);
+    }
+    
+    roundparticle = new PolygonDrawable(points);
+}

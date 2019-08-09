@@ -91,15 +91,15 @@ class PlayableCharacter extends Character {
                     }
                     
                     if(face == "right") {
-                        this.setAnimStyle("swim-right", this.anim["swim-right"].copy().setIcpf(12));
+                        this.setAnimStyle("swim-right");
                     } else {
-                        this.setAnimStyle("swim-left", this.anim["swim-left"].copy().setIcpf(12));
+                        this.setAnimStyle("swim-left");
                     }
                 } else {
                     if(face == "right") {
-                        this.setAnimStyle("water-right", this.anim["swim-right"].copy());
+                        this.setAnimStyle("water-right");
                     } else {
-                        this.setAnimStyle("water-left", this.anim["swim-left"].copy());
+                        this.setAnimStyle("water-left");
                     }
                 }
             } else if(!this.hasState("actuallyGrounded")) {

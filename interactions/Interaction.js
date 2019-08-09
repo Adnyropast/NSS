@@ -110,6 +110,24 @@ class ReplaceActor extends Interactor {
         var actor = this.getActor();
         var recipient = interrecipient.getRecipient();
         
+        /**/
+        
+        if(recipient instanceof Character && recipient.speed.getNorm() > 4) {
+            let c = Math.floor(recipient.speed.getNorm());
+            
+            // for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 3) {
+            for(let i = 0; i < c; ++i) {
+                let angle = -Math.PI/8 + i * 2*Math.PI/c;
+                
+                var cos = Math.cos(angle), sin = Math.sin(angle);
+                var particle = SmokeParticle.fromMiddle(recipient.getPositionM());
+                particle.setSpeed([2*cos*Math.random(), 2*sin*Math.random()]);
+                addEntity(particle);
+            }
+        }
+        
+        /**/
+        
         actor.replace(recipient, this.replaceId, this.bounce);
         
         for(var dim = 0; dim < Math.min(actor.getDimension(), recipient.getDimension()); ++dim) {
@@ -302,7 +320,7 @@ class TypeDamager extends Interactor {
         super();
         this.setId("damage");
         
-        this.offenses = set_gather(offenses);
+        this.offenses = set_gather(Array.from(arguments));
         this.hit = new SetArray();
     }
     
@@ -311,13 +329,31 @@ class TypeDamager extends Interactor {
         var recipient = interrecipient.getRecipient();
         
         if(!this.hit.includes(recipient)) {
+            let averagesize = (actor.getWidth() + actor.getHeight() + recipient.getWidth() + recipient.getHeight()) / 4;
+            let totalDamage = 0;
+            
             for(var i = 0; i < this.offenses.length; ++i) {
                 var type = this.offenses[i].type;
                 
-                recipient.hurt(interrecipient.negotiateDamage(type, this.offenses[i].value));
+                let negotiatedDamage = interrecipient.negotiateDamage(type, this.offenses[i].value);
+                
+                recipient.hurt(negotiatedDamage);
                 
                 if(type === FX_SHARP) {
                     addDrawable(new CutDrawable(Vector.addition(actor.getPositionM(), recipient.getPositionM()).divide(2), [Math.random() * 2 - 1, Math.random() * 2 - 1]));
+                    
+                    let c = 3 + Math.round(Math.random());
+                    
+                    for(let i = 0; i < c; ++i) {
+                        let angle = i * 2*Math.PI/c;
+                        
+                        let particle = DiamondParticle.fromMiddle(Vector.addition(actor.getPositionM(), recipient.getPositionM()).divide(2), [0, 0]);
+                        
+                        particle.setSpeed((new Vector(2 * Math.random() + 1, 0)).rotate(angle + Math.random()));
+                        particle.getDrawable().rotate(particle.speed.getAngle()).multiplySize(averagesize/16);
+                        
+                        addEntity(particle);
+                    }
                 } else if(type === FX_GOLD_) {
                     for(let i = 0; i < 8; ++i) {
                         let angle = i * 2*Math.PI/8;
@@ -327,24 +363,44 @@ class TypeDamager extends Interactor {
                         let direction = getDD(actor.locate(recipient))[0];
                         let vector = actor.speed.normalized();
                         vector[direction.dimension] += direction.sign;
-                        particle.setSpeed(vector.rotate(Math.random() * 2 - 1).normalize(Math.random()));
+                        particle.setSpeed(vector.rotate(Math.random() * 2 - 1).normalize(Math.random() * 2 + 1));
                         
                         particle.drawable.rotate(particle.speed.getAngle());
+                        
+                        particle.drawable.multiplySize(averagesize/16);
                         
                         addEntity(particle);
                     }
                 }
+                
+                totalDamage += negotiatedDamage;
             }
             
-            this.hit.add(recipient);
+            recipient.addStateObject({"name" : "hurt", "countdown" : 24});
+            recipient.addAction(new StunState(24));
             
+            this.hit.add(recipient);
+            /**
             worldFreeze = 3;
             setGameTimeout(function() {
                 worldFreeze = 2;
-            }, 1);
+            }, 1);/**/
+            
+            let ts;
+            
+            if(ts = CAMERA.findActionWithId("transitionSize")) {
+                CAMERA.setSizeM(ts.sizeTransition.endColor);
+            }
+            
+            CAMERA.removeActionsWithId("transitionSize");
+            
+            CAMERA.addAction(new TransitionSize(new ColorTransition(Vector.subtraction(CAMERA.getSize(), [2 * totalDamage, 2 * totalDamage, 0]), CAMERA.getSize(), 12, function timing(t) {
+                let sign = (t * 5) % 2 == 0 ? -1 : 1;
+                let val = 1 - t;
+                
+                return 1 + sign * val;
+            })));
         }
-        
-        recipient.addStateObject({"name" : "hurt", "countdown" : 32});
         
         return this;
     }
@@ -355,7 +411,7 @@ class TypeDamageable extends Interrecipient {
         super();
         this.setId("damage");
         
-        this.factors = set_gather(factors);
+        this.factors = set_gather(Array.from(arguments));
     }
     
     negotiateDamage(type, damage) {
@@ -475,8 +531,6 @@ class MapWarper extends Interactor {
     
     interact(interrecipient) {
         if(!maptransitioning) {
-            console.log("mapwarp");
-            
             // loadMap(this.mapname);
             maptransitioning = true;
             playerPositionM.set(this.warpPositionM);
