@@ -201,3 +201,29 @@ function getMap(rectangles = CREATED_RECTANGLES, rsFunction = rsAddEntity) {
     
     return string;
 }
+
+class LPlace extends Action {
+    constructor() {
+        super();
+        this.setId("lplace");
+        
+        this.entity = new Entity([NaN, NaN], [16, 16]);
+    }
+    
+    use() {
+        let cursorPosition = this.user.getCursor().getPositionM();
+        
+        for(let dim = 0; dim < cursorPosition.length; ++dim) {
+            cursorPosition[dim] = Math.round(cursorPosition[dim] / 8) * 8;
+        }
+        
+        let entity = LCreated.from(this.entity);
+        entity.setPositionM(cursorPosition);
+        
+        setSelectedRectangle(entity);
+        CREATED_RECTANGLES.add(SELECTED_RECTANGLE);
+        addEntity(SELECTED_RECTANGLE);
+        
+        return this.end();
+    }
+}

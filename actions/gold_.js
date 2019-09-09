@@ -7,7 +7,7 @@ class GoldAbility extends BusyAction {
     }
 }
 
-class GoldSolid extends Entity {
+class GoldSolid extends Hitbox {
     constructor(position, size) {
         super(position, size);
         
@@ -25,6 +25,7 @@ class GoldSolid extends Entity {
     updateDrawable() {
         this.drawable.setPositionM(this.getPositionM());
         this.drawable.multiplySize(1/1.025);
+        this.drawable.setImaginaryAngle(this.speed.getAngle());
         
         return this;
     }
@@ -52,10 +53,8 @@ class GoldFlurry extends GoldAbility {
             var hitbox = GoldSolid.fromMiddle(this.user.getPositionM(), [8, 8]);
             hitbox.shareBlacklist(this.user.getBlacklist());
             
-            hitbox.setSpeed(Vector.subtraction(this.user.getCursor().getPositionM(), this.user.getPositionM()).rotate(Math.sin(this.t) * 0.25).normalize(4));
+            hitbox.setSpeed(this.user.getCursorDirection().rotate(Math.sin(this.t) * 0.25).normalize(4));
             hitbox.addInteraction(new DragActor(hitbox.speed.normalized(0.25)));
-            
-            hitbox.drawable.rotate(hitbox.speed.getAngle());
             
             addEntity(hitbox);
         }
@@ -96,6 +95,7 @@ class RocketPunchProjectile extends Projectile {
     
     updateDrawable() {
         this.drawable.setPositionM(this.getPositionM());
+        this.drawable.setImaginaryAngle(this.speed.getAngle());
         
         return this;
     }
@@ -121,12 +121,10 @@ class RocketPunch extends GoldAbility {
         if(this.phase == 16) {
             var projectile = RocketPunchProjectile.fromMiddle([this.user.getPositionM(0), this.user.getPositionM(1)], [8, 8]);
             
-            projectile.setSpeed(Vector.subtraction(this.user.getCursor().getPositionM(), this.user.getPositionM()).normalize(8));
+            projectile.setSpeed(this.user.getCursorDirection().normalize(8));
             // projectile.setForce(projectile.speed.times(2));
             projectile.addInteraction(new DragActor(projectile.speed.times(1)));
             projectile.shareBlacklist(this.user.getBlacklist());
-            
-            projectile.getDrawable().rotate(projectile.speed.getAngle());
             
             addEntity(projectile);
             

@@ -11,7 +11,7 @@ class Entity extends Rectangle {
         
         Object.defineProperty(this, "speed", {"configurable" : true, "enumerable" : true, "value" : Vector.filled(this.getDimension(), 0), "writable" : true});
         this.selfBrake = 1;
-        this.thrust = 0;
+        // this.thrust = 0;
         this.selfThrust = 0;
         
         // 
@@ -69,7 +69,7 @@ class Entity extends Rectangle {
         
         this.state = [];
         
-        this.gravityDirection = Vector.filled(this.getDimension(), 0);
+        // this.gravityDirection = Vector.filled(this.getDimension(), 0);
         // this.ground = false;
         
         // 
@@ -84,6 +84,12 @@ class Entity extends Rectangle {
         this.opponents = new SetArray();
         
         this.controller = noController;
+        
+        this.controllers = new SetArray();
+        
+        this.drawableOffset = Vector.filled(this.getDimension(), 0);
+        
+        this.collidesWith = new SetArray();
     }
     
     setSpeed(speed) {
@@ -521,11 +527,11 @@ class Entity extends Rectangle {
             if((type & 1) == 1) {
                 if(negative && other.speed[dimension] >= 0) {
                     other.setPosition2(dimension, this.getPosition1(dimension));
+                    other.speed[dimension] = -bounce * other.speed[dimension];
                 } else if(!negative && other.speed[dimension] <= 0) {
                     other.setPosition1(dimension, this.getPosition2(dimension));
+                    other.speed[dimension] = -bounce * other.speed[dimension];
                 }
-                
-                other.speed[dimension] = -bounce * other.speed[dimension];
             }
             
             
@@ -543,11 +549,15 @@ class Entity extends Rectangle {
     }
     
     update() {
+        for(let i = 0; i < this.controllers.length; ++i) {
+            this.controllers[i].bind(this)();
+        }
+        
         // this.heal();
         this.updateActions();
         this.updateDrawable();
         this.advance();
-        this.thrust += this.selfThrust;
+        // this.thrust += this.selfThrust;
         
         // this.updateReset();
         
@@ -561,10 +571,11 @@ class Entity extends Rectangle {
     
     updateReset() {
         this.updateState();
-        this.gravityDirection.fill(0);
+        // this.gravityDirection.fill(0);
         this.collidedWith.splice(0, this.collidedWith.length);
-        this.thrust = 0;
+        // this.thrust = 0;
         this.route = null;
+        this.collidesWith.clear();
         
         return this;
     }
@@ -670,6 +681,7 @@ class Entity extends Rectangle {
             if(action instanceof Action) {
                 if(action.user != this) {
                     console.error("??? action.user is not entity that updates action ???");
+                    console.log(this, action);
                 }
                 
                 action.use();
@@ -890,6 +902,10 @@ class Entity extends Rectangle {
     }
     
     collides(other) {
+        if(this.collidesWith.includes(other)) {
+            return true;
+        }
+        
         let minDim = Math.min(this.getDimension(), other.getDimension());
         
         for(let dim = 0; dim < minDim; ++dim) {
@@ -897,6 +913,8 @@ class Entity extends Rectangle {
                 return false;
             }
         }
+        
+        this.collidesWith.push(other);
         
         return true;
     }
@@ -923,5 +941,41 @@ class Entity extends Rectangle {
     
     ondefeat() {
         return this;
+    }
+    
+    getCursorDirection() {
+        if(this.cursor != null) {
+            let cursorDirection = Vector.subtraction(this.cursor.getPositionM(), this.getPositionM());
+            
+            for(let dim = 0; dim < cursorDirection.length; ++dim) {
+                if(isAlmostZero(cursorDirection[dim])) {
+                    cursorDirection[dim] = 0;
+                }
+            }
+            
+            return cursorDirection;
+        }
+        
+        return null;
+    }
+    
+    collidesWithPoint(point) {
+        let minDim = Math.min(this.getDimension(), point.length);
+        
+        for(let dim = 0; dim < minDim; ++dim) {
+            if(this.getPosition1(dim) >= point[dim] || this.getPosition2(dim) <= point[dim]) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+}
+
+class Hitbox extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.addInteraction(new StunActor());
     }
 }

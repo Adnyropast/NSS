@@ -73,6 +73,102 @@ function addKeyAction(keyCode, actionClass) {
     }
 }
 
+function addKeyActionRepeat(keyCode, actionClass) {
+    if(Array.isArray(keyCode)) {
+        for(let i = 0; i < keyCode.length; ++i) {
+            addKeyActionRepeat(keyCode[i], actionClass);
+        }
+    } else {
+        if(!controls.keys.hasOwnProperty(keyCode)) {
+            controls.keys[keyCode] = [];
+        } if(!controls.keyup.hasOwnProperty(keyCode)) {
+            controls.keyup[keyCode] = [];
+        }
+        
+        let adder = function adder() {
+            actionNewAdder(actionClass)(this);
+        };
+        
+        controls.keys[keyCode].push(function(entity) {
+            entity.controllers.add(adder);
+        });
+        controls.keyup[keyCode].push(function(entity) {
+            entity.controllers.remove(adder);
+            actionConstructorRemover(actionClass)(entity);
+        });
+    }
+}
+
+function addClickActionRepeat(which, actionClass) {
+    if(Array.isArray(which)) {
+        for(let i = 0; i < which.length; ++i) {
+            addClickActionRepeat(which[i], actionClass);
+        }
+    } else {
+        let adder = function adder() {
+            actionNewAdder(actionClass)(this);
+        };
+        
+        controls.click[which].push(function(entity) {
+            entity.controllers.add(adder);
+        });
+        controls.mouseup[which].push(function(entity) {
+            entity.controllers.remove(adder);
+            actionConstructorRemover(actionClass)(entity);
+        });
+    }
+}
+
+function addKeyActionToggle(keyCode, actionClass) {
+    if(Array.isArray(keyCode)) {
+        for(let i = 0; i < keyCode.length; ++i) {
+            addKeyActionToggle(keyCode[i], actionClass);
+        }
+    } else {
+        if(!controls.keys.hasOwnProperty(keyCode)) {
+            controls.keys[keyCode] = [];
+        } if(!controls.keyup.hasOwnProperty(keyCode)) {
+            controls.keyup[keyCode] = [];
+        }
+        
+        let adder = function adder() {
+            actionNewAdder(actionClass)(this);
+        };
+        
+        controls.keys[keyCode].push(function(entity) {
+            if(entity.controllers.includes(adder)) {
+                entity.controllers.remove(adder);
+                actionConstructorRemover(actionClass)(entity);
+            } else {
+                entity.controllers.add(adder);
+            }
+        });
+        // controls.keyup[keyCode].push();
+    }
+}
+
+function addClickActionToggle(which, actionClass) {
+    if(Array.isArray(which)) {
+        for(let i = 0; i < which.length; ++i) {
+            addClickActionToggle(which[i], actionClass);
+        }
+    } else {
+        let adder = function adder() {
+            actionNewAdder(actionClass)(this);
+        };
+        
+        controls.click[which].push(function(entity) {
+            if(entity.controllers.includes(adder)) {
+                entity.controllers.remove(adder);
+                actionConstructorRemover(actionClass)(entity);
+            } else {
+                entity.controllers.add(adder);
+            }
+        });
+        // controls.mouseup[which].push();
+    }
+}
+
 var controls = {
     click : {
         1 : [
@@ -113,38 +209,27 @@ var controls = {
     }]
 };
 
-addClickAction(1, LCreate);
+addClickAction(1, LPlace);
+// addClickAction(1, LCreate);
 addClickAction(2, LSelect);
 addKeyAction(46, LDelete);
 addClickAction(3, LResize);
 addKeyAction(49, LSelect);
+// addKeyAction(84, SlashAction);
+addKeyActionRepeat(86, Flamethrower);
+addKeyActionRepeat(77, PlasmaLightning);
+addKeyActionRepeat(79, AutoSword);
+addKeyActionRepeat(79, VeinSweep);
+addClickActionRepeat(1, AutoSword);
+// addKeyActionRepeat(85, CutterDash);
+addKeyActionRepeat(85, BurningAttack);
+addKeyActionRepeat(K_LEFT, MovementLeft);
+addKeyActionRepeat(K_UP, MovementUp);
+addKeyActionRepeat(K_RIGHT, MovementRight);
+addKeyActionRepeat(K_DOWN, MovementDown);
+addKeyActionRepeat([32], Jump);
 
 var actionevents = [
-    {"id" : "left", "keys" : K_LEFT, "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new MovementLeft());
-    }, "oneventup" : function oneventup(player) {
-        player.removeActionsWithConstructor(MovementLeft);
-    }},
-    {"id" : "up", "keys" : K_UP, "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new MovementUp());
-    }, "oneventup" : function oneventup(player) {
-        player.removeActionsWithConstructor(MovementUp);
-    }},
-    {"id" : "right", "keys" : K_RIGHT, "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new MovementRight());
-    }, "oneventup" : function oneventup(player) {
-        player.removeActionsWithConstructor(MovementRight);
-    }},
-    {"id" : "down", "keys" : K_DOWN, "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new MovementDown());
-    }, "oneventup" : function oneventup(player) {
-        player.removeActionsWithConstructor(MovementDown);
-    }},
-    {"id" : "jump", "keys" : [32], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new Jump());
-    }, "oneventup" : function oneventup(player) {
-        player.removeActionsWithConstructor(Jump);
-    }},
     {"id" : "holdFocus", "keys" : [223], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
         player.addAction(new HoldFocus());
     }, "oneventup" : function oneventup(player) {
@@ -179,25 +264,22 @@ var actionevents = [
         player.addAction(new ZoneEngage());
     }, "oneventup" : function oneventup(player) {
         
-    }},
-    {"id" : "teleportation", "keys" : [84], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new Teleportation());
-    }, "oneventup" : function oneventup(player) {
-        
-    }},
-    {"id" : "overheadSlash", "keys" : [], "presskeys" : [79], "mouse" : [1], "oneventdown" : function oneventdown(player) {
+    }},/**
+    {"id" : "overheadSlash", "keys" : [79], "presskeys" : [79], "mouse" : [1], "oneventdown" : function oneventdown(player) {
         player.addAction(new OverheadSlash());
+        player.addAction(new VeinSweep());
     }, "oneventup" : function oneventup(player) {
         
     }},
-    
+    /**/
     {"id" : "cutterBoomerang", "keys" : [73], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new CutterBoomerang());
+        player.addAction(new AutoCutter());
     }, "oneventup" : function oneventup(player) {
         
     }},
     {"id" : "cutterDash", "keys" : [85], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new CutterDash());
+        // player.addAction(new CutterDash());
+        // player.addAction(new BurningAttack());
     }, "oneventup" : function oneventup(player) {
         
     }},
@@ -295,3 +377,30 @@ function getMousePosition(dimension) {
     
     return positionOnCanvas.divide(CAMERA.getSizeProp()).add(offset);
 }
+
+// 
+
+let ctrljson = {
+    "keyonce" : [
+        {"keyCode" : 0, "actionId" : "jump"},
+        {"keyCode" : 0, "actionId" : "jump"},
+        {"keyCode" : 0, "actionId" : "jump"},
+        {"keyCode" : 0, "actionId" : "jump"},
+        {"keyCode" : 0, "actionId" : "jump"}
+    ],
+    "keyrepeat" : [
+        {"keyCode" : 0, "actionId" : ""}
+    ],
+    "keytoggle" : [
+        {"keyCode" : 0, "actionId" : ""}
+    ],
+    "mouseonce" : [
+        {"which" : 0, "actionId" : ""}
+    ],
+    "mouserepeat" : [
+        {"which" : 0, "actionId" : ""}
+    ],
+    "mousetoggle" : [
+        {"which" : 0, "actionId" : ""}
+    ]
+};

@@ -95,9 +95,13 @@ class Rectangle {
     }
     
     static fromData(data) {
+        /**
+        
         var clone = {};
         Object.assign(clone, data);
         data = clone;
+        
+        /**/
         
         var position = undefined, size = undefined;
         
@@ -121,6 +125,112 @@ class Rectangle {
             }
             
             delete data.size;
+        }
+        
+        if(data.hasOwnProperty("x")) {
+            if(typeof position == "undefined") {position = [];}
+            position[0] = data.x;
+            // delete data.x;
+        } if(data.hasOwnProperty("y")) {
+            if(typeof position == "undefined") {position = [];}
+            position[1] = data.y;
+            // delete data.y;
+        } if(data.hasOwnProperty("z")) {
+            if(typeof position == "undefined") {position = [];}
+            position[2] = data.z;
+            // delete data.z;
+        } if(data.hasOwnProperty("x1")) {
+            if(typeof position == "undefined") {position = [];}
+            position[0] = data.x1;
+            // delete data.x1;
+        } if(data.hasOwnProperty("y1")) {
+            if(typeof position == "undefined") {position = [];}
+            position[1] = data.y1;
+            // delete data.y1;
+        } if(data.hasOwnProperty("z1")) {
+            if(typeof position == "undefined") {position = [];}
+            position[2] = data.z1;
+            // delete data.z1;
+        } if(data.hasOwnProperty("xM")) {
+            if(typeof position == "undefined") {position = [];}
+            
+            if(typeof size != "undefined" && typeof size[0] != "undefined") {
+                position[0] = data.xM - size[0] / 2;
+            } else {
+                // throw "error : width not defined";
+            }
+            
+            // delete data.xM;
+        } if(data.hasOwnProperty("yM")) {
+            if(typeof position == "undefined") {position = [];}
+            
+            if(typeof size != "undefined" && typeof size[1] != "undefined") {
+                position[1] = data.yM - size[1] / 2;
+            } else {
+                // throw "error : height not defined";
+            }
+            
+            // delete data.yM;
+        } if(data.hasOwnProperty("zM")) {
+            if(typeof position == "undefined") {position = [];}
+            
+            if(typeof size != "undefined" && typeof size[2] != "undefined") {
+                position[2] = data.zM - size[2] / 2;
+            } else {
+                // throw "error : depth not defined";
+            }
+            
+            // delete data.zM;
+        } if(data.hasOwnProperty("x2")) {
+            if(typeof position == "undefined") {position = [];}
+            
+            if(typeof size != "undefined" && typeof size[0] != "undefined") {
+                position[0] = data.x2 - size[0];
+            } else {
+                // throw "error : width not defined";
+            }
+            
+            // delete data.x2;
+        } if(data.hasOwnProperty("y2")) {
+            if(typeof position == "undefined") {position = [];}
+            
+            if(typeof size != "undefined" && typeof size[1] != "undefined") {
+                position[1] = data.y2 - size[1];
+            } else {
+                // throw "error : height not defined";
+            }
+            
+            // delete data.y2;
+        } if(data.hasOwnProperty("z2")) {
+            if(typeof position == "undefined") {position = [];}
+            
+            if(typeof size != "undefined" && typeof size[2] != "undefined") {
+                position[2] = data.z2 - size[2];
+            } else {
+                // throw "error : depth not defined";
+            }
+            
+            // delete data.z2;
+        } if(Array.isArray(data.position)) {
+            if(typeof position == "undefined") {position = [];}
+            
+            for(var dim = 0; dim < data.position.length; ++dim) {
+                position[dim] = data.position[dim];
+            }
+            
+            // delete data.position;
+        } if(Array.isArray(data.positionM)) {
+            if(typeof position == "undefined") {position = [];}
+            
+            for(var dim = 0; dim < data.positionM.length; ++dim) {
+                if(typeof size != "undefined" && typeof size[dim] != "undefined") {
+                    position[dim] = data.positionM[dim] - size[dim] / 2;
+                } else {
+                    // throw "Dimension error";
+                }
+            }
+            
+            // delete data.positionM;
         }
         
         var rectangle = new this(position, size);
@@ -166,7 +276,7 @@ class Rectangle {
             
             // if(typeof position == "undefined") {position = [];}
             
-            // if(typeof size[0] != "undefined") {
+            // if(typeof size != "undefined" && typeof size[0] != "undefined") {
                 // position[0] = data.xM - size[0] / 2;
             // } else {
                 // throw "error : width not defined";
@@ -178,7 +288,7 @@ class Rectangle {
             
             // if(typeof position == "undefined") {position = [];}
             
-            // if(typeof size[1] != "undefined") {
+            // if(typeof size != "undefined" && typeof size[1] != "undefined") {
                 // position[1] = data.yM - size[1] / 2;
             // } else {
                 // throw "error : height not defined";
@@ -190,7 +300,7 @@ class Rectangle {
             
             // if(typeof position == "undefined") {position = [];}
             
-            // if(typeof size[2] != "undefined") {
+            // if(typeof size != "undefined" && typeof size[2] != "undefined") {
                 // position[2] = data.zM - size[2] / 2;
             // } else {
                 // throw "error : depth not defined";
@@ -202,7 +312,7 @@ class Rectangle {
             
             // if(typeof position == "undefined") {position = [];}
             
-            // if(typeof size[0] != "undefined") {
+            // if(typeof size != "undefined" && typeof size[0] != "undefined") {
                 // position[0] = data.x2 - size[0];
             // } else {
                 // throw "error : width not defined";
@@ -214,7 +324,7 @@ class Rectangle {
             
             // if(typeof position == "undefined") {position = [];}
             
-            // if(typeof size[1] != "undefined") {
+            // if(typeof size != "undefined" && typeof size[1] != "undefined") {
                 // position[1] = data.y2 - size[1];
             // } else {
                 // throw "error : height not defined";
@@ -226,7 +336,7 @@ class Rectangle {
             
             // if(typeof position == "undefined") {position = [];}
             
-            // if(typeof size[2] != "undefined") {
+            // if(typeof size != "undefined" && typeof size[2] != "undefined") {
                 // position[2] = data.z2 - size[2];
             // } else {
                 // throw "error : depth not defined";
@@ -249,7 +359,7 @@ class Rectangle {
             // if(typeof position == "undefined") {position = [];}
             
             // for(var dim = 0; dim < data.positionM.length; ++dim) {
-                // if(typeof size[dim] != "undefined") {
+                // if(typeof size != "undefined" && typeof size[dim] != "undefined") {
                     // position[dim] = data.positionM[dim] - size[dim] / 2;
                 // } else {
                     // throw "Dimension error";
@@ -259,7 +369,7 @@ class Rectangle {
             delete data.positionM;
         }
         
-        Object.assign(rectangle, data);
+        // Object.assign(rectangle, data);
         
         return rectangle;
     }

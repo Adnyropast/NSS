@@ -30,7 +30,12 @@ class Jump extends Action {
             
             this.user.removeState("ladder").removeState("ladder-maintain");
             
-            this.direction = Vector.from(this.user.gravityDirection).normalize(-this.initialForce);
+            let gravityDirection = this.user.findState("gravity");
+            
+            if(typeof gravityDirection == "undefined") {gravityDirection = [0, 0]}
+            else {gravityDirection = gravityDirection.direction}
+            
+            this.direction = Vector.from(gravityDirection).normalize(-this.initialForce);
             
             if(this.grounded) {
                 

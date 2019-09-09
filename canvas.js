@@ -8,7 +8,7 @@ var hprop = CANVAS.height / BASEHEIGHT;
 CTX.textBaseline = "top";
 CTX.font = (16 * hprop) + "px Luckiest Guy, Consolas";
 
-CANVAS.makePattern = function makePattern(image, width, height, repetition) {
+CANVAS.makePattern = function makePattern(image, width = CTILE_WIDTH, height = width, repetition = "repeat") {
     var tmpr = document.createElement("canvas");
     tmpr.width = width; tmpr.height = height;
     tmpr.getContext("2d").drawImage(image, 0, 0, width, height);
@@ -32,4 +32,10 @@ function makeCTile(bgcolor, shcolor, shcolor2 = bgcolor) {
     ctx.fillRect(0, ctile.height - cb, ctile.width, cb);
     
     return CANVAS.makePattern(ctile, CTILE_WIDTH, CTILE_WIDTH, "repeat");
+}
+
+function makeRepeatedTileFrom(image, width, height) {
+    let m = 2;
+    
+    return makeStyledCanvas(CANVAS.makePattern(image, CTILE_WIDTH*m), width*m, height*m);
 }

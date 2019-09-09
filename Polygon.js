@@ -13,26 +13,12 @@ class Polygon extends Array {
     constructor(points) {
         super();
         
-        if(Array.isArray(points)) {
-            for(var i = 0; i < points.length; ++i) {
-                // The first point determines the dimension of the polygon
-                
-                if(typeof this.dimension == "undefined") {
-                    Object.defineProperty(this, "dimension", {"enumerable" : false, "value" : points[i].length});
-                }
-                
-                // The polygon isn't properly built if any point has a different dimension from the first
-                
-                else if(points[i].length != this.dimension) {
-                    throw "Dimension error : [" + points[i] + "] should have " + this.dimension + " coordinates";
-                }
-                
-                this.setPoint(i, points[i]);
-            }
-        }
-        
+        Object.defineProperty(this, "dimension", {"writable" : true, "enumerable" : false, "value" : undefined});
         Object.defineProperty(this, "center", {"writable" : true, "enumerable" : false, "value" : []});
-        this.setCenter();
+        
+        this.setPoints(points);
+        
+        Object.defineProperty(this, "imaginaryAngle", {"writable" : true, "enumerable" : false, "value" : 0});
     }
     
     /**
@@ -260,7 +246,11 @@ class Polygon extends Array {
      */
     
     setDimension(dimension) {
-        Object.defineProperty(this, "dimension", {"value":dimension});
+        this.dimension = dimension;
+        
+        for(let i = 0; i < this.size(); ++i) {
+            this.getPoint(i).length = dimension;
+        }
         
         return this;
     }
@@ -270,9 +260,28 @@ class Polygon extends Array {
      */
     
     setPoints(points) {
-        this.splice(0, this.size());
+        // this.splice(0, this.size());
+        this.length = 0;
         
-        this.push.apply(this, points);
+        if(Array.isArray(points)) {
+            for(var i = 0; i < points.length; ++i) {
+                // The first point determines the dimension of the polygon
+                
+                if(typeof this.dimension == "undefined") {
+                    this.setDimension(points[i].length);
+                }
+                
+                // The polygon isn't properly built if any point has a different dimension from the first
+                
+                else if(points[i].length != this.dimension) {
+                    throw "Dimension error : [" + points[i] + "] should have " + this.dimension + " coordinates instead of " + points[i].length;
+                }
+                
+                this.setPoint(i, points[i]);
+            }
+        }
+        
+        this.setCenter();
         
         return this;
     }
@@ -341,6 +350,160 @@ class Polygon extends Array {
         }
         
         return this;
+    }
+    
+    /* 12/08/2019 */
+    
+    getMinPosition(dimension) {
+        if(arguments.length == 1) {
+            let min = +Infinity;
+            
+            for(let i = 0; i < this.size(); ++i) {
+                let point = this.getPoint(i);
+                
+                if(min > point[dimension]) {
+                    min = point[dimension];
+                }
+            }
+            
+            return min;
+        } else if(arguments.length == 0) {
+            let minPosition = [];
+            
+            for(let dim = 0; dim < this.getDimension(); ++dim) {
+                minPosition[dim] = this.getMinPosition(dim);
+            }
+            
+            return minPosition;
+        }
+    }
+    
+    /* 12/08/2019 */
+    
+    getMaxPosition(dimension) {
+        if(arguments.length == 1) {
+            let max = -Infinity;
+            
+            for(let i = 0; i < this.size(); ++i) {
+                let point = this.getPoint(i);
+                
+                if(max < point[dimension]) {
+                    max = point[dimension];
+                }
+            }
+            
+            return max;
+        } else if(arguments.length == 0) {
+            let maxPosition = [];
+            
+            for(let dim = 0; dim < this.getDimension(); ++dim) {
+                maxPosition[dim] = this.getMaxPosition(dim);
+            }
+            
+            return maxPosition;
+        }
+    }
+    
+    stretch(vector) {
+        let minPosition = this.getMinPosition();
+        let maxPosition = this.getMaxPosition();
+        
+        for(let i = 0; i < this.size(); ++i) {
+            let point = this.getPoint(i);
+            
+            for(let dim = 0; dim < this.getDimension(); ++dim) {
+                if(maxPosition[dim] != minPosition[dim]) {
+                    if(vector[dim] > 0) {
+                        let vect = maxPosition[dim] - minPosition[dim];
+                        let proportion = (point[dim] - minPosition[dim]) / vect;
+                        
+                        point[dim] += proportion * vector[dim];
+                    } else if(vector[dim] < 0) {
+                        let vect = maxPosition[dim] - minPosition[dim];
+                        let proportion = (maxPosition[dim] - point[dim]) / vect;
+                        
+                        point[dim] += proportion * vector[dim];
+                    }
+                }
+            }
+        }
+        
+        this.setCenter();
+        
+        return this;
+    }
+    
+    stretchM(vector) {
+        let center = Array.from(this.getCenter());
+        
+        this.stretch(vector);
+        
+        return this.setPositionM(center);
+    }
+    
+    shrink(vector) {
+        let minPosition = this.getMinPosition();
+        let maxPosition = this.getMaxPosition();
+        
+        for(let i = 0; i < this.size(); ++i) {
+            let point = this.getPoint(i);
+            
+            for(let dim = 0; dim < this.getDimension(); ++dim) {
+                if(maxPosition[dim] != minPosition[dim]) {
+                    if(vector[dim] < 0) {
+                        let vect = maxPosition[dim] - minPosition[dim];
+                        let proportion = (point[dim] - minPosition[dim]) / vect;
+                        
+                        console.log(dim, point[dim], proportion);
+                        
+                        point[dim] += proportion * vector[dim];
+                    } else if(vector[dim] > 0) {
+                        let vect = maxPosition[dim] - minPosition[dim];
+                        let proportion = (maxPosition[dim] - point[dim]) / vect;
+                        
+                        point[dim] += proportion * vector[dim];
+                    }
+                }
+            }
+        }
+        
+        this.setCenter();
+        
+        return this;
+    }
+    
+    shrinkM(vector) {
+        let center = Array.from(this.getCenter());
+        
+        this.shrink(vector);
+        
+        return this.setPositionM(center);
+    }
+    
+    /* 22/08/2019 */
+    
+    initImaginaryAngle(imaginaryAngle) {this.imaginaryAngle = imaginaryAngle; return this;}
+    
+    /* 22/08/2019 */
+    
+    getImaginaryAngle() {return this.imaginaryAngle;}
+    
+    /* 22/08/2019 */
+    
+    setImaginaryAngle(imaginaryAngle) {
+        let angle = imaginaryAngle - this.imaginaryAngle;
+        
+        this.rotate(angle);
+        
+        this.imaginaryAngle = imaginaryAngle;
+        
+        return this;
+    }
+    
+    /* 23/08/2019 */
+    
+    getPositionM() {
+        return this.center;
     }
 }
 

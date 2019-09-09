@@ -328,9 +328,9 @@ function cubicBezier(p0, p1, p2, p3) {
     };
 }
 
-const bezierLinear = cubicBezier(0, 0, 1, 1);
+const bezierLinear = function bezierLinear(t) {return t;}; cubicBezier(0, 0, 1, 1);
 const bezierEase = cubicBezier(.25,.1,.25,1);
-const bezierEaseIn = cubicBezier(.42,0,1,1);
+const bezierEaseIn = function bezierEaseIn(t) {return t*t*t;}; cubicBezier(.42,0,1,1);
 const bezierEaseOut = cubicBezier(0,0,.58,1);
 const bezierEaseInOut = cubicBezier(.42,0,.58,1);
 
@@ -522,4 +522,143 @@ class SetArray extends Array {
         
         return this;
     }
+}
+
+class PointsPath extends Array {
+    constructor() {
+        super();
+    }
+    
+    addStep(step, point) {
+        this.push({step : step, point : point});
+        
+        this.sort(function(a, b) {
+            return a.step - b.step;
+        });
+        
+        return this;
+    }
+    
+    at(step) {
+        let bef = this[0];
+        let aft = this[0];
+        
+        for(let i = 0; i < this.length; ++i) {
+            aft = this[i];
+            
+            if(step <= aft.step) {
+                let progression;
+                
+                if(bef.step == aft.step) {
+                    progression = 0;
+                } else {
+                    progression = (step - bef.step) / (aft.step - bef.step);
+                }
+                
+                let point = [];
+                let dimensions = Math.min(bef.point.length, aft.point.length);
+                
+                for(let dim = 0; dim < dimensions; ++dim) {
+                    point[dim] = bef.point[dim] + progression * (aft.point[dim] - bef.point[dim]);
+                }
+                
+                return point;
+            }
+            
+            bef = this[i];
+        }
+            
+        return null;
+    }
+    
+    getPoints() {
+        let points = [];
+        
+        for(let i = 0; i < this.length; ++i) {
+            points.push(this[i].point);
+        }
+        
+        return points;
+    }
+}
+
+function object_clone(object) {
+    let clone = new object.constructor();
+    
+    Object.assign(clone, object);
+    
+    return clone;
+}
+
+class VisibleList {
+    constructor(visibleCount = 3) {
+        this.items = [];
+        this.visibleCount = visibleCount;
+        this.index = 0;
+        this.type = ["auto", "centered"][0];
+        this.auto_start = 0;
+    }
+    
+    getVisible() {
+        if(this.type === "auto") {
+            let lastIndex = Math.min(this.auto_start + this.visibleCount, this.items.length);
+            
+            return this.items.slice(this.auto_start, lastIndex);
+        } else if(this.type === "centered") {
+            let start = Math.max(0, this.index - Math.floor(this.visibleCount/2));
+            let end = Math.min(this.items.length, this.index + Math.floor(this.visibleCount/2) + 1);
+            
+            return this.items.slice(start, end);
+        }
+        
+        return [];
+    }
+    
+    setType(type) {this.type = type; return this;}
+    
+    addItem(item) {this.items.push(item); return this;}
+    
+    setIndex(index) {
+        if(index < 0) {
+            index = 0;
+        } else if(index >= this.items.length) {
+            index = this.items.length - 1;
+        }
+        
+        if(index >= 0 && index < this.items.length) {
+            if(this.type === "auto") {
+                if(this.auto_start + this.visibleCount <= index) {
+                    this.auto_start = index - this.visibleCount + 1;
+                } else if(this.auto_start > index) {
+                    this.auto_start = index;
+                }
+            }
+            
+            this.index = index;
+        }
+        
+        return this;
+    }
+    
+    incIndex() {return this.setIndex(this.index+1);}
+    decIndex() {return this.setIndex(this.index-1);}
+    
+    getItem() {return this.items[this.index];}
+}
+
+function rectangle_averagesize() {
+    let sum = 0;
+    let count = 0;
+    
+    for(let i = 0; i < arguments.length; ++i) {
+        let rectangle = arguments[i];
+        
+        for(let dim = 0; dim < rectangle.getDimension(); ++dim) {
+            sum += arguments[i].getSize(dim);
+            
+            ++count;
+        }
+    }
+    
+    return sum / count;
 }

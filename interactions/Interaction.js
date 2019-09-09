@@ -113,15 +113,26 @@ class ReplaceActor extends Interactor {
         /**/
         
         if(recipient instanceof Character && recipient.speed.getNorm() > 4) {
-            let c = Math.floor(recipient.speed.getNorm());
+            let averagesize = (recipient.getWidth() + recipient.getHeight()) / 2;
+            let c = Math.min(16, Math.floor(recipient.speed.getNorm()));
             
             // for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 3) {
             for(let i = 0; i < c; ++i) {
                 let angle = -Math.PI/8 + i * 2*Math.PI/c;
                 
                 var cos = Math.cos(angle), sin = Math.sin(angle);
-                var particle = SmokeParticle.fromMiddle(recipient.getPositionM());
-                particle.setSpeed([2*cos*Math.random(), 2*sin*Math.random()]);
+                
+                let directions = getDD(recipient.locate(actor));
+                let vect = Vector.filled(recipient.getDimension(), 0);
+                
+                for(let i = 0; i < directions.length; ++i) {
+                    vect[directions[i].dimension] = directions[i].sign * averagesize/2;
+                }
+                
+                let size = [averagesize, averagesize];
+                
+                var particle = SmokeParticle.fromMiddle(vect.plus(recipient.getPositionM()), size);
+                particle.setSpeed((new Vector(2*cos*Math.random(), 2*sin*Math.random())).normalize(Math.random()));
                 addEntity(particle);
             }
         }
@@ -285,7 +296,27 @@ class ThrustActor extends Interactor {
         value = negotiated.thrustValue;
         
         if(value > actor.thrust) {
-            actor.thrust = value;
+            // actor.thrust = value;
+        }
+        
+        // 
+        
+        let thrustState = actor.findState("thrust");
+        
+        if(typeof thrustState == "undefined") {
+            actor.addStateObject({name:"thrust", value:value, countdown:1});
+        } else if(value > thrustState.value) {
+            thrustState.value = value;
+        }
+        
+        // 
+        
+        let thrustFactor = actor.findState("thrustFactor");
+        
+        if(typeof thrustFactor == "undefined") {
+            actor.addStateObject({name:"thrustFactor", value:interrecipient.thrustFactor, countdown:1});
+        } else if(interrecipient.thrustFactor > thrustFactor.value) {
+            thrustFactor.value = interrecipient.thrustFactor;
         }
         
         return this;
@@ -322,13 +353,15 @@ class TypeDamager extends Interactor {
         
         this.offenses = set_gather(Array.from(arguments));
         this.hit = new SetArray();
+        this.hitActions = [];
+        this.rehit = -1;
     }
     
     interact(interrecipient) {
         var actor = this.getActor();
         var recipient = interrecipient.getRecipient();
         
-        if(!this.hit.includes(recipient)) {
+        if(!this.hit.includes(interrecipient)) {
             let averagesize = (actor.getWidth() + actor.getHeight() + recipient.getWidth() + recipient.getHeight()) / 4;
             let totalDamage = 0;
             
@@ -340,7 +373,7 @@ class TypeDamager extends Interactor {
                 recipient.hurt(negotiatedDamage);
                 
                 if(type === FX_SHARP) {
-                    addDrawable(new CutDrawable(Vector.addition(actor.getPositionM(), recipient.getPositionM()).divide(2), [Math.random() * 2 - 1, Math.random() * 2 - 1]));
+                    addDrawable(new CutDrawable(Vector.addition(actor.getPositionM(), recipient.getPositionM()).divide(2), [Math.random() * 2- 1, Math.random() * 2 - 1]).multiplySize(averagesize/16));
                     
                     let c = 3 + Math.round(Math.random());
                     
@@ -371,15 +404,42 @@ class TypeDamager extends Interactor {
                         
                         addEntity(particle);
                     }
+                } else if(type === FX_FIRE) {
+                    let particle = FireParticle.fromMiddle(recipient.getPositionM(), recipient.getSize());
+                    particle.drawable.multiplySize((recipient.getWidth() + recipient.getHeight())/2/16);
+                    particle.drawable.setZIndex(Math.random() - 0.25);
+                    particle.setSpeed([Math.random(), Math.random()]);
+                    
+                    addEntity(particle);
+                } else if(type === FX_ELECTRIC) {
+                    let count = 3;
+                    
+                    for(let i = 0; i < count; ++i) {
+                        let angle = i/count * 2*Math.PI + Math.random() - 0.5;
+                        
+                        let lightning = new LightningDrawable(recipient.getPositionM(), Vector.addition(recipient.getPositionM(), [averagesize * Math.cos(angle), averagesize * Math.sin(angle)]));
+                        
+                        addDrawable(lightning);
+                    }
                 }
                 
                 totalDamage += negotiatedDamage;
             }
             
-            recipient.addStateObject({"name" : "hurt", "countdown" : 24});
-            recipient.addAction(new StunState(24));
+            for(let i = 0; i < this.hitActions.length; ++i) {
+                recipient.addAction(object_clone(this.hitActions[i]));
+            }
             
-            this.hit.add(recipient);
+            this.hit.add(interrecipient);
+            
+            let hit = this.hit;
+            
+            if(this.rehit > 0) {
+                setGameTimeout(function() {
+                    hit.splice(0, hit.length);
+                }, this.rehit);
+            }
+            
             /**
             worldFreeze = 3;
             setGameTimeout(function() {
@@ -400,10 +460,19 @@ class TypeDamager extends Interactor {
                 
                 return 1 + sign * val;
             })));
+        } else {/**
+            ++interrecipient.rehitTimer;
+            
+            if(interrecipient.rehitTimer == this.rehit) {
+                interrecipient.rehitTimer = 0;
+                this.hit.remove(interrecipient);
+            }**/
         }
         
         return this;
     }
+    
+    setRehit(rehit) {this.rehit = rehit; return this;}
 }
 
 class TypeDamageable extends Interrecipient {
@@ -412,6 +481,7 @@ class TypeDamageable extends Interrecipient {
         this.setId("damage");
         
         this.factors = set_gather(Array.from(arguments));
+        this.rehitTimer = 0;
     }
     
     negotiateDamage(type, damage) {
@@ -446,6 +516,16 @@ class GroundActor extends Interactor {
     
     interact(interrecipient) {
         var recipient = interrecipient.getRecipient();
+        
+        let groundSave = recipient.findState("groundSave");
+        
+        if(typeof groundSave == "undefined") {
+            recipient.addState("land");
+            
+            recipient.addStateObject({name:"groundSave", countdown:2});
+        } else {
+            groundSave.countdown = 2;
+        }
         
         recipient.addState("grounded");
         
@@ -687,7 +767,15 @@ class GravityActor extends Interactor {
     interact(interrecipient) {
         var recipient = interrecipient.getRecipient();
         
-        recipient.gravityDirection.add(this.force);
+        // recipient.gravityDirection.add(this.force);
+        
+        let gravityState = recipient.findState("gravity")
+        
+        if(typeof gravityState == "undefined") {
+            recipient.addStateObject({name:"gravity", direction:Vector.filled(recipient.getDimension(), 0).add(this.force), countdown:1});
+        } else {
+            gravityState.direction.add(this.force);
+        }
         
         return this;
     }

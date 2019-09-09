@@ -57,7 +57,7 @@ class HitboxTrailing extends Action {
     }
 }
 
-class Bullet extends Entity {
+class Bullet extends Hitbox {
     constructor(position, size) {
         super(position, size);
         
@@ -73,7 +73,7 @@ class BulletShot extends Action {
     use() {
         if(this.phase == 0) {
             var bullet = Bullet.fromMiddle(this.user.getPositionM(), [2, 2]);
-            bullet.setSpeed(Vector.subtraction(this.user.getCursor().getPositionM(), this.user.getPositionM()).normalize(128));
+            bullet.setSpeed(this.user.getCursorDirection().normalize(128));
             bullet.setLifespan(10);
             
             bullet.shareBlacklist(this.user.getBlacklist());

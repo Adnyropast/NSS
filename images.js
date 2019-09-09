@@ -135,6 +135,8 @@ class ColorTransition {
     copy() {
         return this.constructor.from(this);
     }
+    
+    setStep(step) {this.step = step; return this;}
 }
 
 class AnimatedImages {
@@ -283,6 +285,9 @@ var IMG_DCRT_L3 = loadImage("images/decoration-level3.png");
 const IMG_TREETRUNK = loadImage("images/treetrunk.png");
 const IMG_TREEBACKGROUND = loadImage("images/treebackground.png");
 
+const IMG_DEFBLOCK = loadImage("images/def_block.png");
+const IMG_SKYTILE = loadImage("images/sky_tile.png");
+
 // 
 
 const CTILE_WIDTH = 16;
@@ -382,14 +387,17 @@ function makeGradientCTilesPattern(horizontalCount, verticalCount, bgTransition,
 
 function makeTextCanvas(content, font = "Luckiest Guy", fillStyle = "black", strokeStyle) {
     let c = document.createElement("canvas");
-    c.width /= 2, c.height /= 2;
     let ctx = c.getContext("2d");
     
+    const fontHeight = 75;
+    
+    c.height = fontHeight;
+    
     ctx.textBaseline = "top";
-    ctx.font = c.height + "px " + font;
+    ctx.font = fontHeight + "px " + font;
     c.width = ctx.measureText(content).width;
     ctx.textBaseline = "top";
-    ctx.font = c.height + "px " + font
+    ctx.font = fontHeight + "px " + font
     
     ctx.fillStyle = fillStyle;
     ctx.fillText(content, 0, 0);
@@ -402,6 +410,11 @@ function makeTextCanvas(content, font = "Luckiest Guy", fillStyle = "black", str
     return c;
 }
 
+const tfparams = {
+    "positioning" : 0,
+    "padding-left" : 0
+};
+
 function makeTextFit(content, width, height, font = "Luckiest Guy", fillStyle = "black", strokeStyle) {
     let c = document.createElement("canvas");
     c.width = width, c.height = height;
@@ -410,7 +423,8 @@ function makeTextFit(content, width, height, font = "Luckiest Guy", fillStyle = 
     let oc = makeTextCanvas(content, font, fillStyle, strokeStyle);
     
     if(oc.width != 0) {
-        ctx.drawImage(oc, 0, 0, oc.width * height / oc.height, height);
+        // ctx.drawImage(oc, 0, 0, oc.width * height / oc.height, height);
+        ctx.drawImage(oc, tfparams["padding-left"] + tfparams.positioning * (c.width - oc.width * height / oc.height), 0, oc.width * height / oc.height, height);
     }
     
     return c;
@@ -499,4 +513,15 @@ function makeSelectCommandLabel(label, font = "Segoe UI", fillStyle = "#00FFFF",
     ctx.drawImage(oc, 16, 16);
     
     return c;
+}
+
+function canvas_clone(canvas) {
+    let clone = document.createElement("canvas");
+    
+    clone.width = canvas.width;
+    clone.height = canvas.height;
+    
+    clone.getContext("2d").drawImage(canvas, 0, 0);
+    
+    return clone;
 }

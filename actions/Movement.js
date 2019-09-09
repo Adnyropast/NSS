@@ -1,5 +1,5 @@
 
-const AS_MOVEMENT = set_gather(ACT_MOVEMENT, "wallCling", "crouch", "lookup", "movementLeft", "movementUp", "movementRight", "movementDown", "linearMovement");
+const AS_MOVEMENT = set_gather(ACT_MOVEMENT, "wallCling", "crouch", "lookup", "movementLeft", "movementUp", "movementRight", "movementDown", "linearMovement", "still");
 
 class Movement extends Action {
     constructor(power) {
@@ -15,7 +15,25 @@ class Movement extends Action {
         this.lookup = new LookUp();
     }
     
+    getBasePower() {
+        
+    }
+    
+    getDirection() {
+        
+    }
+    
     use() {
+        let thrust = this.user.findState("thrust");
+        
+        if(typeof thrust == "undefined") {thrust = 0;}
+        else {thrust = thrust.value;}
+        
+        let thrustFactor = this.user.findState("thrustFactor");
+        
+        if(typeof thrustFactor == "undefined") {thrustFactor = 0;}
+        else {thrustFactor = thrustFactor.value;}
+        
         var vector = null;
         
         if(this.user.route != null) {
@@ -33,16 +51,21 @@ class Movement extends Action {
             var power = this.power;
             
             if(typeof power == "undefined") {
-                power = this.user.thrust;
+                power = thrust;
             }
             
             if(!full) {power /= 2;}
             
             vector.normalize(power);
             
-            for(var dim = 0; dim < this.user.gravityDirection.length; ++dim) {
-                if(this.user.gravityDirection[dim] != 0 && vector[dim] != 0) {
-                    if(Math.sign(this.user.gravityDirection[dim]) == Math.sign(vector[dim])) {
+            let gravityDirection = this.user.findState("gravity");
+            
+            if(typeof gravityDirection == "undefined") {gravityDirection = [0, 0];}
+            else {gravityDirection = gravityDirection.direction;}
+            
+            for(var dim = 0; dim < gravityDirection.length; ++dim) {
+                if(gravityDirection[dim] != 0 && vector[dim] != 0) {
+                    if(Math.sign(gravityDirection[dim]) == Math.sign(vector[dim])) {
                         this.user.addAction(this.crouch);
                         vector[dim] = 0;
                     } else {
@@ -108,18 +131,25 @@ class DirectionMovement extends Movement {
     
 }
 
-class Still extends Movement {
+class Still extends Action {
     constructor() {
         super();
+        this.setId("still");
         this.setUseCost(0);
     }
     
     use() {
+        this.user.setFace(this.user.getCursorDirection()[0]);
+        
         return this;
     }
     
     allowsReplacement(action) {
         return false;
+    }
+    
+    preventsAddition(action) {
+        return action instanceof Movement;
     }
 }
 
@@ -210,6 +240,7 @@ class Crouch extends Action {
         
         this.regeneration = new Regeneration(0.0625);
         this.saveSize = null;
+        this.saveDrawableOffset = null;
     }
     
     use() {
@@ -228,15 +259,20 @@ class Crouch extends Action {
         this.user.addAction(this.regeneration);
         this.saveSize = this.user.getSize();
         let y2 = this.user.getY2();
-        // this.user.setSize([this.user.getWidth(), this.user.getHeight() / 2]);
+        this.user.setSize([this.user.getWidth(), this.user.getHeight() / 2]);
         this.user.setY2(y2);
+        this.saveDrawableOffset = Vector.from(this.user.drawableOffset);
+        this.user.drawableOffset = new Vector(0, -this.user.getHeight()/2);
         
         return super.onadd();
     }
     
     onend() {
         this.user.removeAction(this.regeneration);
+        let y2 = this.user.getY2();
         this.user.setSize(this.saveSize);
+        this.user.setY2(y2);
+        this.user.drawableOffset = this.saveDrawableOffset;
         
         return super.onend();
     }

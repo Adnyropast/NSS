@@ -1,6 +1,9 @@
 
 const ENETRA_DEF = new ColorTransition([255, 0, 0, 1], [0, 255, 0, 1]);
 
+const EBAR_HEIGHTPROP = 12/36;
+const EBAR_BORDERPROP = 4/36;
+
 class EnergyBarDrawable extends RectangleDrawable {
     constructor(position, size = [36, 12]) {
         super(position, size);
@@ -40,6 +43,19 @@ class EnergyBarDrawable extends RectangleDrawable {
     }
     
     setBorderWidth(borderWidth) {this.borderWidth = borderWidth;}
+    
+    setCamera(camera) {
+        super.setCamera(camera);
+        this.energyBar.setCamera(camera);
+        
+        return this;
+    }
+    
+    setProperWidth(width, heightProp = EBAR_HEIGHTPROP, borderProp = EBAR_BORDERPROP) {
+        this.setWidth(width).setHeight(width * heightProp).setBorderWidth(width * borderProp);
+        
+        return this;
+    }
 }
 
 const AS_CHARACTER = set_gather(AS_FOCUS, "followMe", AS_MOVEMENT, AS_ROUTE, ACT_JUMP, "stunState");
@@ -55,6 +71,8 @@ class Character extends Entity {
         
         // this.uiEnergy = new TextDrawable();
         this.energyBar = new EnergyBarDrawable([0, 0], [36, 12]);
+        
+        this.energyBar.setProperWidth(rectangle_averagesize(this));
         
         this.addInteraction(new ReplaceRecipient());
         this.addInteraction(new BrakeRecipient());
@@ -77,6 +95,16 @@ class Character extends Entity {
         this.addInteraction(new LadderRecipient());
         
         this.faceSave = "right";
+        
+        this.stats = {};
+        this.stats["walk-speed"] = 0.5;
+        this.stats["walk-speed-tired"] = 0.25;
+        this.stats["air-speed"] = 0.5;
+        this.stats["swim-speed"] = 0.5;
+        
+        this.addInteraction(new StunRecipient(1));
+        
+        this.stats["climb-speed"] = 0.25;
     }
     
     static fromData(data) {
@@ -89,6 +117,8 @@ class Character extends Entity {
     
     onadd() {
         addEntity(this.cursor);
+        
+        NONOBSTACLES.add(this);
         
         return super.onadd();
     }
@@ -241,16 +271,16 @@ class FocusClosest extends FocusAction {
     }
 }
 
-class EntityCharge extends Action {
+class EntityCharge extends BusyAction {
     constructor(typeDamage) {
         super();
         this.setId("entityCharge");
         
-        this.hitbox = new Entity([0, 0], [0, 0]);
+        this.hitbox = new Hitbox([0, 0], [0, 0]);
         this.hitbox.addInteraction(new TypeDamager(typeDamage));
         this.hitbox.addInteraction(new VacuumDragActor(-2));
-        this.hitbox.setLifespan(32);
-        
+        this.hitbox.setLifespan(16);
+        this.hitbox.addInteraction(new StunActor(12));
     }
     
     use() {
@@ -259,7 +289,17 @@ class EntityCharge extends Action {
             this.hitbox.position = this.user.position;
             this.hitbox.shareBlacklist(this.user.getBlacklist());
             addEntity(this.hitbox);
+            
+            let thrust = this.user.findState("thrust");
+            
+            if(typeof thrust == "undefined") {thrust = 0;}
+            else {thrust = thrust.value;}
+            
+            this.user.drag(this.user.getCursorDirection().normalize(thrust * 16));
+            
+            this.setRemovable(false);
         } else if(this.phase == 24) {
+            this.setRemovable(true);
             this.end();
         }
         

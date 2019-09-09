@@ -31,7 +31,8 @@
         <script src="Entity.js"></script>
         <script src="Action.js"></script>
         <script src="interactions/Interaction.js"></script>
-        <script src="Battler.js"></script>
+        <script src="battle/Battler.js"></script>
+        <script src="battle/Skill.js"></script>
         
         <script src="actions/draft-actions.js"></script>
         <script src="entities/draft-entities.js"></script>
@@ -45,6 +46,8 @@
         <script src="actions/sword.js"></script>
         <script src="actions/gold_.js"></script>
         <script src="actions/Regeneration.js"></script>
+        <script src="actions/fire.js"></script>
+        <script src="actions/plasma.js"></script>
         
         <script src="entities/Camera.js"></script>
         <script src="entities/Character.js"></script>
@@ -53,6 +56,8 @@
         <script src="entities/Adnyropast.js"></script>
         <script src="entities/Haple.js"></script>
         <script src="entities/Ten.js"></script>
+        
+        <script src="interactions/interaction-damage.js"></script>
         
         <script id="entitycollections">
         
@@ -69,6 +74,8 @@
         
         let ALLIES_ = new SetArray();
         let OPPONENTS_ = new SetArray();
+        let OBSTACLES = new SetArray();
+        let NONOBSTACLES = new SetArray();
         
         function addEntity(entity) {
             entity.onadd();
@@ -119,6 +126,7 @@
         
         function addDrawable(drawable) {
             if(drawable != null) {
+                drawable.setCamera(CAMERA);
                 DRAWABLES.add(drawable);
             }
         }
@@ -219,11 +227,13 @@
         
         function setPlayer(entity) {
             if(PLAYER instanceof Entity) {
-                PLAYER.controller = noController;
+                // PLAYER.controller = noController;
+                PLAYER.controllers.remove(playerController);
             }
             
             PLAYER = entity;
-            entity.controller = playerController;
+            // entity.controller = playerController;
+            entity.controllers.add(playerController);
             entity.addInteraction(new MapWarpable);
             entity.battler.setPlayable(true);
             entity.addAction(new FollowMe());
@@ -313,43 +323,15 @@
         
         let worldCounter = 0;
         
-        let worldSlowdown = 1;
-        let worldFreeze = 0;
-        
         let loadZone = new Entity([NaN, NaN, NaN], [896, 504, 896]);
         
         function worldUpdate() {
-            let entitiesUpdate = true;
-            
-            if(worldCounter % worldSlowdown != 0) {
-                // return;
-                entitiesUpdate = false;
-            } if(worldFreeze > 0) {
-                --worldFreeze;
-                // return;
-                entitiesUpdate = false;
-            }
-            
             loadZone.setPositionM(CAMERA.getPositionM());
+            loadZone.updateReset();
             
-            let entities = SetArray.from(ENTITIES);
-            
-            for(var i = 0; i < entities.length; ++i) {
-                var entity = entities[i];
-                
-                if(entity.collides(loadZone)) {
-                    entity.controller(entity);
-                    if(entitiesUpdate) entity.update();
-                }
-            }
-            
-            if(entitiesUpdate)
-            for(var i = 0; i < entities.length; ++i) {
-                var entity = entities[i];
-                entity.updateReset();
-            }
-            
-            /**/
+            let entities = ENTITIES.filter(function(entity) {
+                return loadZone.collides(entity);
+            });
             
             COLLIDABLES.sort(function(a, b) {
                 if(a.collide_priority < b.collide_priority) {return -1;}
@@ -357,16 +339,104 @@
                 return 0;
             });
             
-            let collidables = SetArray.from(COLLIDABLES);
-            if(entitiesUpdate)
-            for(var i = 0; i < collidables.length; ++i) {
-                if(collidables[i].collides(loadZone)) {
-                    for(var j = i + 1; j < collidables.length; ++j) {
-                        if(collidables[i].collides(collidables[j])) {
-                            collidables[i].oncollision(collidables[j]);
-                            collidables[j].oncollision(collidables[i]);
+            /**/
+            
+            let collidables = COLLIDABLES.filter(function(collidable) {
+                return loadZone.collides(collidable);
+            });
+            
+            /*/
+            
+            let collidables = entities.filter(function(entity) {
+                return entity.isCollidable();
+            });
+            
+            /**/
+            
+            DRAWABLES.sort(function(a, b) {
+                /*  *
+                
+                let distA = Vector.subtraction(a.getPositionM(), CAMERA.position).getNorm();
+                let distB = Vector.subtraction(b.getPositionM(), CAMERA.position).getNorm();
+                
+                if(distA < distB) {
+                    return -1;
+                } if(distA > distB) {
+                    return +1;
+                }
+                
+                /*/
+                
+                if(a.getZIndex() > b.getZIndex()) {
+                    return -1;
+                } if(a.getZIndex() < b.getZIndex()) {
+                    return +1;
+                }
+                
+                /*  */
+                
+                return 0;
+            });
+            
+            let drawables = DRAWABLES.filter(function(drawable) {
+                if(drawable.cameraMode == "none") {return true;}
+                
+                if(typeof drawable.getPositionM == "undefined") {return true;}
+                
+                if(drawable instanceof Rectangle) {
+                    for(let dim = 0; dim < 2; ++dim) {
+                        if(CAMERA.getPosition1(dim) >= drawable.getPosition2(dim) || CAMERA.getPosition2(dim) <= drawable.getPosition1(dim)) {
+                            return false;
                         }
                     }
+                    
+                    return true;
+                }
+                
+                let drawablePositionM = drawable.getPositionM();
+                
+                for(let dim = 0; dim < 2; ++dim) {
+                    if(CAMERA.getPosition1() >= drawablePositionM[dim] || CAMERA.getPosition2(dim) <= drawablePositionM[dim]) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+            
+            for(var i = 0; i < entities.length; ++i) {
+                var entity = entities[i];
+                
+                // entity.controller(entity);
+                entity.update();
+            }
+            
+            for(var i = 0; i < ENTITIES.length; ++i) {
+                var entity = ENTITIES[i];
+                entity.updateReset();
+            }
+            
+            /**/
+            
+            for(var i = 0; i < collidables.length; ++i) {
+                let collidable1 = collidables[i];
+                
+                /**/
+                
+                for(var j = i + 1; j < collidables.length; ++j) {
+                    if(collidables[i].collides(collidables[j])) {
+                        collidables[i].oncollision(collidables[j]);
+                        collidables[j].oncollision(collidables[i]);
+                    }
+                    
+                /*/
+                
+                for(var j = 0; j < collidable1.whitelist.length; ++j) {
+                    if(collidable1.collides(collidable1.whitelist[j])) {
+                        collidable1.oncollision(collidable1.whitelist[j])
+                    }
+                    
+                    /**/
                 }
             }
             
@@ -435,19 +505,9 @@
             
             /**/
             
-            DRAWABLES.sort(function(a, b) {
-                if(a.getZIndex() > b.getZIndex()) {
-                    return -1;
-                } if(a.getZIndex() < b.getZIndex()) {
-                    return +1;
-                }
-                
-                return 0;
-            });
-            
-            let drawables = SetArray.from(DRAWABLES);
-            
             for(var i = 0; i < drawables.length; ++i) {
+                let drawable = drawables[i];
+                
                 /**
                 if(i < drawables.length - 1 && drawables[i].getZIndex() < drawables[i + 1].getZIndex()) {
                     var drawable = drawables[i + 1];
@@ -455,10 +515,12 @@
                     drawables[i] = drawable;
                 }
                 /**/
-                var drawable = drawables[i];
-                if(entitiesUpdate) drawable.update();
+                
+                drawable.update();
                 drawable.draw(context);
             }
+            
+            /**/
         }
         
         const BATTLERS = new SetArray();
@@ -485,6 +547,7 @@
         
         function removeBattler(battler) {
             if(battler == MAINBATTLER) {
+                battler.oncenterout();
                 MAINBATTLER = null;
             }
             
@@ -511,7 +574,7 @@
         /**/
         
         var battleMode = "everyone";
-        
+        /*
         class CommandsPage extends Array {
             constructor() {
                 super(...arguments);
@@ -584,23 +647,22 @@
         }
         
         let commands = [];
-        
+        */
         let MAINBATTLER = null;
         
         const BATTLEDRAWABLES = new SetArray();
         
-        const BATTLECAMERA = new Camera([0, 0]);
+        const BATTLECAMERA = Camera.fromMiddle([0, 0, 0], [256, 144, 0]);
         
         function setBattleViewPoint(mainBattler) {
-            let allies = mainBattler.getAllies();
-            let opponents = mainBattler.getOpponents();
+            if(MAINBATTLER != null) {
+                MAINBATTLER.oncenterout();
+            }
             
-            for(let j = 0; j < allies.length; ++j) {
-                allies[j].drawable.setX((5 - j) * CANVAS.width / 16);
-                allies[j].drawable.setY(4 * CANVAS.height / 9);
-            } for(let j = 0; j < opponents.length; ++j) {
-                opponents[j].drawable.setX((9 + j) * CANVAS.width / 16);
-                opponents[j].drawable.setY(3 * CANVAS.height / 9);
+            MAINBATTLER = mainBattler;
+            
+            if(MAINBATTLER != null) {
+                MAINBATTLER.oncenterin();
             }
         }
         
@@ -609,35 +671,30 @@
         let actIC = 0;
         
         function battleUpdate() {
-            if(battlePhase == "strategy") {
+            if(battlePhase === "strategy") {
                 var battlers;
                 
-                if(battleMode == "everyone") {
+                if(battleMode === "everyone") {
                     battlers = BATTLERS;
-                } else if(battleMode == "single") {
+                } else if(battleMode === "single") {
                     battlers = new SetArray(BATTLERS[actorIndex]);
                 }
                 
-                if(MAINBATTLER == null) {
-                    for(let i = battlers.length - 1; i >= 0; --i) {
-                        if(battlers[i].isPlayable()) {
-                            MAINBATTLER = battlers[i];
-                            setBattleViewPoint(MAINBATTLER);
-                        }
-                    }
-                }
+                /**
                 
                 if(commands.length < 1 && MAINBATTLER != null) {
                     commands.push(MAINBATTLER.getCommandsPage());
                 }
                 
-                // 
+                // /**
                 
                 let lastPage = commands[commands.length - 1];
                 
                 if(commands.length > 0) {
                     lastPage.update();
                 }
+                
+                /**/
                 
                 for(var i = 0; i < battlers.length; ++i) {
                     if(!battlers[i].isPlayable()) {
@@ -650,6 +707,7 @@
                 if(BATTLERS.length == 0) {
                     transitionIn();
                     switchPhase("world");
+                    battlePhase = "act";
                     transitionOut();
                 } else {
                     let allReady = true;
@@ -672,7 +730,7 @@
                 }
             }
             
-            else if(battlePhase == "act") {
+            else if(battlePhase === "act") {
                 if(SKILLS_QUEUE.length > 0) {
                     SKILLS_QUEUE.sort(function() {
                         return 0;
@@ -691,6 +749,26 @@
                     ++actorIndex;
                     actorIndex %= BATTLERS.length;
                     battlePhase = "strategy";
+                    
+                    if(MAINBATTLER == null) {
+                        let battlers;
+                        
+                        if(battleMode === "everyone") {
+                            battlers = BATTLERS;
+                        } else if(battleMode === "single") {
+                            battlers = new SetArray(BATTLERS[actorIndex]);
+                        }
+                        
+                        for(let i = battlers.length - 1; i >= 0; --i) {
+                            if(battlers[i].isPlayable()) {
+                                setBattleViewPoint(battlers[i]);
+                            }
+                        }
+                    }
+                    
+                    if(MAINBATTLER != null) {
+                        MAINBATTLER.onturnstart();
+                    }
                 }
                 
                 for(let i = BATTLERS.length - 1; i >= 0; --i) {
@@ -721,23 +799,15 @@
             var context = CANVAS.getContext("2d");
             context.clearRect(0, 0, CANVAS.width, CANVAS.height);
             
-            context.fillStyle = "#0000003F";
-            context.fillRect(0, 0, CANVAS.width, 2 * CANVAS.height / 9);
-            context.fillRect(0, 7 * CANVAS.height / 9, CANVAS.width, 2 * CANVAS.height / 9);
-            
-            context.fillStyle = "#EFEFEF";
-            context.fillRect(0, 0 * CANVAS.height / 9, CANVAS.width / 2, 3 * CANVAS.height / 9);
-            context.fillRect(CANVAS.width / 2, 6 * CANVAS.height / 9, CANVAS.width / 2, 3 * CANVAS.height / 9);
-            
             // 
             
             for(let i = 0; i < BATTLEDRAWABLES.length; ++i) {
                 BATTLEDRAWABLES[i].draw(context);
             }
-            
+            /*
             for(let i = 0; i < commands.length; ++i) {
                 commands[i].draw(context);
-            }
+            }*/
         }
         
         const DMENU_ESC = new DirectionalMenu();
@@ -798,6 +868,11 @@
             }
         }
         
+        function transitionInOut(durationIn = 16, durationOut = 16) {
+            transitionIn(durationIn);
+            setGameTimeout(transitionOut.bind(transitionOut, durationOut), durationIn);
+        }
+        
         let gameTimeouts = [];
         
         function setGameTimeout(f, timeout) {
@@ -831,7 +906,7 @@
                 
                 if(gameTimeouts[i].timeout > 0) {
                     --gameTimeouts[i].timeout;
-                } else if(gameTimeouts[i].timeout == 0) {
+                } else {
                     gameTimeouts[i].function();
                     gameTimeouts.splice(i, 1);
                 }
@@ -880,6 +955,9 @@
                     }
                 }
                 
+                loadMap("hub");
+                transitionIn(), transitionOut();
+                
                 switchLoop(gameUpdate, WORLD_PACE);
             }
         }
@@ -895,5 +973,7 @@
         
         </script>
         <script src="draft-maps.js"></script>
+        <script src="draft-saves.js"></script>
+        <script src="draft-saves-characters.js"></script>
     </body>
 </html>

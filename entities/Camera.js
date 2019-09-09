@@ -1,6 +1,7 @@
 
-const DEF_CAMPOS = [0, 0, -256];
-const DEF_CAMSIZE = [448, 252, 0];
+const DEF_CAMPOS = [0, 0, -(Math.pow(2, 9) + Math.pow(2, 8))/2];
+// const DEF_CAMSIZE = [448, 252, 0];
+const DEF_CAMSIZE = [416, 234, 0];
 
 class Camera extends Entity {
     constructor(position, size = DEF_CAMSIZE) {
@@ -27,7 +28,7 @@ class Camera extends Entity {
         
         this.movementTo = (new MovementTo(this.accVal)).setUseCost(0);
         
-        this.cursorDistance = this.range = 512;
+        this.cursorDistance = this.range = Math.pow(2, 9) + Math.pow(2, 8);
         this.direction = new Vector(0, 0, this.range);
         this.vx = new Vector(-this.range, 0, 0);
         this.vy = new Vector(0, -this.range, 0);

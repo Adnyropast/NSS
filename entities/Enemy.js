@@ -15,7 +15,7 @@ class Enemy extends Character {
         this.resetEnergy(10);
         // this.setRegeneration(0.0625);
         
-        this.energyBar.setEnergyTransition(ENETRA_ENEMY).setWidth(this.getWidth()).setHeight(12/36*this.getWidth()).setBorderWidth(4*this.getWidth()/36);
+        this.energyBar.setEnergyTransition(ENETRA_ENEMY);
         
         this.addInteraction(new TypeDamageable([{"type" : "enemy", "factor" : 0}]));
         
@@ -28,7 +28,7 @@ class Enemy extends Character {
         
         this.blacklist = OPPONENTS_;
         
-        this.controller = enemyController;
+        this.controllers.add(enemyController);
     }
     
     onadd() {
@@ -39,21 +39,22 @@ class Enemy extends Character {
         return super.onadd();
     }
     
-    onremove() {
-        for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 3) {
+    ondefeat() {
+        for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 3/2) {
             var cos = Math.cos(angle), sin = Math.sin(angle);
             var particle = EnemyVanishParticle.fromMiddle(this.getPositionM(), this.size);
-            particle.setSpeed([4*cos, 4*sin]);
-            particle.drag(this.speed);
+            particle.setSpeed((new Vector(cos, sin)).normalize(3+Math.random()));
+            // particle.drag(this.speed);
             
             addEntity(particle);
         }
         
-        var particle = EnemyVanishParticle.fromMiddle(this.getPositionM(), this.size);
-        particle.drag(this.speed);
-        
         addEntity(particle);
         
+        return this;
+    }
+    
+    onremove() {
         OPPONENTS_.remove(this);
         
         return super.onremove();
@@ -66,13 +67,22 @@ class EnemyVanishParticle extends Particle {
     constructor() {
         super(...arguments);
         
-        this.setLifespan(512);
-        this.setStyle(new ColorTransition([127, 0, 127, 1], [0, 255, 255, 1], 32));
+        this.setLifespan(64);
+        this.setDrawable(PolygonDrawable.from(makeRandomPolygon(24, 12, 16)).multiplySize(rectangle_averagesize(this)/16));
+        this.setStyle(new ColorTransition([127, 0, 127, 1], [0, 255, 255, 1], 64));
         this.setSizeTransition(new ColorTransition(this.size, [0, 0], 32));
         
         this.collidable = true;
-        this.addInteraction(new DragRecipient());
+        this.addInteraction(new DragRecipient(0.5));
         this.addInteraction(new ReplaceRecipient());
+        this.setSelfBrake(1.0625);
+    }
+    
+    updateDrawable() {
+        this.drawable.setPositionM(this.getPositionM());
+        this.drawable.multiplySize(1/1.0625);
+        
+        return super.updateDrawable();
     }
 }
 

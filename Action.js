@@ -116,7 +116,10 @@ class Action {
             
             var user = this.user;
             this.user = null;
-            user.removeAction(this);
+            
+            if(user != null) {
+                user.removeAction(this);
+            }
         }
         
         return this;
@@ -140,6 +143,14 @@ class Action {
     
     isRemovable() {return this.removable;}
     setRemovable(removable) {this.removable = removable; return this;}
+    
+    matchId(id) {
+        return this.id === id;
+    }
+    
+    sharesId(action) {
+        return action instanceof Action && this.id === action.id;
+    }
 }
 
 class BusyAction extends Action {
@@ -149,7 +160,17 @@ class BusyAction extends Action {
         return this;
     }
     
+    allowsReplacement(action) {
+        if(action instanceof StunState) {
+            this.setRemovable(true);
+            
+            return true;
+        }
+        
+        return false;
+    }
+    
     preventsAddition(action) {
-        return action instanceof BusyAction || super.preventsAddition(action) || action.id === ACT_JUMP || action.id === ACT_MOVEMENT;
+        return !(action instanceof StunState) && (action instanceof BusyAction || super.preventsAddition(action) || action.id === ACT_JUMP || action.id === ACT_MOVEMENT);
     }
 }

@@ -1,5 +1,5 @@
 
-const AS_HEART = set_gather("bloodShot", "heartBlowout");
+const AS_HEART = set_gather("bloodShot", "heartBlowout", "veinSweep");
 
 const FX_HEART_ = effectsCount++;
 
@@ -43,7 +43,7 @@ class BloodShot extends Action {
             
             var projectile = BloodProjectile.fromMiddle([initialPosition[0], initialPosition[1]], [12, 12]);
             
-            projectile.setSpeed(Vector.subtraction(this.user.getCursor().getPositionM(), initialPosition).normalize(16));
+            projectile.setSpeed(Vector.subtraction(targetPosition, initialPosition).normalize(16));
             projectile.addInteraction(new DragActor(projectile.speed.normalized(1)));
             projectile.shareBlacklist(this.user.getBlacklist());
             
@@ -70,7 +70,7 @@ class BlowoutShots extends Action {
     
     use() {
         if(this.phase == 0) {
-            var vector = Vector.subtraction(this.user.getCursor().getPositionM(), this.user.getPositionM());
+            var vector = this.user.getCursorDirection();
             var norm = vector.getNorm();
             var cos = vector[0] / norm;
             var sin = vector[1] / norm;
@@ -92,6 +92,34 @@ class BlowoutShots extends Action {
         this.angle += this.inc;
         // this.inc += Math.random();
         this.angle %= 2 * Math.PI;
+        
+        return this;
+    }
+}
+
+class VeinSweep extends SlashAction {
+    constructor() {
+        super();
+        this.setId("veinSweep");
+        
+        this.slashDuration = 12;
+        this.det = 3;
+        
+        this.hitbox.removeInteractorWithId("damage");
+        this.hitbox.addInteraction(new TypeDamager({type:FX_HEART_, value:1}));
+        // console.log(this.hitbox.findInteractorWithId("damage"));
+    }
+    
+    transitionsSetup() {
+        let face = this.user.getCursorDirection();
+        face[0] = Math.sign(face[0]);
+        
+        if(face[0] != 0) {
+            this.baseAngleTransition = new ColorTransition([-Math.PI/2 + face[0] * Math.PI/4], [-Math.PI/2 + face[0] * 3/4 * Math.PI]);
+            this.baseDistanceTransition = new ColorTransition([0], [16]);
+            this.bladeAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * 3/4 * Math.PI], [-Math.PI/2 + face[0] * 3/2 * Math.PI]);
+            this.bladeWidthTransition = new ColorTransition([32], [32], 1, function(t) {return Math.pow((t - 0.5) / 0.5, 2)});
+        }
         
         return this;
     }

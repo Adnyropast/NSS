@@ -150,25 +150,42 @@ class ZoneEngage extends BusyAction {
         this.wind = null;
         
         this.targets = new SetArray();
+        
+        this.duration = 32;
     }
     
     use() {
         if(this.phase == 0) {
             this.zone = Entity.fromMiddle([this.user.getXM(), this.user.getYM()], [0, 0]).setZIndex(this.user.getZIndex() + ALMOST_ZERO/8);
             addEntity(this.zone);
-            this.wind = Entity.shared(this.zone);
+            this.wind = Hitbox.shared(this.zone);
             this.wind.shareBlacklist(this.user.getBlacklist());
             this.wind.addInteraction(new VacuumDragActor(-0.5));
             this.wind.addInteraction(new TypeDamager([{"type" : FX_WIND, "value" : 0.5}]));
             addEntity(this.wind);
+            
+            let canvas = document.createElement("canvas");
+            canvas.width = 256, canvas.height = 256;
+            
+            let ctx = canvas.getContext("2d");
+            
+            let grd = ctx.createRadialGradient(canvas.width/2, canvas.height/2, canvas.width/16, 2/4*canvas.width, 2/4*canvas.height, canvas.width/2);
+            
+            grd.addColorStop(0, "cyan");
+            grd.addColorStop(1, "rgba(0, 255, 255, 0)");
+            
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            this.zone.setStyle(canvas);
         }
         
         // repaceLoop(WORLD_PACE + Math.pow(2, this.phase));
-        worldFreeze = Math.floor(Math.pow(this.phase, 1.5));
+        // worldFreeze = Math.floor(Math.pow(this.phase, 1.5));
         
-        this.zone.setSizeM([this.phase * 64, this.phase * 64]);
+        this.zone.setSizeM([Math.pow(1.125+0.0625, this.phase), Math.pow(1.125+0.0625, this.phase)]);
         this.zone.setPositionM(this.user.getPositionM());
-        this.zone.setStyle("rgba(0, 255, 255, " + (this.phase / 10) + ")");
+        // this.zone.setStyle("rgba(0, 255, 255, " + (this.phase / 10) + ")");
         
         for(let i = 0; i < this.zone.collidedWith.length; ++i) {
             if(this.zone.collidedWith[i].isBattler()) {
@@ -176,7 +193,7 @@ class ZoneEngage extends BusyAction {
             }
         }
         
-        if(this.phase == 10) {
+        if(this.phase == this.duration) {
             let opponentFound = false;
             
             for(let i = 0; i < this.targets.length; ++i) {
@@ -191,7 +208,7 @@ class ZoneEngage extends BusyAction {
             
             this.end();
             
-            worldFreeze = 0;
+            // worldFreeze = 0;
         }
         
         return this;
@@ -328,6 +345,7 @@ class StunState extends BusyAction {
     }
     
     onadd() {
+        this.user.addStateObject({"name" : "hurt", "countdown" : this.timeout});
         this.brakeRecipientSave = this.user.findInterrecipientWithId("brake");
         this.user.removeInterrecipientWithId("brake");
         this.setRemovable(false);
@@ -351,6 +369,141 @@ class StunState extends BusyAction {
             this.end();
         } else {
             --this.timeout;
+        }
+        
+        return this;
+    }
+}
+
+class LifespanState extends Action {
+    constructor(lifespan = 1) {
+        super();
+        this.setId("lifespanState");
+        
+        this.lifespan = lifespan;
+    }
+    
+    use() {
+        --this.lifespan;
+        
+        if(this.lifespan == 0) {
+            this.end();
+        }
+        
+        return this;
+    }
+    
+    allowsReplacement(action) {
+        return action.sharesId(this);
+    }
+    
+    onend() {
+        removeEntity(this.user);
+        
+        return this;
+    }
+}
+
+class SlashAction extends BusyAction {
+    constructor() {
+        super();
+        this.setId("overheadSlash");
+        
+        this.hitbox = (new SlashEffect([NaN, NaN], [16, 16])).setLifespan(16);
+        // this.hitbox.setStyle("orange");
+        this.trailDrawable = new TrailDrawable();
+        
+        this.slashDuration = 10;
+        this.startlag = 0;
+        this.endlag = 4;
+        
+        this.baseAngleTransition = new ColorTransition([], []);
+        this.baseDistanceTransition = new ColorTransition([], []);
+        
+        this.bladeAngleTransition = new ColorTransition([], []);
+        this.bladeWidthTransition = new ColorTransition([], []);
+        
+        this.det = 3;
+    }
+    
+    updateTrailDrawableStyle(detProgress) {
+        this.trailDrawable.trailStyle;
+        this.trailDrawable.edgeStyle;
+        
+        this.trailDrawable.trailStyle = new ColorTransition([127*detProgress, 255, 255, 1], [0, 255*detProgress, 255, 0], 8);
+        
+        // let ct = new ColorTransition([63, 255, 255, 1], [0, 0, 255, 0], 8, bezierLinear);
+        // this.trailDrawable.trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), 8, bezierLinear);
+        
+        return this;
+    }
+    
+    transitionsSetup() {
+        let face = this.user.getCursorDirection();
+        face[0] = Math.sign(face[0]);
+        
+        this.baseAngleTransition = new ColorTransition([-Math.PI/2 - 2 * 2*face[0] * 0.1875], [-Math.PI/2 + 8 * 2*face[0] * 0.1875]);
+        this.baseDistanceTransition = new ColorTransition([12], [12]);
+        
+        this.bladeAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * Math.PI*3/4], [-Math.PI/2 + face[0] * 3/4 * Math.PI]);
+        this.bladeAngleTransition = this.baseAngleTransition;
+        this.bladeWidthTransition = new ColorTransition([20], [20]);
+        
+        return this;
+    }
+    
+    use() {
+        let userPositionM = this.user.getPositionM();
+        
+        if(this.phase == 0) {
+            if(!this.transitionsSetup()) {return this.end();}
+            
+            this.user.setFace(this.user.getCursorDirection()[0]);
+            
+            if(this.user.getEnergy() > this.getUseCost()) {
+                this.setRemovable(false);
+                this.user.hurt(this.getUseCost());
+            } else {
+                return this.end();
+            }
+        }
+        
+        if(this.phase == this.startlag) {
+            this.hitbox.shareBlacklist(this.user.getBlacklist());
+            addEntity(this.hitbox);
+            addDrawable(this.trailDrawable);
+        }
+        
+        if(this.phase >= this.startlag && this.phase <= this.slashDuration + this.startlag) {
+            let positionTransition = new ColorTransition(this.lastPositionM || userPositionM, userPositionM);
+            
+            for(let i = 1; i <= this.det; ++i) {
+                let progress = Math.max(0, (this.phase - this.startlag - 1 + i/this.det) / this.slashDuration);
+                
+                let baseAngle = this.baseAngleTransition.at(progress)[0];
+                
+                let baseDistance = this.baseDistanceTransition.at(progress)[0];
+                let baseDirection = new Vector(Math.cos(baseAngle), Math.sin(baseAngle));
+                
+                let basePosition = Vector.addition(positionTransition.at(i/this.det), baseDirection.normalized(baseDistance));
+                
+                let bladeAngle = this.bladeAngleTransition.at(progress)[0];
+                let bladeWidth = this.bladeWidthTransition.at(progress)[0];
+                
+                this.hitbox.setPositionM(basePosition.plus(baseDirection.normalized(bladeWidth/2)));
+                this.hitbox.setSizeM([bladeWidth, bladeWidth]);
+                
+                this.updateTrailDrawableStyle(i/this.det);
+                
+                this.trailDrawable.addSized(basePosition, bladeAngle, bladeWidth, bladeWidth - 1.25);
+            }
+            
+            this.lastPositionM = userPositionM;
+        }
+        
+        if(this.phase == this.startlag + this.slashDuration + this.endlag) {
+            this.setRemovable(true);
+            this.end();
         }
         
         return this;

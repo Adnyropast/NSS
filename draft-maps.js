@@ -10,7 +10,7 @@ function loadFromData(data) {
     };
     
     if(data.hasOwnProperty("camera")) {
-        lists.camera = Camera.fromData(data.camera);
+        lists.camera = Camera.fromData(object_clone(data.camera));
     }
     
     lists.player0 = getPlayerClass().fromData({positionM : playerPositionM});
@@ -23,7 +23,7 @@ function loadFromData(data) {
             entityClass = EC[entityData.classId];
         }
         
-        lists.entities.push(entityClass.fromData(entityData));
+        lists.entities.push(entityClass.fromData(object_clone(entityData)));
     }
     
     if(Array.isArray(data["drawables"])) for(let i = 0; i < data.drawables.length; ++i) {
@@ -196,10 +196,10 @@ maps["hub"] = {
         {"classId" : "cameraBoundary", "position" : [-240, 0], "size" : [0, 0]},
         {"classId" : "cameraBoundary", "position" : [+240, 0], "size" : [0, 0]},
         
-        {"classId" : "invisibleWall", "position" : ["-Infinity", -135], "size" : ["Infinity", 0]},
-        {"classId" : "invisibleWall", "position" : ["-Infinity", +135], "size" : ["Infinity", 0]},
-        {"classId" : "invisibleWall", "position" : [-240, "-Infinity"], "size" : [0, "Infinity"]},
-        {"classId" : "invisibleWall", "position" : [+240, "-Infinity"], "size" : [0, "Infinity"]},
+        {"classId" : "invisibleWall", "positionM" : ["-Infinity", -135], "size" : ["Infinity", 0]},
+        {"classId" : "invisibleWall", "positionM" : ["-Infinity", +135], "size" : ["Infinity", 0]},
+        {"classId" : "invisibleWall", "positionM" : [-240-320, "-Infinity"], "size" : [640, "Infinity"]},
+        {"classId" : "invisibleWall", "positionM" : [+240+320, "-Infinity"], "size" : [640, "Infinity"]},
         
         {"classId" : "softPlatform", "position" : [-240, -48], "size" : [112, 1]},
         {"classId" : "ladder", "position" : [-240, -48], "size" : [112, 104]},
@@ -215,11 +215,13 @@ maps["hub"] = {
         {"classId" : "lookupDoor", "position" : [104, 32], "size" : [16, 32], "mapname" : "maze-water"},
         
         {"classId" : "dummy", "position" : [144, 32], "size" : [16, 32]},
+        {"classId" : "dummy", "position" : [176, 0], "size" : [48, 56]},
+        {"classId" : "dummy", "position" : [-136, -56], "size" : [8, 8]},
         
         {"classId" : "sidewaysSetter", "position" : [-640, -360], "size" : [1280, 720]},
         
-        {"classId" : "skyDecoration", "position" : [-240, -135], "size" : [480, 270]},
-        {"classId" : "sunlightDecoration", "position" : [0, 0], "size" : [CANVAS.width, CANVAS.height]}
+        {"classId" : "skyDecoration"/*, "position" : [-240, -135], "size" : [480, 270]*/},
+        {"classId" : "sunlightDecoration", "position" : [0, 0]}
     ]
 };
 
@@ -265,7 +267,7 @@ maps["hpp0"] = {
         
         {"classId" : "sidewaysSetter", "position" : [-224, -126], "size" : [448, 252]},
         
-        {"classId" : "sunlightDecoration", "position" : [0, 0], "size" : [CANVAS.width, CANVAS.height]},
+        {"classId" : "sunlightDecoration", "position" : [0, 0]},
         {"classId" : "treeBackground", "position" : [-224, -126], "size" : [448, 252]}
     ]
 };
@@ -285,7 +287,7 @@ maps["hpp1"] = {
         
         {"classId" : "sidewaysSetter", "position" : [-224, -126], "size" : [448, 252]},
         
-        {"classId" : "sunlightDecoration", "position" : [0, 0], "size" : [CANVAS.width, CANVAS.height]},
+        {"classId" : "sunlightDecoration", "position" : [0, 0]},
         {"classId" : "treeBackground", "position" : [-224, -126], "size" : [448, 252]}
     ]
 };
@@ -305,21 +307,16 @@ maps["hppa"] = {
         
         {"classId" : "groundArea", "position" : [-224, -126], "size" : [448, 252]},
         
-        {"classId" : "sunlightDecoration", "position" : [0, 0], "size" : [CANVAS.width, CANVAS.height]},
+        {"classId" : "sunlightDecoration", "position" : [0, 0]},
         {"classId" : "treeBackground", "position" : [-224, -126], "size" : [448, 252]}
     ]
 };
 
-loadMap("hub");
-transitionIn(), transitionOut();
-
 var mazeStyle = makeCTile("#7F5F00", "#5F3F00");
 var cellStyle = makeCTile("#00BF00", "#007F00");// makeCTile("#00AF00", "#006F00");
-var wallPattern = makeCTile("#7F7F8F", "#3F3F7F", "#8F8F9F");
+
 mazeStyle = makeCTile("#00FF00", "#00BF00");
 mazeStyle = makeCTile("#00FF00", "#00BF00", "#00DF00");
-wallPattern = CANVAS.makePattern(makeGradientCTilesCanvas(4, 4, new ColorTransition([0, 0, 0, 1], [255, 255, 255, 1]), new ColorTransition([0, 0, 0, 1], [0, 0, 0, 1])), 64, 64, "repeat");
-wallPattern = CANVAS.makePattern(makeGradientCanvas(new ColorTransition(CV_WHITE, [127, 127, 127, 1]), 4, 4), CTILE_WIDTH, CTILE_WIDTH, "repeat");
 
 function rv() {return Math.random() * 255;}
 
@@ -337,7 +334,6 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
     
     /**/
     
-    // wallPattern = makeGradientCTiles(4, 4, new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1]), new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1]));
     skyStyle = makeSkyPattern(actualMazeSize[1] * 2 / CTILE_WIDTH);
     // skyStyle = makeGradientCTilesPattern(1, actualMazeSize[1] * 2 / 16, new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1]), new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1]));
     skyStyle = makeGradientCanvas(new ColorTransition("#0000FF", "#00FFFF"), 1, actualMazeSize[1] / CTILE_WIDTH);
@@ -389,12 +385,10 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
                 ));
                 /**/
                 
-                let wall = new Ground(
+                let wall = new MazeWall(
                     [cX - wallSize[0], cY - wallSize[1]],
                     [wallSize[0] * 2, 4 * wallSize[1] + cellSize[1]]
                 );
-                
-                wall.setStyle(makeStyledCanvas(wallPattern, wall.getWidth(), wall.getHeight()));
                 
                 entities.push(wall);
                 /**/
@@ -415,12 +409,10 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
                 ));
                 /**/
                 
-                let wall = new Ground(
+                let wall = new MazeWall(
                     [cX + wallSize[0] + cellSize[0], cY - wallSize[0]],
                     [wallSize[0] * 2, 4 * wallSize[1] + cellSize[1]]
                 );
-                
-                wall.setStyle(makeStyledCanvas(wallPattern, wall.getWidth(), wall.getHeight()));
                 
                 entities.push(wall);
                 /**/
@@ -441,12 +433,10 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
                 ));
                 /**/
                 
-                let wall = new Ground(
+                let wall = new MazeWall(
                     [cX - wallSize[0], cY - wallSize[1]],
                     [4 * wallSize[0] + cellSize[0], wallSize[1] * 2]
                 );
-                
-                wall.setStyle(makeStyledCanvas(wallPattern, wall.getWidth(), wall.getHeight()));
                 
                 entities.push(wall);
                 /**/
@@ -473,12 +463,10 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
                 // console.log(4 * wallSize[0] + cellSize[0], wallSize[1] * 2);
                 // console.log(wallSize[0] * 16, wallSize[1] * 4);
                 
-                let wall = new Ground(
+                let wall = new MazeWall(
                     [cX - wallSize[0], cY + wallSize[1] + cellSize[1]],
                     [4 * wallSize[0] + cellSize[0], wallSize[1] * 2]
                 );
-                
-                wall.setStyle(makeStyledCanvas(wallPattern, wall.getWidth(), wall.getHeight()));
                 
                 entities.push(wall);
                 /**/
@@ -508,7 +496,8 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
     } else if(mode == "sideways") {
         entities.push((new AirArea([0, 0], actualMazeSize)));
         entities.push((new GravityField([0, 0], actualMazeSize)));
-        drawables.push((new SkyDrawable([0, 0], actualMazeSize)).setStyle(skyStyle));
+        entities.push((new EC["skyDecoration"]([0, 0], actualMazeSize)));
+        entities.push((new EC["sunlightDecoration"]()));
     } else if(mode == "sideways-water") {
         entities.push((new WaterArea([0, 0], actualMazeSize)));
         
