@@ -66,7 +66,7 @@ function loadMap(mapname) {
 function loadTest() {
     let lists = {
         "camera" : Camera.fromMiddle([BASEWIDTH / 2, BASEHEIGHT / 2]),
-        "player0" : (new Adnyropast([80, 80])),
+        "player0" : (new (getPlayerClass())([80, 80])),
         entities : [],
         drawables : []
     };
@@ -133,57 +133,11 @@ function loadTest() {
     
     lists.drawables.push((new RectangleDrawable([16, 304], [16, 80])).setZIndex(-2).setStyle("#9F3F00"));
     // addEntity((new Decoration([-640, 0], [640 * 3, 360])).setZIndex(1000).setStyle(makeCTile("#00CFFF", "#00BFEF")));
-    lists.drawables.push((new SkyDrawable([-640, 0], [640 * 3, 360])).setStyle(makeSkyPattern(45*16)));
+    lists.drawables.push((new RectangleDrawable([-640, 0], [640 * 3, 360])).setZIndex(+Infinity).setStyle("cyan"));
     
-    lists.drawables.push((new RectangleDrawable([0, 0], [64, 64])).setZIndex(1).setStyle(PTRN_GRASS1));
+    lists.drawables.push((new RectangleDrawable([0, 0], [64, 64])).setZIndex(1).setStyle("green"));
     
     loadFromLists(lists);
-}
-
-function loadTest2() {
-    clearMap();
-    
-    addEntity(Camera.fromMiddle([BASEWIDTH / 2, BASEHEIGHT / 2]));
-    
-    addEntity((new Adnyropast([320, 180])));
-    
-    addEntity((new GroundArea([0, 0], [640, 360])).setZIndex(+1).setStyle(IMG_MAP_DRAFT));
-    
-    addEntity((new Obstacle([0, 0], [16, 16])).setStyle("#7F7F00"));
-    addEntity((new Obstacle([624, 0], [16, 16])).setStyle("#7F7F00"));
-    addEntity((new Obstacle([0, 344], [16, 16])).setStyle("#7F7F00"));
-    addEntity((new Obstacle([624, 344], [16, 16])).setStyle("#7F7F00"));
-    
-    addEntity((new Obstacle([0, 16], [16, 328])));
-    addEntity((new Obstacle([16, 0], [608, 16])));
-    addEntity((new Obstacle([16, 344], [608, 16])));
-    addEntity((new Obstacle([624, 16], [16, 328])));
-    
-    // addEntity((new Obstacle([32, 32], [16, 16])));
-    
-    /*/ 
-    
-    addEntity((new Obstacle([224, 80], [8, 8])));
-    addEntity((new Obstacle([232, 80], [8, 8])));
-    addEntity((new Obstacle([240, 80], [8, 8])));
-    addEntity((new Obstacle([248, 80], [8, 8])));
-    addEntity((new Obstacle([256, 80], [8, 8])));
-    addEntity((new Obstacle([264, 80], [8, 8])));
-    addEntity((new Obstacle([272, 80], [8, 8])));
-    addEntity((new Obstacle([280, 80], [8, 8])));
-    addEntity((new Obstacle([288, 80], [8, 8])));
-    addEntity((new Obstacle([296, 80], [8, 8])));
-    addEntity((new Obstacle([304, 80], [8, 8])));
-    addEntity((new Obstacle([312, 80], [8, 8])));
-    addEntity((new Obstacle([320, 80], [8, 8])));
-    addEntity((new Obstacle([224, 88], [104, 8])));
-    addEntity((new Obstacle([224, 96], [104, 16])));
-    addEntity((new Obstacle([224, 112], [104, 24])));
-    addEntity((new Obstacle([224, 136], [104, 32])));
-    
-    /**/ 
-    
-    addEntity((new Braker([0, 0], [640, 360], 1.25)));
 }
 
 var maps = {};
@@ -334,9 +288,7 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
     
     /**/
     
-    skyStyle = makeSkyPattern(actualMazeSize[1] * 2 / CTILE_WIDTH);
     // skyStyle = makeGradientCTilesPattern(1, actualMazeSize[1] * 2 / 16, new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1]), new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1]));
-    skyStyle = makeGradientCanvas(new ColorTransition("#0000FF", "#00FFFF"), 1, actualMazeSize[1] / CTILE_WIDTH);
     // mazeStyle = makeStyledCanvas(makeGradientCTiles(actualMazeSize[0] * 2, actualMazeSize[1] * 2, new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1]), new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1])), actualMazeSize[0] * 2, actualMazeSize[1] * 2);
     
     /**/
@@ -490,7 +442,9 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
     if(mode == "topdown") {
         let groundArea = new GroundArea([0, 0], actualMazeSize);
         
-        groundArea.setZIndex(ALMOST_ZERO).setStyle(makeStyledCanvas(mazeStyle, groundArea.getWidth(), groundArea.getHeight()));
+        groundArea.setZIndex(ALMOST_ZERO)//.setStyle(makeStyledCanvas(mazeStyle, groundArea.getWidth(), groundArea.getHeight()));
+        
+        groundArea.setStyle(makeRepeatedTileFrom(IMG_GRASSTILE, groundArea.getWidth(), groundArea.getHeight()));
         
         entities.push(groundArea);
     } else if(mode == "sideways") {
@@ -501,9 +455,10 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
     } else if(mode == "sideways-water") {
         entities.push((new WaterArea([0, 0], actualMazeSize)));
         
-        waterStyle = makeGradientCanvas(new ColorTransition([0, 191, 255, 0.25], [31, 127, 159, 0.25]), 1, actualMazeSize[1] / CTILE_WIDTH);
+        // waterStyle = makeGradientCanvas(new ColorTransition([0, 191, 255, 0.25], [31, 127, 159, 0.25]), 1, actualMazeSize[1] / CTILE_WIDTH);
         
-        drawables.push((new SkyDrawable([0, 0], actualMazeSize)).setZIndex(-Infinity).setStyle(waterStyle));
+        // drawables.push((new RectangleDrawable([0, 0], actualMazeSize)).setZIndex(-Infinity).setStyle(waterStyle));
+        entities.push((new EC["sunlightDecoration"]()));
     }
     
     return lists;

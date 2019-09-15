@@ -90,6 +90,9 @@ class Entity extends Rectangle {
         this.drawableOffset = Vector.filled(this.getDimension(), 0);
         
         this.collidesWith = new SetArray();
+        
+        this.lifeCounter = 0;
+        this.lifespan = -1;
     }
     
     setSpeed(speed) {
@@ -291,10 +294,16 @@ class Entity extends Rectangle {
     }
     
     setLifespan(lifespan) {
+        /**
         this.resetEnergy(lifespan);
         
         this.removeActionsWithConstructor(Regeneration);
         this.addAction(new Regeneration(-1));
+        /**/
+        this.lifeCounter = 0;
+        this.lifespan = lifespan;
+        
+        /**/
         
         return this;
     }
@@ -503,6 +512,7 @@ class Entity extends Rectangle {
                     var interrecipient = other.interrecipients[j];
                     
                     if(interrecipient.matchId(interactor.getId())) {
+                        interrecipient.beforeInteraction(interactor);
                         interactor.interact(interrecipient);
                         interrecipient.oninteraction(interactor);
                         break;
@@ -566,6 +576,13 @@ class Entity extends Rectangle {
             removeEntity(this);
         }
         
+        ++this.lifeCounter;
+        
+        if(this.lifeCounter == this.lifespan) {
+            this.ondefeat();
+            removeEntity(this);
+        }
+        
         return this;
     }
     
@@ -581,7 +598,7 @@ class Entity extends Rectangle {
     }
     
     addAction(action) {
-        action.endid = "this message should be overwritten";
+        // action.endid = "this message should be overwritten";
         
         if(!this.canUseAction(action)) {
             action.end("User can't use the action.");
@@ -637,7 +654,7 @@ class Entity extends Rectangle {
     
     removeActionsWithConstructor(constructor) {
         for(var i = this.actions.length - 1; i >= 0; --i) {
-            if(/*this.actions[i] instanceof Action && */this.actions[i].constructor == constructor) {
+            if(this.actions[i] instanceof Action && this.actions[i].constructor == constructor) {
                 this.removeActionAt(i, "Removed from user with a constructor match (removeActionsWithConstructor).");
             }
         }
@@ -959,17 +976,7 @@ class Entity extends Rectangle {
         return null;
     }
     
-    collidesWithPoint(point) {
-        let minDim = Math.min(this.getDimension(), point.length);
-        
-        for(let dim = 0; dim < minDim; ++dim) {
-            if(this.getPosition1(dim) >= point[dim] || this.getPosition2(dim) <= point[dim]) {
-                return false;
-            }
-        }
-        
-        return true;
-    }
+    onland(obstacle) {return this;}
 }
 
 class Hitbox extends Entity {

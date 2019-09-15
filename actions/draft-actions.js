@@ -178,6 +178,8 @@ class ZoneEngage extends BusyAction {
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             this.zone.setStyle(canvas);
+            
+            this.setRemovable(false);
         }
         
         // repaceLoop(WORLD_PACE + Math.pow(2, this.phase));
@@ -206,6 +208,7 @@ class ZoneEngage extends BusyAction {
                 engageBattle(this.targets);
             }
             
+            this.setRemovable(true);
             this.end();
             
             // worldFreeze = 0;
@@ -223,6 +226,8 @@ class ZoneEngage extends BusyAction {
         return super.onend();
     }
 }
+
+AC["zoneEngage"] = ZoneEngage;
 
 class FollowMe extends Action {
     constructor() {
@@ -267,22 +272,6 @@ class Summon extends Action {
         
         return this.end();
     }
-}
-
-class OnceTest extends Action {
-    
-}
-
-class RepeatTest extends Action {
-    
-}
-/**
-class HoldTest extends Action {
-    
-}
-/**/
-class ToggleTest extends Action {
-    
 }
 
 const AS_ROUTE = set_gather("tmprRoute");
@@ -407,7 +396,7 @@ class LifespanState extends Action {
 class SlashAction extends BusyAction {
     constructor() {
         super();
-        this.setId("overheadSlash");
+        this.setId("slashAction");
         
         this.hitbox = (new SlashEffect([NaN, NaN], [16, 16])).setLifespan(16);
         // this.hitbox.setStyle("orange");
@@ -430,24 +419,19 @@ class SlashAction extends BusyAction {
         this.trailDrawable.trailStyle;
         this.trailDrawable.edgeStyle;
         
-        this.trailDrawable.trailStyle = new ColorTransition([127*detProgress, 255, 255, 1], [0, 255*detProgress, 255, 0], 8);
-        
-        // let ct = new ColorTransition([63, 255, 255, 1], [0, 0, 255, 0], 8, bezierLinear);
-        // this.trailDrawable.trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), 8, bezierLinear);
-        
         return this;
     }
     
     transitionsSetup() {
         let face = this.user.getCursorDirection();
         face[0] = Math.sign(face[0]);
+        face[1] = Math.sign(face[1]);
         
-        this.baseAngleTransition = new ColorTransition([-Math.PI/2 - 2 * 2*face[0] * 0.1875], [-Math.PI/2 + 8 * 2*face[0] * 0.1875]);
-        this.baseDistanceTransition = new ColorTransition([12], [12]);
+        this.baseAngleTransition;
+        this.baseDistanceTransition;
         
-        this.bladeAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * Math.PI*3/4], [-Math.PI/2 + face[0] * 3/4 * Math.PI]);
-        this.bladeAngleTransition = this.baseAngleTransition;
-        this.bladeWidthTransition = new ColorTransition([20], [20]);
+        this.bladeAngleTransition;
+        this.bladeWidthTransition;
         
         return this;
     }
@@ -490,8 +474,8 @@ class SlashAction extends BusyAction {
                 let bladeAngle = this.bladeAngleTransition.at(progress)[0];
                 let bladeWidth = this.bladeWidthTransition.at(progress)[0];
                 
+                this.hitbox.setSize([bladeWidth, bladeWidth]);
                 this.hitbox.setPositionM(basePosition.plus(baseDirection.normalized(bladeWidth/2)));
-                this.hitbox.setSizeM([bladeWidth, bladeWidth]);
                 
                 this.updateTrailDrawableStyle(i/this.det);
                 

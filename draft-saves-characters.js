@@ -3,10 +3,19 @@ let characters = {};
 
 characters[0] = {
     "classId" : "adnyropast",
-    
+    "stats" : {
+        
+    },
+    "energy" : 50
 };
 
-
+characters["haple0"] = {
+    "classId" : "haple",
+    "stats" : {
+        
+    },
+    "energy" : 50
+};
 
 function getSavedCharacter(id) {
     try {
@@ -19,3 +28,15 @@ function getSavedCharacter(id) {
         console.error(error);
     }
 }
+
+function makeHapleCharacter() {
+    return {
+        "classId" : "haple",
+        "stats" : {
+            
+        },
+        "energy" : 50
+    };
+}
+
+let currentCharacter = "haple0";

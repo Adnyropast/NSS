@@ -57,3 +57,5 @@ class PlasmaLightning extends BusyAction {
         return this;
     }
 }
+
+AC["plasmaLightning"] = PlasmaLightning;

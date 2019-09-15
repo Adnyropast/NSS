@@ -662,3 +662,7 @@ function rectangle_averagesize() {
     
     return sum / count;
 }
+
+function irandom(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min);
+}

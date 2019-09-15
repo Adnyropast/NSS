@@ -120,3 +120,7 @@ function enemyController() {
         this.removeActionsWithConstructor(Movement);
     }
 }
+
+function healController() {
+    this.heal(this.stats["regeneration"]);
+}

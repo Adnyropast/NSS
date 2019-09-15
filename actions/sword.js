@@ -23,33 +23,24 @@ class SlashEffect extends Hitbox {
     }
 }
 
-class BladeTransition {
+class SwordSlashAction extends SlashAction {
     constructor() {
-        this.userPositions = [];
+        super();
         
+        this.endlag = 0;
     }
     
-    start(userPosition, baseAngle, baseDistance, bladeAngle) {
+    updateTrailDrawableStyle(detProgress) {
+        this.trailDrawable.trailStyle = new ColorTransition([127*detProgress, 255, 255, 1], [0, 255*detProgress, 255, 0], 8);
         
-    }
-    
-    addStep(userPosition, baseRotateAngle, baseDistance, bladeRotateAngle) {
-        this.userPositions.push(userPosition);
-        
+        // let ct = new ColorTransition([63, 255, 255, 1], [0, 0, 255, 0], 8, bezierLinear);
+        // this.trailDrawable.trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), 8, bezierLinear);
         
         return this;
     }
-    
-    at(t) {
-        let res = {
-            "userPosition" : null,
-            "baseDirection" : null,
-            "bladeAngle" : undefined
-        };
-    }
 }
 
-class OverheadSlash extends SwordAbility {
+class OverheadSlash extends SwordSlashAction {
     constructor() {
         super();
         this.setId("overheadSlash");
@@ -63,211 +54,16 @@ class OverheadSlash extends SwordAbility {
         this.setUseCost(3);
     }
     
-    use() {
-        if(this.phase == 0) {
-            this.face = new Vector(Math.sign(this.user.getCursor().getXM() - this.user.getXM()), 0);
-            this.face = this.user.getCursorDirection();
-            
-            if(this.user.getEnergy() <= this.getUseCost()) {
-                return this.end();
-            }
-            
-            this.user.hurt(this.getUseCost());
-            
-            this.center = this.user.getPositionM();
-            
-            this.setRemovable(false);
-            
-            if(this.face[0] != 0) {
-                this.face[0] = Math.sign(this.face[0]);
-                this.face[1] = 0;
-                this.effect = SlashEffect.fromMiddle([this.face.x + this.user.getXM(), this.face.y + this.user.getYM()], [32, 32]);
-                
-                this.user.setFace(this.face[0]);
-            } else if(this.face[1] != 0) {
-                this.face[1] = Math.sign(this.face[1]);
-                this.effect = SlashEffect.fromMiddle([this.face.x + this.user.getXM(), this.face.y + this.user.getYM()], [32, 32]);
-            } else {
-                this.effect = SlashEffect.fromMiddle([this.face.x + this.user.getXM(), this.face.y + this.user.getYM()], [32, 32]);
-            }
-            
-            this.effect.setLifespan(16);
-            this.effect.shareBlacklist(this.user.getBlacklist());
-            // this.effect.setForce(this.face.multiply(2));
-            this.effect.addInteraction(new DragActor(this.face.times(0.25)));
-            
-            addEntity(this.effect);
-            
-            addDrawable(this.trailDrawable);
-        }
+    transitionsSetup() {
+        let face = this.user.getCursorDirection();
+        face[0] = Math.sign(face[0]);
         
-        if(this.phase <= 10) {
-            var angle = -Math.PI / 2 + (this.phase - 2) * 2*this.face[0] * 0.1875 + 2*this.face[1] * (this.phase + 2*this.face[1] * Math.PI) * -0.1875;
-            
-            var s = 32 - Math.abs(this.phase - 5) * 16 / 5;
-            
-            this.effect.setSize([s, s]);
-            
-            var farX = this.user.getXM() + Math.cos(angle) * 24;
-            var farY = this.user.getYM() + Math.sin(angle) * 24;
-            
-            this.effect.setPositionM(0, farX);
-            this.effect.setPositionM(1, farY);
-            /**/
-            
-            if(true || this.lastPositionM) {
-                let positionTransition = new ColorTransition(this.lastPositionM || this.user.getPositionM(), this.user.getPositionM());
-                
-                let det = 3;
-                
-                for(let i = 1; i <= det; ++i) {
-                    let angle = -Math.PI / 2 + (this.phase-1 + i/det - 2) * 2*this.face[0] * 0.1875 + 2*this.face[1] * (this.phase-1 + i/det + 2*this.face[1] * Math.PI) * -0.1875;
-                    
-                    let positionM = positionTransition.at(i/det);
-                    
-                    var closeX = positionM[0] + Math.cos(angle) * 12;
-                    var closeY = positionM[1] + Math.sin(angle) * 12;
-                    
-                    this.trailDrawable.trailStyle = new ColorTransition([127*i/det, 255, 255, 1], [0, 255*i/det, 255, 0], 8, function(t) {if(t == 1) {return 1}; return t / 1.5;});
-                    
-                    this.trailDrawable.addSized([closeX, closeY], angle, 20, 18.75);
-                }
-            }
-            
-            // var angle = -Math.PI / 2 + (this.phase - 2) * this.face[0] * 0.1875 + this.face[1] * (this.phase + this.face[1] * Math.PI) * -0.1875;
-            
-            // var closeX = this.user.getXM() + Math.cos(angle) * 12;
-            // var closeY = this.user.getYM() + Math.sin(angle) * 12;
-            
-            // this.trailDrawable.addSized([closeX, closeY], angle, 20, 18.75);
-            
-            
-            /**
-            
-            let vert = Math.PI / 2;
-            
-            let sign = Math.sign(this.face[0]);
-            
-            for(let i = this.phase; i <= this.phase; ++i) {
-                var baseAngle = -Math.PI / 2 + (i-3) * sign * Math.PI/12;
-                var bladeAngle = baseAngle - (12-i)/12 * sign * Math.PI/2
-                
-                let size = 20 - Math.abs(this.phase - 10);
-                
-                var baseDirection = (new Vector(Math.cos(baseAngle), Math.sin(baseAngle))).times(8 + this.phase / 3);
-                
-                this.trailDrawable.addSized(baseDirection.add(this.user.getPositionM()), bladeAngle, size, size * 1.125);
-            }
-            /**
-            
-            let sign = Math.sign(this.face[0]);
-            
-            if(this.phase == 0) {
-                var baseAngle = -Math.PI/2 - sign * Math.PI / 4;
-                var bladeAngle = baseAngle - sign * Math.PI/2;
-                
-                var baseDirection = (new Vector(Math.cos(baseAngle), Math.sin(baseAngle))).times(0);
-                
-                this.trailDrawable.addSized(baseDirection.add(this.user.getPositionM()), bladeAngle, 20, 18.75);
-            } else if(this.phase == 1) {
-                var baseAngle = -Math.PI/2 - sign * Math.PI/4 * 2/3;
-                var bladeAngle = baseAngle - sign * Math.PI/2;
-                
-                var baseDirection = (new Vector(Math.cos(baseAngle), Math.sin(baseAngle))).times(12);
-                
-                this.trailDrawable.addSized(baseDirection.add(this.user.getPositionM()), bladeAngle, 20, 18.75);
-                
-                var baseAngle = -Math.PI/2 - sign * Math.PI/4 * 1/3;
-                var bladeAngle = baseAngle - sign * Math.PI/2;
-                
-                var baseDirection = (new Vector(Math.cos(baseAngle), Math.sin(baseAngle))).times(12);
-                
-                this.trailDrawable.addSized(baseDirection.add(this.user.getPositionM()), bladeAngle, 20, 18.75);
-                
-                var baseAngle = -Math.PI/2;
-                var bladeAngle = baseAngle - sign * Math.PI/2;
-                
-                var baseDirection = (new Vector(Math.cos(baseAngle), Math.sin(baseAngle))).times(12);
-                
-                this.trailDrawable.addSized(baseDirection.add(this.user.getPositionM()), bladeAngle, 20, 18.75);
-            } else if(this.phase == 2) {
-                var baseAngle = -Math.PI/2 + sign * Math.PI/4 * 1/3;
-                var bladeAngle = baseAngle - sign * Math.PI/2;
-                
-                var baseDirection = (new Vector(Math.cos(baseAngle), Math.sin(baseAngle))).times(16);
-                
-                this.trailDrawable.addSized(baseDirection.add(this.user.getPositionM()), bladeAngle, 20, 18.75);
-                
-                var baseAngle = -Math.PI/2 + sign * Math.PI/4 * 2/3;
-                var bladeAngle = baseAngle - sign * Math.PI/2;
-                
-                var baseDirection = (new Vector(Math.cos(baseAngle), Math.sin(baseAngle))).times(16);
-                
-                this.trailDrawable.addSized(baseDirection.add(this.user.getPositionM()), bladeAngle, 20, 18.75);
-                
-                var baseAngle = -Math.PI/2 + sign * Math.PI/4;
-                var bladeAngle = baseAngle - sign * Math.PI/2;
-                
-                var baseDirection = (new Vector(Math.cos(baseAngle), Math.sin(baseAngle))).times(16);
-                
-                this.trailDrawable.addSized(baseDirection.add(this.user.getPositionM()), bladeAngle, 20, 18.75);
-                
-                
-                
-                var baseAngle = -Math.PI/2 + sign * Math.PI/2 - sign * Math.PI/2 * 2/3;
-                var bladeAngle = baseAngle - sign * Math.PI/2;
-                
-                var baseDirection = (new Vector(Math.cos(baseAngle), Math.sin(baseAngle))).times(16);
-                
-                this.trailDrawable.addSized(baseDirection.add(this.user.getPositionM()), bladeAngle, 20, 18.75);
-                
-                var baseAngle = -Math.PI/2 + sign * Math.PI/2 - sign * Math.PI/2 * 1/3;
-                var bladeAngle = baseAngle - sign * Math.PI/2;
-                
-                var baseDirection = (new Vector(Math.cos(baseAngle), Math.sin(baseAngle))).times(16);
-                
-                this.trailDrawable.addSized(baseDirection.add(this.user.getPositionM()), bladeAngle, 20, 18.75);
-                
-                var baseAngle = -Math.PI/2 + sign * Math.PI/2;
-                var bladeAngle = baseAngle - sign * Math.PI/2;
-                
-                var baseDirection = (new Vector(Math.cos(baseAngle), Math.sin(baseAngle))).times(16);
-                
-                this.trailDrawable.addSized(baseDirection.add(this.user.getPositionM()), bladeAngle, 20, 18.75);
-                
-                
-                
-                var baseAngle = -Math.PI/2 + sign * (3/4 * Math.PI/2 - Math.PI/2 * 2/3);
-                var bladeAngle = baseAngle - sign * Math.PI/2;
-                
-                var baseDirection = (new Vector(Math.cos(baseAngle), Math.sin(baseAngle))).times(16);
-                
-                this.trailDrawable.addSized(baseDirection.add(this.user.getPositionM()), bladeAngle, 20, 18.75);
-                
-                var baseAngle = -Math.PI/2 + sign * (3/4 * Math.PI - Math.PI/2 * 1/3);
-                var bladeAngle = baseAngle - sign * Math.PI/2;
-                
-                var baseDirection = (new Vector(Math.cos(baseAngle), Math.sin(baseAngle))).times(16);
-                
-                this.trailDrawable.addSized(baseDirection.add(this.user.getPositionM()), bladeAngle, 20, 18.75);
-                
-                var baseAngle = -Math.PI/2 + sign * 3/4 * Math.PI;
-                var bladeAngle = baseAngle - sign * Math.PI/2;
-                
-                var baseDirection = (new Vector(Math.cos(baseAngle), Math.sin(baseAngle))).times(16);
-                
-                this.trailDrawable.addSized(baseDirection.add(this.user.getPositionM()), bladeAngle, 20, 18.75);
-                
-                
-                
-            }
-            /**/
-            
-            this.lastPositionM = this.user.getPositionM();
-        } else {
-            this.setRemovable(true);
-            this.end();
-        }
+        this.baseAngleTransition = new ColorTransition([-Math.PI/2 - 2 * 2*face[0] * 0.1875], [-Math.PI/2 + 8 * 2*face[0] * 0.1875]);
+        this.baseDistanceTransition = new ColorTransition([12], [12]);
+        
+        this.bladeAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * Math.PI*3/4], [-Math.PI/2 + face[0] * 3/4 * Math.PI]);
+        this.bladeAngleTransition = this.baseAngleTransition;
+        this.bladeWidthTransition = new ColorTransition([20], [20]);
         
         return this;
     }
@@ -291,12 +87,12 @@ class OverheadSlash extends SwordAbility {
     }
 }
 
-class UpwardArcSlash extends SlashAction {
+class UpwardArcSlash extends SwordSlashAction {
     constructor() {
         super();
         this.setId("upwardArcSlash");
         
-        this.slashDuration = 6;
+        this.slashDuration = 9;
         // this.startlag = 6;
         
         this.hitbox.addInteraction(new DragActor([0, -4]));
@@ -316,7 +112,7 @@ class UpwardArcSlash extends SlashAction {
     }
 }
 
-class MultiswordAttack1 extends SlashAction {
+class MultiswordAttack1 extends SwordSlashAction {
     constructor() {
         super();
         this.setId("multiswordAttack1");
@@ -454,7 +250,7 @@ class MultiswordAttackFinish extends MultiswordAttack2 {
     }
 }
 
-class DownwardArcSlash extends SlashAction {
+class DownwardArcSlash extends SwordSlashAction {
     constructor() {
         super();
         this.setId("downwardArcSlash");
@@ -484,16 +280,20 @@ class AutoSword extends SwordAbility {
     
     use() {
         if(this.phase == 0) {
-            let cursorDirection = this.user.getCursorDirection();
-            
-            if(cursorDirection[0] != 0) {
-                this.user.addAction(new OverheadSlash());
-            } else if(cursorDirection[1] < 0) {
-                this.user.addAction(new UpwardArcSlash());
-            } else if(cursorDirection[1] > 0) {
-                this.user.addAction(new DownwardArcSlash());
+            if(this.user.collidesWithPoint(this.user.cursor.getPositionM())) {
+                
             } else {
-                this.end();
+                let cursorDirection = this.user.getCursorDirection();
+                
+                if(Math.abs(cursorDirection[0]) >= Math.abs(cursorDirection[1])) {
+                    this.user.addAction(new OverheadSlash());
+                } else if(cursorDirection[1] < 0) {
+                    this.user.addAction(new UpwardArcSlash());
+                } else if(cursorDirection[1] > 0) {
+                    this.user.addAction(new DownwardArcSlash());
+                } else {
+                    this.end();
+                }
             }
         }
         

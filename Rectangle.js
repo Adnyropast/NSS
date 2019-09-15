@@ -1070,11 +1070,11 @@ class Rectangle {
         return "{[" + this.getPosition() + "], [" + this.getSize() + "]}";
     }
     
-    basicDraw(context, fillStyle, strokeStyle) {
+    basicDraw(context, fillStyle) {
         if(fillStyle instanceof HTMLImageElement) {
             context.drawRect(fillStyle, this.getX(), this.getY(), this.getWidth(), this.getHeight());
         } else {
-            context.fillStyle = fillStyle;
+            // context.fillStyle = fillStyle;
             context.fillRect(this.getX(), this.getY(), this.getWidth(), this.getHeight());
         }
         
@@ -1132,6 +1132,20 @@ class Rectangle {
         }
         
         return Math.sqrt(Math.pow(x - this.getXM(), 2) + Math.pow(y - this.getYM(), 2));
+    }
+    
+    /*  */
+    
+    collidesWithPoint(point) {
+        let minDim = Math.min(this.getDimension(), point.length);
+        
+        for(let dim = 0; dim < minDim; ++dim) {
+            if(this.getPosition1(dim) > point[dim] || this.getPosition2(dim) < point[dim]) {
+                return false;
+            }
+        }
+        
+        return true;
     }
 }
 

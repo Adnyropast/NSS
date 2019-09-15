@@ -6,20 +6,17 @@ const ACT_PROJECTILE = ++actionid;
 const ACT_TARGETATTACK = ++actionid;
 const ACT_MOVEMENT = ++actionid;
 
-var actionsIds = [];
+const AC = {};
 
-function registerAction(id, ActionClass) {
-    for(var i = 0; i < actionsIds.length; ++i) {
-        if(actionsIds[i].id == id) {
-            actionsIds[i].class = ActionClass;
-            return;
-        }
+function getActionClass(actionId) {
+    if(AC.hasOwnProperty(actionId)) {
+        return AC[actionId];
     }
     
-    actionsIds.push({"id" : id, "class" : ActionClass});
+    console.warn(actionId + " not registered in AC.");
+    
+    return Action;
 }
-
-const AC = {};
 
 /**
  * The Action class represents any action that can be performed by a character.

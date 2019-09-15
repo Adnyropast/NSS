@@ -407,6 +407,7 @@ class HapleBattler extends Battler {
         let visibleOptions = this.visibleList.getVisible();
         
         tfparams["positioning"] = 0.5;
+        tfparams["padding-top"] = 8;
         
         for(let i = 0; i < visibleOptions.length; ++i) {
             let angle = i * Math.PI / 8;
@@ -423,6 +424,7 @@ class HapleBattler extends Battler {
         }
         
         tfparams["positioning"] = 0;
+        tfparams["padding-top"] = 0;
         
         // this.drawable.
         

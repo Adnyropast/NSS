@@ -177,7 +177,7 @@ class WaterArea extends Area {
         super(position, size);
         // this.setOtherBrake(BRK_WATER);
         // this.otherThrust = THRUST_WATER;
-        this.setStyle("#007FFF3F");
+        this.setStyle("#007FFF7F");
         
         this.addInteraction(new BrakeActor(BRK_WATER));
         this.addInteraction(new ThrustRecipient(THRUSTFACTOR_WATER));
@@ -244,9 +244,11 @@ class GoldSmokeParticle extends Particle {
         this.setSelfBrake(1.0625);
         this.setLifespan(32);
         // this.setColorTransition([0, 255, 255, 127], [0, 255, 255, 0], 60);
-        this.setDrawable(PolygonDrawable.from(flameparticle).multiplySize(1/4));
-        this.drawable.setPositionM(this.getPositionM());
+        // this.setDrawable(PolygonDrawable.from(flameparticle).multiplySize(1/4));
         this.setDrawable(PolygonDrawable.from(makeRandomPolygon(24, 12, 16)).setLifespan(32).setPositionM(this.getPositionM()).multiplySize(8/16));
+        
+        this.drawable.multiplySize(rectangle_averagesize(this)/16);
+        
         this.setStyle(new ColorTransition([0, 255, 255, 127], [0, 255, 255, 0], 60));
         this.setStyle(new ColorTransition([0, 255, 255, 1], [127, 255, 255, 0.5], 32));
         this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
@@ -256,26 +258,30 @@ class GoldSmokeParticle extends Particle {
         this.drawable.setPositionM(this.getPositionM());
         this.drawable.multiplySize(1/1.03125);
         
+        this.drawable.setImaginaryAngle(this.speed.getAngle());
+        
         return this;
     }
 }
+
+const smokeColorTransition = new ColorTransition([255, 255, 255, 255 / 255], [223, 223, 223, 191 / 255], 32);
 
 class SmokeParticle extends Particle {
     constructor(position, size = [8, 8]) {
         super(position, size);
         
         this.setDrawable(PolygonDrawable.from(makeRandomPolygon(24, 12, 16)).setLifespan(32).setPositionM(this.getPositionM()).multiplySize(8/16));
+        this.drawable.initImaginarySize(rectangle_averagesize(this));
         
         this.collidable = true;
         // this.forceFactor = 0.5;
         // this.setSelfBrake(1.0625);
         this.setLifespan(32);
         // this.setColorTransition([255, 255, 255, 191], [223, 223, 223, 31], 60);
-        this.setStyle(new ColorTransition([255, 255, 255, 255 / 255], [223, 223, 223, 191 / 255], 32));
-        // this.setStyle(AnimatedImages.from(PTRNS_SMOKE));
+        this.setStyle(ColorTransition.from(smokeColorTransition));
         
         this.addInteraction(new ReplaceRecipient());
-        // this.addInteraction(new DragRecipient(1));
+        this.addInteraction(new DragRecipient(0.03125));
         // this.addInteraction(new BrakeRecipient(1.5));
         
         this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
@@ -283,7 +289,8 @@ class SmokeParticle extends Particle {
     }
     
     updateDrawable() {
-        this.drawable.multiplySize(1/1.0625);
+        // this.drawable.multiplySize(1/1.0625);
+        this.drawable.setImaginarySize(rectangle_averagesize(this));
         this.drawable.setPositionM(this.getPositionM());
         
         return this;
@@ -346,7 +353,7 @@ class Projectile extends Hitbox {
         this.setLifespan(16);
         
         this.addInteraction(new TypeDamager([{"type" : FX_PIERCING, "value" : 1}]));
-        this.addInteraction(new ReplaceRecipient());
+        // this.addInteraction(new ReplaceRecipient());
         this.addInteraction(new ContactVanishRecipient(1));
     }
 }
@@ -475,7 +482,7 @@ class TransitionCover extends Entity {
     }
     
     onadd() {
-        transitionIn(this.energy);
+        transitionIn(this.lifespan);
         
         return super.onadd();
     }
@@ -516,7 +523,18 @@ EC["skyDecoration"] = class SkyDecoration extends Entity {
         
         this.drawable.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_SKYTILE, CANVAS.width/40*m), this.getWidth()*m, this.getHeight()*m));
         
-        this.drawable.style.getContext("2d").drawImage(makeGradientCanvas(new ColorTransition([0, 0, 255, 0.75], [0, 255, 255, 0.75]), 1, this.getHeight()), 0, 0, this.drawable.style.width, this.drawable.style.height);
+        // this.drawable.style.getContext("2d").drawImage(makeGradientCanvas(new ColorTransition([0, 0, 255, 0.75], [0, 255, 255, 0.75]), 1, this.getHeight()), 0, 0, this.drawable.style.width, this.drawable.style.height);
+        
+        let canvas = this.drawable.style;
+        let ctx = canvas.getContext("2d");
+        
+        let grd = ctx.createLinearGradient(canvas.width, 0, canvas.width, canvas.height);
+        
+        grd.addColorStop(0, "rgba(0, 0, 255, 0.75)");
+        grd.addColorStop(1, "rgba(0, 255, 255, 0.75)");
+        
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         this.drawable.setCameraMode("none");
         
@@ -660,5 +678,42 @@ class MazeWall extends EC["ground"] {
         
         this.setStyle(makeStyledCanvas(wallPattern, this.getWidth()*4, this.getHeight()*4));
         this.setStyle(makeRepeatedTileFrom(makeGradientCanvas(new ColorTransition(CV_WHITE, [127, 127, 127, 1]), 2, 2), this.getWidth(), this.getHeight()));
+    }
+}
+
+const smokeColorTransition2 = new ColorTransition([255, 255, 255, 255 / 255], [223, 223, 223, 0 / 255], 28, function(t) {return Math.pow(t, 5)});
+
+class SpikeSmokeParticle extends Particle {
+    constructor(position, size) {
+        super(...arguments);
+        
+        this.setLifespan(28);
+        this.setSizeTransition(new ColorTransition(Vector.multiplication(size, 1/2), Vector.multiplication(size, 1.25), 28));
+        this.setSelfBrake(1.03125);
+        
+        let spikesCount = irandom(3, 5);
+        let angleDiff = Math.PI/4;
+        
+        // this.resetSpikeDrawable(spikesCount, new ColorTransition([-angleDiff], [+angleDiff]), irandom(8, 10), irandom(16, 18), 6);
+        this.resetSpikeDrawable(spikesCount, new ColorTransition([-angleDiff], [+angleDiff]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
+    }
+    
+    updateDrawable() {
+        this.drawable.setImaginarySize(rectangle_averagesize(this));
+        this.drawable.setPositionM(this.getPositionM());
+        this.drawable.setImaginaryAngle(this.speed.getAngle());
+        
+        return this;
+    }
+    
+    resetSpikeDrawable() {
+        this.drawable = new SpikeDrawable(...arguments);
+        
+        this.drawable.setStyle(ColorTransition.from(smokeColorTransition2));
+        
+        this.drawable.setPositionM(this.getPositionM());
+        this.drawable.initImaginarySize(rectangle_averagesize(this));
+        
+        return this;
     }
 }

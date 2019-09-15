@@ -211,9 +211,11 @@ class PlayableCharacter extends Character {
             this.setAnimStyle("run-left");
         }
         
-        let offsetX = -Math.sign(this.speed[0]) * this.getWidth()/2;
-        
         if((this.drawable.style.iindex % 2) == 1 && this.drawable.style.icount == 0) {
+            let offsetX = -Math.sign(this.speed[0]) * this.getWidth()/2;
+            
+            /**
+            
             for(let i = -1; i < +1; i += 0.125) {
                 let particle = SmokeParticle.fromMiddle([this.getXM() + offsetX, this.getY2()]);
                 
@@ -238,6 +240,16 @@ class PlayableCharacter extends Character {
             addEntity(particle);
             var particle = SmokeParticle.fromMiddle(this.getPositionM());
             particle.setSpeed(this.speed.normalized(1).rotated(Math.PI + 0.75));
+            addEntity(particle);
+            
+            /**/
+            
+            let averagesize = rectangle_averagesize(this);
+            
+            let particle = SpikeSmokeParticle.fromMiddle([this.getXM() + offsetX, this.getY2()], [averagesize, averagesize]);
+            
+            particle.setSpeed(this.speed.rotated(Math.PI).normalize());
+            
             addEntity(particle);
             
             /**/
@@ -377,3 +389,8 @@ class MovementDown extends Action {
         return this;
     }
 }
+
+AC["movementLeft"] = MovementLeft;
+AC["movementUp"] = MovementUp;
+AC["movementRight"] = MovementRight;
+AC["movementDown"] = MovementDown;

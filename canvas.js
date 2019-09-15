@@ -39,3 +39,20 @@ function makeRepeatedTileFrom(image, width, height) {
     
     return makeStyledCanvas(CANVAS.makePattern(image, CTILE_WIDTH*m), width*m, height*m);
 }
+
+function makeRadialGradientCanvas(color1, color2, width = 256, height = 256) {
+    let canvas = document.createElement("canvas");
+    canvas.width = width, canvas.height = height;
+    
+    let ctx = canvas.getContext("2d");
+    
+    let grd = ctx.createRadialGradient(canvas.width/2, canvas.height/2, canvas.width/16, 2/4*canvas.width, 2/4*canvas.height, canvas.width/2);
+    
+    grd.addColorStop(0, color1);
+    grd.addColorStop(1, color2);
+    
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    return canvas;
+}

@@ -58,7 +58,7 @@ class EnergyBarDrawable extends RectangleDrawable {
     }
 }
 
-const AS_CHARACTER = set_gather(AS_FOCUS, "followMe", AS_MOVEMENT, AS_ROUTE, ACT_JUMP, "stunState");
+const AS_CHARACTER = set_gather(AS_FOCUS, "followMe", AS_MOVEMENT, AS_ROUTE, AS_JUMP, "stunState");
 
 class Character extends Entity {
     constructor(position, size) {
@@ -105,6 +105,8 @@ class Character extends Entity {
         this.addInteraction(new StunRecipient(1));
         
         this.stats["climb-speed"] = 0.25;
+        this.stats["jump-force"] = 1.875;
+        this.stats["regeneration"] = 0.0625;
     }
     
     static fromData(data) {
@@ -168,6 +170,32 @@ class Character extends Entity {
         } else if(face === "left" || face < 0) {
             this.faceSave = "left";
         }
+        
+        return this;
+    }
+    
+    onland(obstacle) {
+        let norm = this.speed.getNorm();
+        
+        let directions = getDD(this.locate(obstacle));
+        let vector = new Vector(0, 0);
+        
+        let averagesize = rectangle_averagesize(this);
+        
+        for(let i = 0; i < directions.length; ++i) {
+            vector[directions[i].dimension] += directions[i].sign * averagesize/2;
+        }
+        
+        let positionM = Vector.addition(this.getPositionM(), vector);
+        
+        let particle = SpikeSmokeParticle.fromMiddle(positionM, [norm, norm]);
+        
+        particle.setSpeed(this.speed.normalized(-0.5));
+        
+        // particle.resetSpikeDrawable(irandom(6, 9), new ColorTransition([-Math.PI/2], [+Math.PI/2]), irandom(8, 10), irandom(16, 18), 6);
+        particle.resetSpikeDrawable(irandom(6, 9), new ColorTransition([-Math.PI/2], [+Math.PI/2]), function() {return irandom(8, 10);}, function() {return irandom(14, 18);}, 6);
+        
+        addEntity(particle);
         
         return this;
     }

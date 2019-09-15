@@ -335,15 +335,6 @@ class TextDrawable {
 
 /**/
 
-class SkyDrawable extends RectangleDrawable {
-    constructor(position, size) {
-        super(position, size);
-        
-        this.setZIndex(Infinity);
-        this.setStyle(PTRN_SKY);
-    }
-}
-
 class TrailDrawable {
     constructor() {
         this.zIndex = 0;
@@ -536,35 +527,8 @@ class CutDrawable extends PolygonDrawable {
     }
 }
 
-let flameparticle = new PolygonDrawable([[16, 0], [14.782072520180588, 6.1229349178414365], [11.313708498984761, 11.31370849898476], [6.122934917841437 - 1, 14.782072520180588], [0, 14], [-16, 8], [-8, 4], [-24, 0], [-8, -4], [-16, -8], [0, -14], [6.122934917841437 - 1, -14.782072520180588], [11.313708498984761, -11.31370849898476], [14.782072520180588, -6.1229349178414365]]);
-
-let diamondparticle = new PolygonDrawable([[0, -16], [2, 0], [0, 16], [-2, 0]]);
-
-let roundparticle;
-
-{
-    let count = 12;
-    let points = [];
-    
-    for(let i = 0; i < count; ++i) {
-        let angle = i * 2*Math.PI/count;
-        
-        points.push([16 * Math.cos(angle), 16 * Math.sin(angle)]);
-    }
-    
-    roundparticle = new PolygonDrawable(points);
-}
-
 function makeFireParticle() {
-    let fireparticle = PolygonDrawable.from(makeRandomPolygon(16, 4, 16));
-    
-    fireparticle.splice(0, 8);
-    
-    let baseparticle = PolygonDrawable.from(makeRandomPolygon(16, 8, 16));
-    
-    baseparticle.splice(8, 16);
-    
-    fireparticle.setPoints(fireparticle.concat(baseparticle));
+    let fireparticle = PolygonDrawable.from(makeFirePolygon());
     
     fireparticle.setStyle(new ColorTransition([255, 255, 127, 1], [255, 0, 0, 0.375], 24, function(t) {return Math.pow(t, 1)}));
     fireparticle.setLifespan(24);
@@ -574,38 +538,9 @@ function makeFireParticle() {
 
 class LightningDrawable extends PolygonDrawable {
     constructor(start, end) {
-        let vector = Vector.subtraction(end, start);
-        let normal = (new Vector(-vector[1], vector[0])).normalize();
+        let norm = Vector.subtraction(end, start).getNorm() / 4;
         
-        let steps = Math.floor(Math.random() * 3 + 12);
-        
-        let pointsPath = new PointsPath();
-        
-        pointsPath.addStep(0, start);
-        pointsPath.addStep(1, end);
-        
-        const v = 16;
-        
-        for(let i = 0; i < steps; ++i) {
-            let progression = Math.random();
-            let point = pointsPath.at(progression);
-            
-            pointsPath.addStep(progression, Vector.addition(point, normal.normalized(v*Math.random()-v/2)));
-        }
-        
-        let points = pointsPath.getPoints();
-        let polygon = [], reverse = [];
-        
-        for(let i = 1; i < points.length - 1; ++i) {
-            polygon.push(normal.plus(points[i]));
-            reverse.push(normal.opposite().plus(points[i]));
-        }
-        
-        reverse.reverse();
-        
-        let actualPolygon = [start].concat(polygon, [end], reverse);
-        
-        super(actualPolygon);
+        super(makeLightningPolygon(start, end, irandom(norm - 2, norm + 2)));
         
         this.setLifespan(12);
         this.setStyle(new ColorTransition(CV_WHITE, [255, 255, 255, 0.5], this.lifespan));
@@ -677,44 +612,6 @@ class FireDrawable extends PolygonDrawable {
     }
 }
 
-function makeRandomPolygon(pointsCount = 16, minDistance = 0, maxDistance = 16) {
-    let points = new Polygon();
-    
-    for(i = 0; i < pointsCount; ++i) {
-        let angle = i / pointsCount * 2*Math.PI;
-        
-        let x = (minDistance + Math.random() * (maxDistance - minDistance)) * Math.cos(angle);
-        let y = (minDistance + Math.random() * (maxDistance - minDistance)) * Math.sin(angle);
-        
-        points.push([x, y]);
-    }
-    
-    return points;
-}
-
-function starTiming(t) {
-	return Math.pow((t - 0.5) / 0.5, 2);
-}
-
-function makeStarPolygon(cornersCount = 5, minDistance = 8, maxDistance = 16, transitionDuration = 2, timingFunction = bezierLinear) {
-    let points = new Polygon();
-    
-    for(let i = 0; i < cornersCount; ++i) {
-        for(let j = 0; j < transitionDuration; ++j) {
-            let angle = (i + j / transitionDuration) / cornersCount * 2*Math.PI;
-            
-            let distance = maxDistance + timingFunction(j/(transitionDuration-1)) * (minDistance - maxDistance);
-            
-            let x = distance * Math.cos(angle);
-            let y = distance * Math.sin(angle);
-            
-            points.push([x, y]);
-        }
-    }
-    
-    return points;
-}
-
 class MultiDrawable extends Drawable {
     constructor() {
         super();
@@ -745,5 +642,12 @@ class MultiDrawable extends Drawable {
         }
         
         return this;
+    }
+}
+
+class SpikeDrawable extends PolygonDrawable {
+    constructor(count, angleTransition, minDistance, maxDistance, width) {
+        super();
+        this.setPoints(makeSpikePolygon(...arguments));
     }
 }

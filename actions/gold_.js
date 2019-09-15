@@ -75,10 +75,11 @@ class GoldFlurry extends GoldAbility {
     }
 }
 
+AC["goldFlurry"] = GoldFlurry;
+
 class RocketPunchProjectile extends Projectile {
     constructor(position, size) {
         super(position, size);
-        this.setStyle(IMG_FIST_LEFT);
         this.setDrawable(PolygonDrawable.from(flameparticle).multiplySize(1/2));
         this.drawable.setPositionM(this.getPositionM());
         this.setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 255, 0.5], 24));
@@ -91,11 +92,19 @@ class RocketPunchProjectile extends Projectile {
         this.setLifespan(24);
         
         this.addInteraction(new TypeDamager([{"type" : FX_GOLD_, "value" : 4}]));
+        let sizeTransition = new ColorTransition(Vector.multiplication(size, 1/2), size, 24, backForthTiming);
+        
+        this.controllers.add(function() {
+            this.setSizeM(sizeTransition.getNext());
+        });
+        
+        this.drawable.initImaginarySize(rectangle_averagesize(this));
     }
     
     updateDrawable() {
         this.drawable.setPositionM(this.getPositionM());
         this.drawable.setImaginaryAngle(this.speed.getAngle());
+        this.drawable.setImaginarySize(rectangle_averagesize(this));
         
         return this;
     }
@@ -116,6 +125,7 @@ class RocketPunch extends GoldAbility {
         
         if(this.phase == 0) {
             this.user.hurt(this.getUseCost());
+            this.setRemovable(false);
         }
         
         if(this.phase == 16) {
@@ -132,12 +142,15 @@ class RocketPunch extends GoldAbility {
             
             this.user.hurt(this.getUseCost());
         } else if(this.phase > 16) {
+            this.setRemovable(true);
             this.end();
         }
         
         return this;
     }
 }
+
+AC["rocketPunch"] = RocketPunch;
 
 class MultiaimShots extends GoldAbility {
     constructor() {

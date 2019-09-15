@@ -1,5 +1,5 @@
 
-const AS_FIRE = ["flameThrower","burningAttack"];
+const AS_FIRE = ["flamethrower","burningAttack"];
 
 class FireEffect extends Hitbox {
     constructor() {
@@ -15,6 +15,7 @@ class FireEffect extends Hitbox {
         
         this.setSelfBrake(1.0625);
         this.addInteraction(new ReplaceRecipient());
+        this.addInteraction(new StunActor(1));
     }
     
     updateDrawable() {
@@ -29,12 +30,17 @@ class FireEffect extends Hitbox {
 class Flamethrower extends BusyAction {
     constructor() {
         super();
-        this.setId("flameThrower");
+        this.setId("flamethrower");
         
         this.setUseCost(0.5);
+        this.setUseCost(4);
     }
     
     use() {
+        if(this.getUseCost() > 0.5) {
+            this.setUseCost(this.getUseCost()/1.25);
+        }
+        
         if(this.user.getEnergy() <= this.getUseCost()) {
             return this.end();
         }
@@ -58,6 +64,8 @@ class Flamethrower extends BusyAction {
         return this;
     }
 }
+
+AC["flamethrower"] = Flamethrower;
 
 class BurningAttack extends BusyAction {
     constructor() {
@@ -106,3 +114,5 @@ class BurningAttack extends BusyAction {
         return this;
     }
 }
+
+AC["burningAttack"] = BurningAttack;

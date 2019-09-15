@@ -41,9 +41,9 @@ class BloodShot extends Action {
             var initialPosition = this.user.getPositionM();
             var targetPosition = this.user.getCursor().getPositionM();
             
-            var projectile = BloodProjectile.fromMiddle([initialPosition[0], initialPosition[1]], [12, 12]);
+            var projectile = BloodProjectile.fromMiddle([initialPosition[0], initialPosition[1]], [4, 4]);
             
-            projectile.setSpeed(Vector.subtraction(targetPosition, initialPosition).normalize(16));
+            projectile.setSpeed(Vector.subtraction(targetPosition, initialPosition).normalize(4));
             projectile.addInteraction(new DragActor(projectile.speed.normalized(1)));
             projectile.shareBlacklist(this.user.getBlacklist());
             
@@ -57,6 +57,8 @@ class BloodShot extends Action {
         return this;
     }
 }
+
+AC["bloodShot"] = BloodShot;
 
 class BlowoutShots extends Action {
     constructor() {
@@ -82,8 +84,8 @@ class BlowoutShots extends Action {
         }
         
         if(this.phase % this.pace == 0) {
-            var projectile = BloodProjectile.fromMiddle(this.user.getPositionM(), [8, 8]);
-            projectile.setSpeed(new Vector(Math.cos(this.angle), Math.sin(this.angle)).normalize(8));
+            var projectile = BloodProjectile.fromMiddle(this.user.getPositionM(), [4, 4]);
+            projectile.setSpeed(new Vector(Math.cos(this.angle), Math.sin(this.angle)).normalize(4));
             projectile.shareBlacklist(this.user.getBlacklist());
             projectile.setLifespan(20);
             addEntity(projectile);
@@ -97,6 +99,8 @@ class BlowoutShots extends Action {
     }
 }
 
+AC["blowoutShots"] = BlowoutShots;
+
 class VeinSweep extends SlashAction {
     constructor() {
         super();
@@ -108,6 +112,13 @@ class VeinSweep extends SlashAction {
         this.hitbox.removeInteractorWithId("damage");
         this.hitbox.addInteraction(new TypeDamager({type:FX_HEART_, value:1}));
         // console.log(this.hitbox.findInteractorWithId("damage"));
+    }
+    
+    updateTrailDrawableStyle(detProgress) {
+        let ct = new ColorTransition([63, 255, 255, 1], [0, 0, 255, 0], 8, bezierLinear);
+        this.trailDrawable.trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), 8, bezierLinear);
+        
+        return this;
     }
     
     transitionsSetup() {
@@ -124,3 +135,5 @@ class VeinSweep extends SlashAction {
         return this;
     }
 }
+
+AC["veinSweep"] = VeinSweep;

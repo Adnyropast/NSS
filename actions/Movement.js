@@ -153,6 +153,8 @@ class Still extends Action {
     }
 }
 
+AC["still"] = Still;
+
 class MovementTo extends Movement {
     constructor(power) {
         super(power);

@@ -44,6 +44,8 @@ class Cutter extends Hitbox {
         this.bladeDrawable.setPositionM(this.getPositionM());
         this.bladeDrawable.setStyle(new ColorTransition([0, 255, 255, 1], [0, 0, 255, 1], 64));
         this.bladeDrawable.setStyle(new ColorTransition([255, 191, 63, 1], [255, 191, 63, 0], 64));
+        
+        this.addInteraction(new VacuumDragActor(-0.125));
     }
     
     updateDrawable() {

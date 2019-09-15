@@ -91,6 +91,8 @@ class Interrecipient {
     negotiate(interactor) {
         return {};
     }
+    
+    beforeInteraction(interactor) {return this;}
 }
 
 /**
@@ -110,7 +112,7 @@ class ReplaceActor extends Interactor {
         var actor = this.getActor();
         var recipient = interrecipient.getRecipient();
         
-        /**/
+        /**
         
         if(recipient instanceof Character && recipient.speed.getNorm() > 4) {
             let averagesize = (recipient.getWidth() + recipient.getHeight()) / 2;
@@ -153,6 +155,25 @@ class ReplaceRecipient extends Interrecipient {
     constructor() {
         super();
         this.setId("replace");
+    }
+    
+    beforeInteraction(interactor) {
+        let actor = interactor.getActor();
+        let recipient = this.getRecipient();
+        
+        let groundSave = recipient.findState("groundSave");
+        
+        if(typeof groundSave == "undefined") {
+            if(recipient.lifeCounter > 2) {
+                recipient.addState("land");
+                recipient.onland(actor);
+            }
+            recipient.addStateObject({name:"groundSave", countdown:2});
+        } else {
+            groundSave.countdown = 2;
+        }
+        
+        return this;
     }
 }
 
@@ -388,19 +409,17 @@ class TypeDamager extends Interactor {
                         addEntity(particle);
                     }
                 } else if(type === FX_GOLD_) {
-                    for(let i = 0; i < 8; ++i) {
-                        let angle = i * 2*Math.PI/8;
+                    let count = irandom(4, 8);
+                    
+                    for(let i = 0; i < count; ++i) {
+                        let angle = i * 2*Math.PI/count;
                         
-                        var particle = GoldSmokeParticle.fromMiddle(Vector.addition(actor.getPositionM(), recipient.getPositionM()).divide(2), [8, 8]);
+                        var particle = GoldSmokeParticle.fromMiddle(Vector.addition(actor.getPositionM(), recipient.getPositionM()).divide(2), [averagesize, averagesize]);
                         
                         let direction = getDD(actor.locate(recipient))[0];
                         let vector = actor.speed.normalized();
                         vector[direction.dimension] += direction.sign;
-                        particle.setSpeed(vector.rotate(Math.random() * 2 - 1).normalize(Math.random() * 2 + 1));
-                        
-                        particle.drawable.rotate(particle.speed.getAngle());
-                        
-                        particle.drawable.multiplySize(averagesize/16);
+                        particle.setSpeed(vector.rotate(Math.random() * 2 - 1).normalize(Math.random() * (averagesize / 8)));
                         
                         addEntity(particle);
                     }
@@ -516,16 +535,6 @@ class GroundActor extends Interactor {
     
     interact(interrecipient) {
         var recipient = interrecipient.getRecipient();
-        
-        let groundSave = recipient.findState("groundSave");
-        
-        if(typeof groundSave == "undefined") {
-            recipient.addState("land");
-            
-            recipient.addStateObject({name:"groundSave", countdown:2});
-        } else {
-            groundSave.countdown = 2;
-        }
         
         recipient.addState("grounded");
         
@@ -839,6 +848,8 @@ class ContactVanishRecipient extends Interrecipient {
         if(this.flags & interactor.flags) {
             let recipient = this.getRecipient();
             
+            /**
+            
             for(let i = 0; i < 8; ++i) {
                 let angle = i * 2*Math.PI/8;
                 
@@ -847,6 +858,16 @@ class ContactVanishRecipient extends Interrecipient {
                 
                 addEntity(particle);
             }
+            
+            /**/
+            
+            let averagesize = rectangle_averagesize(recipient);
+            let particle = SpikeSmokeParticle.fromMiddle(recipient.getPositionM(), [averagesize, averagesize]);
+            particle.setSpeed(recipient.speed.normalized(-0.5));
+            
+            addEntity(particle);
+            
+            /**/
         }
         
         return this;

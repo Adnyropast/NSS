@@ -224,11 +224,7 @@ function loadImage(src) {
 
 var IMG_SEED = loadImage("images/seed.png");
 
-var IMG_GRASSTILE = loadImage("images/grasstile.png");
-var IMG_GRASSTILE_C = loadImage("images/grasstile-c.png");
-var IMG_HPP_C0 = loadImage("images/hpp-c0.png");
-
-const IMG_FIST_LEFT = loadImage("images/fist-left-tp.png");
+var IMG_GRASSTILE = loadImage("images/grass_tile.png");
 
 var ANIM_HAPLE = {
     "std-right" : new AnimatedImages([loadImage("images/haple/std-right.png")]),
@@ -274,14 +270,6 @@ let ANIM_TEN = {
     "swim-right" : ColorTransition.from(CT_TEN).setDuration(12)
 };
 
-var IMG_MAP_DRAFT = loadImage("images/map-draft.png");
-var IMG_MAP_GRASS = loadImage("images/map-grassc.png");
-
-var IMG_WALLTILE = loadImage("images/wall-c.png");
-var IMG_OBSTACLETILE = loadImage("images/obstacle-c.png");
-
-var IMG_DCRT_L3 = loadImage("images/decoration-level3.png");
-
 const IMG_TREETRUNK = loadImage("images/treetrunk.png");
 const IMG_TREEBACKGROUND = loadImage("images/treebackground.png");
 
@@ -291,65 +279,6 @@ const IMG_SKYTILE = loadImage("images/sky_tile.png");
 // 
 
 const CTILE_WIDTH = 16;
-
-var PTRN_GRASS1;
-
-IMG_GRASSTILE.addEventListener("load", function() {
-    var c = document.createElement("canvas");
-    c.width = 64 * wprop; c.height = 64 * hprop;
-    
-    var ctx = c.getContext("2d");
-    
-    ctx.fillStyle = "#3F3F00";
-    ctx.fillRect(0, 0, 64 * wprop, 64 * hprop);
-    ctx.drawImage(IMG_GRASSTILE, 0, 0, 16 * wprop, 16 * hprop);
-    ctx.drawImage(IMG_GRASSTILE, 16 * wprop, 16 * wprop, 32 * hprop, 32 * hprop);
-    
-    PTRN_GRASS1 = CANVAS.getContext("2d").createPattern(c, "no-repeat");
-});
-
-var PTRN_WALL;
-
-IMG_WALLTILE.addEventListener("load", function() {
-    PTRN_WALL = CANVAS.makePattern(this, 8 * wprop, 8 * hprop, "repeat");
-});
-
-var PTRN_OBSTACLE;
-
-IMG_OBSTACLETILE.addEventListener("load", function() {
-    PTRN_OBSTACLE = CANVAS.makePattern(this, 8 * wprop, 8 * hprop, "repeat");
-});
-
-var PTRNS_SMOKE = new AnimatedImages([]).setIcpf(1);
-
-{
-    let count = 33;
-    
-    let tcolor = new ColorTransition([255, 255, 255, 255 / 255], [127, 127, 127, 31 / 255], count, bezierEaseInOut);
-    
-    for(var i = 0; i < count; ++i) {
-        let c = document.createElement("canvas");
-        c.width = 64, c.height = 64;
-        let ctx = c.getContext("2d");
-        
-        ctx.clearRect(0, 0, c.width, c.height);
-        ctx.beginPath();
-        ctx.arc(32, 32, 32 - 32 * (i / count), 0, Math.PI * 2);
-        // ctx.arc(32, 32, ((count / 2) - Math.abs(i - (count / 2))), 0, Math.PI * 2);
-        ctx.fillStyle = tcolor.getNextStyle();
-        // console.log(ctx.fillStyle, tcolor.at(tcolor.getProgress())[3]);
-        ctx.fill();
-        // PTRNS_SMOKE.addImage(CANVAS.makePattern(c, 16 * wprop, 16 * hprop, "no-repeat"));
-        PTRNS_SMOKE.addImage(c);
-        // document.body.appendChild(c);
-    }
-};
-
-var PTRN_SKY = makeSkyPattern(1024);
-
-function makeSkyPattern(verticalCount) {
-    return makeGradientCTilesCanvas(1, verticalCount, new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1]), new ColorTransition([0, 15, 239, 1], [0, 239, 239, 1]));
-}
 
 function makeGradientCTilesCanvas(horizontalCount, verticalCount, bgTransition, shTransition) {
     let width = horizontalCount * CTILE_WIDTH;
@@ -412,22 +341,24 @@ function makeTextCanvas(content, font = "Luckiest Guy", fillStyle = "black", str
 
 const tfparams = {
     "positioning" : 0,
-    "padding-left" : 0
+    "padding-left" : 0,
+    "positioning-y" : 0,
+    "padding-top" : 0
 };
 
 function makeTextFit(content, width, height, font = "Luckiest Guy", fillStyle = "black", strokeStyle) {
-    let c = document.createElement("canvas");
-    c.width = width, c.height = height;
-    let ctx = c.getContext("2d");
+    let finalCanvas = document.createElement("canvas");
+    finalCanvas.width = width, finalCanvas.height = height;
+    let ctx = finalCanvas.getContext("2d");
     
-    let oc = makeTextCanvas(content, font, fillStyle, strokeStyle);
+    let textCanvas = makeTextCanvas(content, font, fillStyle, strokeStyle);
     
-    if(oc.width != 0) {
-        // ctx.drawImage(oc, 0, 0, oc.width * height / oc.height, height);
-        ctx.drawImage(oc, tfparams["padding-left"] + tfparams.positioning * (c.width - oc.width * height / oc.height), 0, oc.width * height / oc.height, height);
+    if(textCanvas.width != 0) {
+        // ctx.drawImage(textCanvas, 0, 0, textCanvas.width * height / textCanvas.height, height);
+        ctx.drawImage(textCanvas, tfparams["padding-left"] + tfparams.positioning * (finalCanvas.width - textCanvas.width * height / textCanvas.height), tfparams["padding-top"], textCanvas.width * height / textCanvas.height, height);
     }
     
-    return c;
+    return finalCanvas;
 }
 
 function makeUnderwaterPattern(height) {

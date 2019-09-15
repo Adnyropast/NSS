@@ -19,6 +19,7 @@ class Polygon extends Array {
         this.setPoints(points);
         
         Object.defineProperty(this, "imaginaryAngle", {"writable" : true, "enumerable" : false, "value" : 0});
+        Object.defineProperty(this, "imaginarySize", {"writable" : true, "enumerable" : false, "value" : 1});
     }
     
     /**
@@ -219,7 +220,7 @@ class Polygon extends Array {
     
     /* 02/11/2018 */
 
-    basicDraw(context, fillStyle, strokeStyle) {
+    basicDraw(context) {
         context.beginPath();
         var point = this.getPoint(0);
         
@@ -228,15 +229,13 @@ class Polygon extends Array {
         for(var i = 1; i < this.size(); ++i) {
             point = this.getPoint(i);
             
-            ctx.lineTo(point[0], point[1]);
+            context.lineTo(point[0], point[1]);
         }
         
-        ctx.closePath();
+        context.closePath();
         
-        ctx.fillStyle = ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 0.5;
-        ctx.stroke();
-        ctx.fill();
+        context.stroke();
+        context.fill();
         
         return this;
     }
@@ -505,6 +504,18 @@ class Polygon extends Array {
     getPositionM() {
         return this.center;
     }
+    
+    /* 13/09/2019 */
+    
+    initImaginarySize(imaginarySize) {this.imaginarySize = imaginarySize; return this;}
+    getImaginarySize() {return this.imaginarySize;}
+    setImaginarySize(imaginarySize) {
+        this.multiplySize(imaginarySize / this.imaginarySize);
+        
+        this.imaginarySize = imaginarySize;
+        
+        return this;
+    }
 }
 
 /**/
@@ -520,3 +531,137 @@ var polygons = [
 ];
 
 /**/
+
+let flameparticle = new Polygon([[16, 0], [14.782072520180588, 6.1229349178414365], [11.313708498984761, 11.31370849898476], [6.122934917841437 - 1, 14.782072520180588], [0, 14], [-16, 8], [-8, 4], [-24, 0], [-8, -4], [-16, -8], [0, -14], [6.122934917841437 - 1, -14.782072520180588], [11.313708498984761, -11.31370849898476], [14.782072520180588, -6.1229349178414365]]);
+
+let diamondparticle = new Polygon([[0, -16], [2, 0], [0, 16], [-2, 0]]);
+
+let roundparticle = makeRandomPolygon(12, 16, 16);
+
+function makeFirePolygon() {
+    let polygon = makeRandomPolygon(16, 4, 16);
+    
+    polygon.splice(0, 8);
+    
+    let base = makeRandomPolygon(16, 8, 16);
+    
+    base.splice(8, 16);
+    
+    polygon.setPoints(polygon.concat(base));
+    
+    return polygon
+}
+
+function makeLightningPolygon(start, end, steps = Math.floor(Math.random() * 3 + 12)) {
+    let vector = Vector.subtraction(end, start);
+    let normal = (new Vector(-vector[1], vector[0])).normalize();
+    
+    let pointsPath = new PointsPath();
+    
+    pointsPath.addStep(0, start);
+    pointsPath.addStep(1, end);
+    
+    const v = 16;
+    
+    for(let i = 0; i < steps; ++i) {
+        let progression = Math.random();
+        let point = pointsPath.at(progression);
+        
+        pointsPath.addStep(progression, Vector.addition(point, normal.normalized(v*Math.random()-v/2)));
+    }
+    
+    let points = pointsPath.getPoints();
+    let polygon = [], reverse = [];
+    
+    for(let i = 1; i < points.length - 1; ++i) {
+        polygon.push(normal.plus(points[i]));
+        reverse.push(normal.opposite().plus(points[i]));
+    }
+    
+    reverse.reverse();
+    
+    let actualPolygon = [start].concat(polygon, [end], reverse);
+    
+    return actualPolygon;
+}
+
+function makeRandomPolygon(pointsCount = 16, minDistance = 0, maxDistance = 16) {
+    let points = new Polygon();
+    
+    for(i = 0; i < pointsCount; ++i) {
+        let angle = i / pointsCount * 2*Math.PI;
+        
+        let x = (minDistance + Math.random() * (maxDistance - minDistance)) * Math.cos(angle);
+        let y = (minDistance + Math.random() * (maxDistance - minDistance)) * Math.sin(angle);
+        
+        points.push([x, y]);
+    }
+    
+    return points;
+}
+
+function starTiming(t) {
+	return Math.pow((t - 0.5) / 0.5, 2);
+}
+
+function makeStarPolygon(cornersCount = 5, minDistance = 8, maxDistance = 16, transitionDuration = 2, timingFunction = bezierLinear) {
+    let points = new Polygon();
+    
+    for(let i = 0; i < cornersCount; ++i) {
+        for(let j = 0; j < transitionDuration; ++j) {
+            let angle = (i + j / transitionDuration) / cornersCount * 2*Math.PI;
+            
+            let distance = minDistance + timingFunction(j/(transitionDuration-1)) * (maxDistance - minDistance);
+            
+            let x = distance * Math.cos(angle);
+            let y = distance * Math.sin(angle);
+            
+            points.push([x, y]);
+        }
+    }
+    
+    return points;
+}
+
+let eightstar = makeStarPolygon(4, 6, 16, 4, function(t) {
+	if(t === 0/3) {return 0;}
+	if(t === 1/3) {return 0.75;}
+	if(t === 2/3) {return 0;}
+	if(t === 3/3) {return 1;}
+});
+
+function makeSpikePolygon(count, angleTransition, minDistance, maxDistance, width) {
+    let path = new Array(2 * count + 1);
+    let reverse = [];
+    
+    for(let i = 0; i < path.length; ++i) {
+        let angle = angleTransition.at(i / (path.length - 1))[0];
+        
+        let cos = Math.cos(angle), sin = Math.sin(angle);
+        
+        if(i % 2 == 1) {
+            let maxD = maxDistance;
+            
+            if(maxDistance instanceof ColorTransition) {maxD = maxDistance.at(Math.floor(i/2)/(count-1))[0]}
+            else if(typeof maxDistance == "function") {maxD = maxDistance(Math.floor(i/2)/(count-1));}
+            
+            path[i] = [maxD * cos, maxD * sin];
+            reverse.push([(maxD - width) * cos, (maxD - width) * sin]);
+        } else {
+            let minD = minDistance;
+            
+            if(minDistance instanceof ColorTransition) {minD = minDistance.at(i/2/count)[0];}
+            else if(typeof minDistance == "function") {minD = minDistance(i/2/count);}
+            
+            path[i] = [minD * cos, minD * sin];
+            
+            if(i != 0 && i != path.length - 1) {
+                reverse.push([(minD - width) * cos, (minD - width) * sin]);
+            }
+        }
+    }
+    
+    reverse.reverse();
+    
+    return new Polygon(path.concat(reverse));
+}
