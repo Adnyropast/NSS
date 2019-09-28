@@ -164,7 +164,20 @@ class ZoneEngage extends BusyAction {
             this.wind.addInteraction(new TypeDamager([{"type" : FX_WIND, "value" : 0.5}]));
             addEntity(this.wind);
             
-            this.zone.setStyle(makeRadialGradientCanvas("cyan", "rgba(0, 255, 255, 0)", 256, 256));
+            let canvas = document.createElement("canvas");
+            canvas.width = 256, canvas.height = 256;
+            
+            let ctx = canvas.getContext("2d");
+            
+            let grd = ctx.createRadialGradient(canvas.width/2, canvas.height/2, canvas.width/16, 2/4*canvas.width, 2/4*canvas.height, canvas.width/2);
+            
+            grd.addColorStop(0, "cyan");
+            grd.addColorStop(1, "rgba(0, 255, 255, 0)");
+            
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            this.zone.setStyle(canvas);
             
             this.setRemovable(false);
         }
@@ -318,8 +331,6 @@ class StunState extends BusyAction {
         
         this.brakeRecipientSave = null;
         this.timeout = timeout;
-        
-        this.backSmoke = new BackSmoke();
     }
     
     onadd() {
@@ -330,8 +341,6 @@ class StunState extends BusyAction {
         
         this.user.setSelfBrake(1.125);
         
-        // this.user.addAction(this.backSmoke);
-        
         return super.onadd();
     }
     
@@ -339,8 +348,6 @@ class StunState extends BusyAction {
         this.user.addInteraction(this.brakeRecipientSave);
         
         this.user.setSelfBrake(1);
-        
-        // this.user.removeAction(this.backSmoke);
         
         return super.onend();
     }
@@ -405,8 +412,6 @@ class SlashAction extends BusyAction {
         this.bladeAngleTransition = new ColorTransition([], []);
         this.bladeWidthTransition = new ColorTransition([], []);
         
-        this.edgeWidthTransition = new ColorTransition([1.25], [1.25]);
-        
         this.det = 3;
     }
     
@@ -427,8 +432,6 @@ class SlashAction extends BusyAction {
         
         this.bladeAngleTransition;
         this.bladeWidthTransition;
-        
-        this.edgeWidthTransition;
         
         return this;
     }
@@ -471,16 +474,12 @@ class SlashAction extends BusyAction {
                 let bladeAngle = this.bladeAngleTransition.at(progress)[0];
                 let bladeWidth = this.bladeWidthTransition.at(progress)[0];
                 
-                let bladeDirection = (new Vector(Math.cos(bladeAngle), Math.sin(bladeAngle))).normalize(bladeWidth);
-                
                 this.hitbox.setSize([bladeWidth, bladeWidth]);
-                this.hitbox.setPositionM(basePosition.plus(bladeDirection.divided(2)));
+                this.hitbox.setPositionM(basePosition.plus(baseDirection.normalized(bladeWidth/2)));
                 
                 this.updateTrailDrawableStyle(i/this.det);
                 
-                let edgeWidth = this.edgeWidthTransition.at(progress)[0];
-                
-                this.trailDrawable.addSized(basePosition, bladeAngle, bladeWidth, bladeWidth - edgeWidth);
+                this.trailDrawable.addSized(basePosition, bladeAngle, bladeWidth, bladeWidth - 1.25);
             }
             
             this.lastPositionM = userPositionM;

@@ -26,12 +26,10 @@ class PlayableCharacter extends Character {
     }
     
     ondefeat() {
-        let spd = rectangle_averagesize(this) / 16;
-        
-        for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 4) {
+        for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 3) {
             var cos = Math.cos(angle), sin = Math.sin(angle);
-            var particle = SmokeParticle.fromMiddle(this.getPositionM(), this.size);
-            particle.setSpeed([spd*cos, spd*sin]);
+            var particle = FireSmokeParticle.fromMiddle(this.getPositionM(), this.size);
+            particle.setSpeed([4*cos, 4*sin]);
             particle.drag(this.speed);
             particle.setStyle(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1], 32));
             particle.setSizeTransition(new ColorTransition(this.size, [0, 0], 32));
@@ -308,8 +306,6 @@ class ComposedAction extends Action {
     }
 }
 
-let movementCost = 0.125;
-
 class MovementLeft extends Action {
     constructor() {
         super();
@@ -319,7 +315,7 @@ class MovementLeft extends Action {
     use() {
         this.user.addAction(new TmprRoute([-BIG, 0]));
         this.user.addAction(new MoveFocus());
-        this.user.addAction(new Movement().setUseCost(movementCost));
+        this.user.addAction(new Movement().setUseCost(0.125));
         
         return this;
     }
@@ -340,7 +336,7 @@ class MovementUp extends Action {
     use() {
         this.user.addAction(new TmprRoute([0, -BIG]));
         this.user.addAction(new MoveFocus());
-        this.user.addAction(new Movement().setUseCost(movementCost));
+        this.user.addAction(new Movement().setUseCost(0.125));
         
         return this;
     }
@@ -361,7 +357,7 @@ class MovementRight extends Action {
     use() {
         this.user.addAction(new TmprRoute([+BIG, 0]));
         this.user.addAction(new MoveFocus());
-        this.user.addAction(new Movement().setUseCost(movementCost));
+        this.user.addAction(new Movement().setUseCost(0.125));
         
         return this;
     }
@@ -382,7 +378,7 @@ class MovementDown extends Action {
     use() {
         this.user.addAction(new TmprRoute([0, +BIG]));
         this.user.addAction(new MoveFocus());
-        this.user.addAction(new Movement().setUseCost(movementCost));
+        this.user.addAction(new Movement().setUseCost(0.125));
         
         return this;
     }

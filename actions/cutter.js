@@ -7,8 +7,7 @@ class CutterAbility extends BusyAction {
     }
 }
 
-// const cutterdrawable = new PolygonDrawable([[16, 0], [12, 4], [8, 8], [-8, 16], [0, 0], [-8, -16], [8, -8], [12, -4]]);
-const cutterdrawable = new PolygonDrawable([[16, 0], [12, 12], [0, 12], [-8, 8], [-16, 12], [-8, 0], [0, 0], [17, -4]]);
+const cutterdrawable = new PolygonDrawable([[16, 0], [12, 4], [8, 8], [-8, 16], [0, 0], [-8, -16], [8, -8], [12, -4]]);
 
 const cutterEdgeStyle = new ColorTransition([255, 223, 0, 1], [255, 223, 0, 0], 16);
 
@@ -43,28 +42,10 @@ class Cutter extends Hitbox {
         /**/
         this.bladeDrawable = PolygonDrawable.from(cutterdrawable).multiplySize(1/2);
         this.bladeDrawable.setPositionM(this.getPositionM());
-        // this.bladeDrawable.setStyle(new ColorTransition([0, 255, 255, 1], [0, 0, 255, 1], 64));
-        // this.bladeDrawable.setStyle(new ColorTransition([255, 191, 63, 1], [255, 191, 63, 0], 64));
-        this.bladeDrawable.setStyle((new ColorTransition([255, 255, 0, 1], [0, 255, 255, 1], 4)).setLoop(true));
+        this.bladeDrawable.setStyle(new ColorTransition([0, 255, 255, 1], [0, 0, 255, 1], 64));
+        this.bladeDrawable.setStyle(new ColorTransition([255, 191, 63, 1], [255, 191, 63, 0], 64));
         
         this.addInteraction(new VacuumDragActor(-0.125));
-        
-        let lifespan = 12;
-        let otherTrail = new TrailDrawable();
-        otherTrail.edgeWidth = 1;
-        otherTrail.trailStyle = new ColorTransition([255, 255, 255, irandom(75, 100)/100], [0, 255, 255, 0], lifespan, bezierLinear);
-        this.trailDrawable.otherTrails.add(otherTrail);
-        otherTrail = new TrailDrawable();
-        otherTrail.edgeWidth = -4;
-        otherTrail.trailStyle = new ColorTransition([255, 255, 255, irandom(75, 100)/100], [0, 255, 255, 0], lifespan, bezierLinear);
-        this.trailDrawable.otherTrails.add(otherTrail);
-        
-        for(let i = 0; i < 0; ++i) {
-            let otherTrail = new TrailDrawable();
-            otherTrail.edgeWidth = irandom(-6, +2);
-            otherTrail.trailStyle = new ColorTransition([255, 255, 255, irandom(75, 100)/100], [0, 255, 255, 0], lifespan, bezierLinear);
-            this.trailDrawable.otherTrails.add(otherTrail);
-        }
     }
     
     updateDrawable() {
@@ -254,7 +235,6 @@ function finalCutter1BladeTransition(t) {
     
     let rt = (t - shiftTime) / (1-shiftTime);
     
-    return ovalTransition((rt+1)/2);
     return Math.pow(Math.abs(rt - 0.5) / 0.5, 3);
     return 1 * (Math.cos(rt * 2*Math.PI) + 1) / 4 + 0.5;
     return 1 * forthBackTiming(rt);
@@ -283,16 +263,6 @@ class FinalCutter1 extends SlashAction {
         this.endlag = 16;
         
         this.setUseCost(3);
-        
-        let otherTrail = new TrailDrawable();
-        otherTrail.edgeWidth = 2;
-        this.trailDrawable.otherTrails.add(otherTrail);
-        
-        for(let i = 0; i < 3; ++i) {
-            let otherTrail = new TrailDrawable();
-            otherTrail.edgeWidth = irandom(-8, +2);
-            this.trailDrawable.otherTrails.add(otherTrail);
-        }
     }
     
     updateTrailDrawableStyle(detProgress) {
@@ -302,14 +272,6 @@ class FinalCutter1 extends SlashAction {
         } else {
             this.trailDrawable.trailStyle = new ColorTransition([127*detProgress, 255, 255, 1], [0, 0, 255, 0], 8);
             this.trailDrawable.trailStyle = new ColorTransition([255, 255, 255 * detProgress, 1], [127, 127, 63 + (255 - 63) * detProgress, 0], 8);
-        }
-        
-        for(let i = 0; i < this.trailDrawable.otherTrails.length; ++i) {
-            let lifespan = irandom(6, 8);
-            
-            let ct = new ColorTransition([255, 255, 255, irandom(75, 100)/100], [0, 255, 255, 0], lifespan, bezierLinear);
-            
-            this.trailDrawable.otherTrails[i].trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), lifespan, bezierLinear);
         }
         
         return this;
@@ -349,6 +311,48 @@ class FinalCutter1 extends SlashAction {
     }
     
     use() {
+        /**
+        
+        let duration = this.slashDuration;
+        
+        if(this.phase <= duration) {
+            let det = 12;
+            
+            let positionTransition = new ColorTransition(this.lastPositionM || this.user.getPositionM(), this.user.getPositionM());
+            
+            for(let i = 1; i <= det; ++i) {
+                let progress = (this.phase-1 + i/det) / duration;
+                if(progress < 0) progress = 0;
+                let baseAngle = this.startBaseAngle + Math.pow(progress, 1/2) * (this.endBaseAngle - this.startBaseAngle);
+                
+                let baseDistance = 8;this.baseDistanceTransition.at(progress)[0];
+                
+                let baseDirection = new Vector(Math.cos(baseAngle), Math.sin(baseAngle));
+                
+                let basePosition = Vector.addition(positionTransition.at(i/det), baseDirection.normalized(baseDistance));
+                
+                let bladeAngle = this.startBladeAngle + Math.pow(progress, 1/2) * (this.endBladeAngle - this.startBladeAngle);
+                
+                let bladeWidth = 16 * finalCutter1BladeTransition(progress);
+                
+                this.hitbox.setPositionM(basePosition.plus(baseDirection.normalized((20 + baseDistance) / 2)));
+                
+                this.trailDrawable.trailStyle = new ColorTransition([127*i/det, 255, 255, 1], [0, 0, 255, 0], 8);
+                
+                if(i == det) this.trailDrawable.trailStyle = new ColorTransition([255, 255, 127, 1], [0, 255, 255, 0], 12);
+                
+                this.trailDrawable.addSized(basePosition, bladeAngle, bladeWidth + baseDistance, bladeWidth - 1.25 + baseDistance);
+            }
+            
+            this.lastPositionM = this.user.getPositionM();
+        }
+        
+        if(this.phase == duration + 4) {
+            this.end();
+        }
+        
+        /**/
+        
         super.use()
         
         if(this.phase == this.startlag + this.slashDuration + 4 && this.nextAction) {this.setRemovable(true); this.end()}
@@ -389,16 +393,6 @@ function finalCutter2BladeTransition(t) {
     return Math.min(1, forthBackTiming(Math.abs(t - 0.5) / 0.5));
 }
 
-function ovalTransition(t) {
-    let angle = t * 2*Math.PI;
-    
-    let distance = Math.sqrt(Math.pow(1*Math.cos(angle), 2) + 0.75*Math.pow(Math.sin(angle), 2));
-    
-    // console.log(distance);
-    
-    return distance;
-}
-
 class FinalCutter2 extends FinalCutter1 {
     constructor() {
         super();
@@ -426,14 +420,14 @@ class FinalCutter2 extends FinalCutter1 {
             
             this.baseAngleTransition = new ColorTransition([this.startBaseAngle], [this.endBaseAngle]);
             
-            this.baseDistanceTransition = new ColorTransition([6], [0], 1, ovalTransition);
+            this.baseDistanceTransition = new ColorTransition([6], [2], 1, forthBackTiming);
             
             this.startBladeAngle = new Vector(-this.face[0], 0).getAngle();
             this.endBladeAngle = this.startBladeAngle - this.face[0] * 2 * Math.PI;
             
             this.bladeAngleTransition = new ColorTransition([this.startBladeAngle], [this.endBladeAngle]);
             
-            this.bladeWidthTransition = new ColorTransition([0], [16], 1, ovalTransition);
+            this.bladeWidthTransition = new ColorTransition([0], [16], 1, finalCutter2BladeTransition);
         } else if(this.face[1] != 0) {
             this.type = "vertical";
         } else {
@@ -441,6 +435,50 @@ class FinalCutter2 extends FinalCutter1 {
         }
         
         return this;
+    }
+    
+    use() {
+        /**
+        
+        let duration = this.slashDuration;
+        
+        if(this.phase <= duration) {
+            let det = 6;
+            
+            let positionTransition = new ColorTransition(this.lastPositionM || this.user.getPositionM(), this.user.getPositionM());
+            
+            for(let i = 1; i <= det; ++i) {
+                let progress = (this.phase-1 + i/det) / duration;
+                
+                let baseAngle = this.startBaseAngle + bezierLinear(progress) * (this.endBaseAngle - this.startBaseAngle);
+                
+                let baseDistance = 6 - 4 * Math.abs((this.phase-1 + i/det) - duration/2) / (duration/2);
+                
+                let baseDirection = new Vector(Math.cos(baseAngle), Math.sin(baseAngle));
+                
+                let basePosition = Vector.addition(positionTransition.at(i/det), baseDirection.normalized(baseDistance));
+                
+                this.hitbox.setPositionM(basePosition.plus(baseDirection.normalized((20 + baseDistance) / 2)));
+                
+                let bladeAngle = this.startBladeAngle + bezierLinear(progress) * (this.endBladeAngle - this.startBladeAngle);
+                
+                let bladeWidth = 16 * finalCutter2BladeTransition((this.phase-1 + i/det) / duration);
+                
+                this.trailDrawable.trailStyle = new ColorTransition([127*i/det, 255, 255, 1], [0, 0, 255, 0], 16);
+                
+                if(i == det) this.trailDrawable.trailStyle = new ColorTransition([255, 255, 127, 1], [0, 255, 255, 0], 20);
+                
+                this.trailDrawable.addSized(basePosition, bladeAngle, bladeWidth + baseDistance, bladeWidth - 1.25 + baseDistance);
+            }
+        }
+        
+        if(this.phase == duration + 4) {
+            this.end();
+        }
+        
+        /**/
+        
+        return super.use();
     }
 }
 

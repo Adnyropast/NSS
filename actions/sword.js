@@ -27,83 +27,17 @@ class SwordSlashAction extends SlashAction {
     constructor() {
         super();
         
-        this.startlag = 0;
         this.endlag = 0;
-        
-        this.swordDrawable = MultiPolygonDrawable.from(makeSwordMultiPolygon());
-        
-        let drawables = this.swordDrawable;
-        
-        drawables[0].setStyle("#00FFFF");
-        drawables[1].setStyle("#00EFEF");
-        drawables[2].setStyle("#003F7F");
-        drawables[3].setStyle("#005F9F");
-        
-        drawables[0].setStyle("#FFFFFF");
-        drawables[1].setStyle("#EFEFEF");
-        drawables[2].setStyle("#7F7F7F");
-        drawables[3].setStyle("#F7F7F7");
-        
-        this.swordDrawable.multiplySize(1/1.5);
-        this.swordDrawable.initImaginarySize(rectangle_averagesize(this.hitbox));
-        
-        this.swordDrawable.zIndex = -10;
-        
-        let otherTrail = new TrailDrawable();
-        otherTrail.edgeWidth = 2;
-        this.trailDrawable.otherTrails.add(otherTrail);
-        
-        for(let i = 0; i < 3; ++i) {
-            let otherTrail = new TrailDrawable();
-            otherTrail.edgeWidth = irandom(-8, +2);
-            this.trailDrawable.otherTrails.add(otherTrail);
-        }
     }
     
     updateTrailDrawableStyle(detProgress) {
-        // this.trailDrawable.trailStyle = new ColorTransition([127*detProgress, 255, 255, 1], [0, 255*detProgress, 255, 0], 8);
+        this.trailDrawable.trailStyle = new ColorTransition([127*detProgress, 255, 255, 1], [0, 255*detProgress, 255, 0], 8);
         
-        let ct = new ColorTransition([0, 255, 255, 1], [0, 0, 255, 0.25], 7, bezierLinear);
-        this.trailDrawable.trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), 7, function timing(t) {return Math.pow(t, 1);});
-        
-        for(let i = 0; i < this.trailDrawable.otherTrails.length; ++i) {
-            let lifespan = irandom(6, 8);
-            
-            ct = new ColorTransition([255, 255, 255, irandom(75, 100)/100], [255, 255, 0, 0], lifespan, bezierLinear);
-            
-            this.trailDrawable.otherTrails[i].trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), lifespan, bezierLinear);
-        }
+        // let ct = new ColorTransition([63, 255, 255, 1], [0, 0, 255, 0], 8, bezierLinear);
+        // this.trailDrawable.trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), 8, bezierLinear);
         
         return this;
     }
-    /**
-    onadd() {
-        addDrawable(this.swordDrawable);
-        
-        return super.onadd();
-    }
-    
-    onend() {
-        removeDrawable(this.swordDrawable);
-        
-        return super.onend();
-    }
-    
-    use() {
-        super.use();
-        
-        this.swordDrawable.setPositionM(this.hitbox.getPositionM());
-        
-        let progression = (Math.min(this.phase, this.startlag + this.slashDuration) - this.startlag) / (this.slashDuration);
-        
-        let angle = this.bladeAngleTransition.at(progression)[0];
-        
-        this.swordDrawable.setImaginaryAngle(angle);
-        this.swordDrawable.setImaginarySize(rectangle_averagesize(this.hitbox));
-        
-        return this;
-    }
-    /**/
 }
 
 class OverheadSlash extends SwordSlashAction {
@@ -115,30 +49,21 @@ class OverheadSlash extends SwordSlashAction {
         this.face = null;
         this.center = null;
         
+        this.trailDrawable = new TrailDrawable();
+        
         this.setUseCost(3);
-        this.det = 3;
     }
     
     transitionsSetup() {
         let face = this.user.getCursorDirection();
         face[0] = Math.sign(face[0]);
-        face[1] = Math.sign(face[1]);
         
         this.baseAngleTransition = new ColorTransition([-Math.PI/2 - 2 * 2*face[0] * 0.1875], [-Math.PI/2 + 8 * 2*face[0] * 0.1875]);
+        this.baseDistanceTransition = new ColorTransition([12], [12]);
         
-        // this.baseDistanceTransition = new ColorTransition([12], [12]);
-        this.baseDistanceTransition = new ColorTransition([0], [12], 1, function timing(t) {return Math.pow(t, 1/1.0625);});
-        
-        // this.bladeAngleTransition = this.baseAngleTransition;
-        // this.bladeAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * Math.PI*3/4], [-Math.PI/2 + face[0] * 3/4 * Math.PI]);
-        this.bladeAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * Math.PI*2.5/4], [-Math.PI/2 + face[0] * 5/4 * Math.PI]);
-        
+        this.bladeAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * Math.PI*3/4], [-Math.PI/2 + face[0] * 3/4 * Math.PI]);
+        this.bladeAngleTransition = this.baseAngleTransition;
         this.bladeWidthTransition = new ColorTransition([20], [20]);
-        this.bladeWidthTransition = new ColorTransition([0], [20], 1, ovalTransition);
-        
-        this.edgeWidthTransition = new VectorTransition([2], [2]);
-        
-        this.hitbox.addInteraction(new DragActor(face.times(0.25)));
         
         return this;
     }

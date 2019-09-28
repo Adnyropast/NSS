@@ -3,7 +3,7 @@ EC["haple"] = class Haple extends PlayableCharacter {
     constructor(position, size = [8, 16]) {
         super(position, size);
         // this.setRegeneration(0.0625);
-        // this.addAction(new Regeneration(0.0625));
+        this.addAction(new Regeneration(0.0625));
         
         this.cursorDistance = 32;
         

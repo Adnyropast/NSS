@@ -29,8 +29,6 @@ class Enemy extends Character {
         this.blacklist = OPPONENTS_;
         
         this.controllers.add(enemyController);
-        
-        this.stats["regeneration"] = 0;
     }
     
     onadd() {
@@ -45,11 +43,13 @@ class Enemy extends Character {
         for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 3/2) {
             var cos = Math.cos(angle), sin = Math.sin(angle);
             var particle = EnemyVanishParticle.fromMiddle(this.getPositionM(), this.size);
-            particle.setSpeed((new Vector(cos, sin)).normalize(rectangle_averagesize(this)/16+Math.random()));
+            particle.setSpeed((new Vector(cos, sin)).normalize(3+Math.random()));
             // particle.drag(this.speed);
             
             addEntity(particle);
         }
+        
+        addEntity(particle);
         
         return this;
     }
@@ -95,9 +95,8 @@ EC["dummy"] = class Dummy extends Character {
         this.setStyle("#7F3F00");
         this.addInteraction(new DragRecipient(0));
         this.addInteraction(new TypeDamageable({"default" : 0}));
-        // this.addActset("regeneration");
-        // this.addAction(new Regeneration(0.125));
-        this.stats["regeneration"] = 0.125;
+        this.addActset("regeneration");
+        this.addAction(new Regeneration(0.125));
     }
     
     onadd() {

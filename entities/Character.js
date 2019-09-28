@@ -58,7 +58,7 @@ class EnergyBarDrawable extends RectangleDrawable {
     }
 }
 
-const AS_CHARACTER = set_gather(AS_FOCUS, "followMe", AS_MOVEMENT, AS_ROUTE, AS_JUMP, "stunState", "smoke");
+const AS_CHARACTER = set_gather(AS_FOCUS, "followMe", AS_MOVEMENT, AS_ROUTE, AS_JUMP, "stunState");
 
 class Character extends Entity {
     constructor(position, size) {
@@ -107,8 +107,6 @@ class Character extends Entity {
         this.stats["climb-speed"] = 0.25;
         this.stats["jump-force"] = 1.875;
         this.stats["regeneration"] = 0.0625;
-        
-        this.controllers.add(healController);
     }
     
     static fromData(data) {

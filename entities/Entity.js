@@ -78,6 +78,8 @@ class Entity extends Rectangle {
         
         this.added = false;
         
+        this.addActset("regeneration");
+        
         this.allies = new SetArray(this);
         this.opponents = new SetArray();
         
@@ -284,19 +286,18 @@ class Entity extends Rectangle {
     regenerate(value = 1) {
         return this.heal(value);
     }
-    /**
+    
     setRegeneration(regeneration) {
         this.addAction(new Regeneration(regeneration));
         
         return this;
     }
-    /**/
+    
     setLifespan(lifespan) {
         /**
         this.resetEnergy(lifespan);
         
         this.removeActionsWithConstructor(Regeneration);
-        this.addActset("regeneration");
         this.addAction(new Regeneration(-1));
         /**/
         this.lifeCounter = 0;
@@ -983,51 +984,5 @@ class Hitbox extends Entity {
         super(...arguments);
         
         this.addInteraction(new StunActor());
-    }
-}
-
-class EntityAround extends Entity {
-    constructor() {
-        super(...arguments);
-        
-        this.entityClass = Entity;
-    }
-    
-    onadd() {
-        let entities = this.getSurrounding();
-        
-        for(let i = 0; i < entities.length; ++i) {
-            addEntity(entities[i]);
-        }
-        
-        return this;
-    }
-    
-    update() {
-        removeEntity(this);
-        
-        return this;
-    }
-    
-    getSurrounding() {
-        let entities = new SetArray();
-        
-        for(let dim = 0; dim < this.getDimension(); ++dim) {
-            var entity = this.entityClass.from(this);
-            var vector = Vector.filled(this.getDimension(), 0);
-            vector[dim] = -this.getSize(dim);
-            entity.translate(vector);
-            
-            entities.add(entity);
-            
-            var entity = this.entityClass.from(this);
-            var vector = Vector.filled(this.getDimension(), 0);
-            vector[dim] = +this.getSize(dim);
-            entity.translate(vector);
-            
-            entities.add(entity);
-        }
-        
-        return entities;
     }
 }
