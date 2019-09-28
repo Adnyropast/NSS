@@ -43,71 +43,23 @@ function rgba(r = 0, g = 0, b = 0, a = 1) {
     return "rgba(" + r + ", " + g + ", " + b + ", " + a + ")";
 }
 
-class ColorTransition {
+class ColorTransition extends VectorTransition {
     constructor(initialColor, endColor, duration = 1, timing = bezierLinear) {
         if(isColorHex(initialColor)) {
-            this.initialColor = hexToColorVector(initialColor);
-        } else {
-            this.initialColor = initialColor;
+            initialColor = hexToColorVector(initialColor);
         }
         
         if(isColorHex(endColor)) {
-            this.endColor = hexToColorVector(endColor);
-        } else {
-            this.endColor = endColor;
+            endColor = hexToColorVector(endColor);
         }
         
-        this.duration = duration;
-        this.step = -1;
-        
-        this.timing = timing;
-        
-        this.stepDirection = +1;
-        this.loop = false;
-    }
-    
-    static from(colorTransition) {
-        return new this(colorTransition.initialColor, colorTransition.endColor, colorTransition.duration, colorTransition.timing).setLoop(colorTransition.loop);
-    }
-    
-    at(t) {
-        var color = new Vector();
-        
-        for(var dim = 0; dim < this.initialColor.length; ++dim) {
-            color[dim] = this.initialColor[dim] + this.timing(t) * (this.endColor[dim] - this.initialColor[dim]);
-        }
-        
-        return color;
+        super(initialColor, endColor, duration, timing);
     }
     
     getStyleAt(t) {
         var color = this.at(t);
         
         return rgba(color);
-    }
-    
-    getProgress() {
-        return this.step / this.duration;
-    }
-    
-    getNext() {
-        this.step += this.stepDirection;
-        
-        if(this.step > this.duration) {
-            this.step = this.duration;
-            
-            if(this.loop) {
-                this.stepDirection *= -1;
-            }
-        } if(this.step < 0) {
-            this.step = 0;
-            
-            if(this.loop) {
-                this.stepDirection *= -1;
-            }
-        }
-        
-        return this.at(this.getProgress());
     }
     
     getNextStyle() {
@@ -121,22 +73,6 @@ class ColorTransition {
         
         return rgba(vector);
     }
-    
-    setDuration(duration) {
-        this.duration = duration;
-        this.step = -1;
-        this.stepDirection = +1;
-        
-        return this;
-    }
-    
-    setLoop(loop) {this.loop = loop; return this;}
-    
-    copy() {
-        return this.constructor.from(this);
-    }
-    
-    setStep(step) {this.step = step; return this;}
 }
 
 class AnimatedImages {
@@ -275,6 +211,7 @@ const IMG_TREEBACKGROUND = loadImage("images/treebackground.png");
 
 const IMG_DEFBLOCK = loadImage("images/def_block.png");
 const IMG_SKYTILE = loadImage("images/sky_tile.png");
+const IMG_TREE2 = loadImage("images/tree2.png");
 
 // 
 

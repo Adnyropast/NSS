@@ -96,7 +96,7 @@ class Camera extends Entity {
     }
     
     update() {
-        /**/
+        /**
         var a = 1.03125;// 1.00025;
         
         if(keyList.value(107) == 1) {
@@ -268,3 +268,11 @@ function gaussianElimination(matrix) {
     
     return matrix;
 }
+
+EC["cameraBoundaryAround"] = class CameraBoundaryAround extends EntityAround {
+    constructor() {
+        super(...arguments);
+        
+        this.entityClass = CameraBoundary;
+    }
+};

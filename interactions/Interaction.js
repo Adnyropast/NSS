@@ -403,11 +403,48 @@ class TypeDamager extends Interactor {
                         
                         let particle = DiamondParticle.fromMiddle(Vector.addition(actor.getPositionM(), recipient.getPositionM()).divide(2), [0, 0]);
                         
-                        particle.setSpeed((new Vector(2 * Math.random() + 1, 0)).rotate(angle + Math.random()));
+                        particle.setSpeed((new Vector(irandom(averagesize/12, averagesize/8), 0)).rotate(angle + Math.random()));
                         particle.getDrawable().rotate(particle.speed.getAngle()).multiplySize(averagesize/16);
                         
                         addEntity(particle);
                     }
+                    
+                    // 
+                    
+                    c = 3;
+                    let startAngle = 0, endAngle = 0;
+                    let multiCrescent = new MultiPolygonDrawable();
+                    
+                    for(let i = 0; i < c; ++i) {
+                        endAngle += 2*Math.PI/c;
+                        
+                        let angleTransition = new VectorTransition([startAngle], [endAngle]);
+                        
+                        let drawable = PolygonDrawable.from(makeCrescentPolygon(16, angleTransition, new VectorTransition([18], [16], 1, function(t) {return ovalTransition(t/2);}), new VectorTransition([6], [16], 1, function(t) {return ovalTransition(t/2);})));
+                        
+                        drawable.setStyle(new ColorTransition([255, 255, 255, 1], [255, 255, 255, 0], 16));
+                        
+                        // addDrawable(drawable);
+                        multiCrescent.push(drawable);
+                        
+                        startAngle += 2*Math.PI/c;
+                    }
+                    
+                    multiCrescent.setLifespan(16);
+                    multiCrescent.rotate(Math.random() * 2*Math.PI/c);
+                    multiCrescent.setPositionM(recipient.getPositionM());
+                    
+                    let recipient_avgsz = rectangle_averagesize(recipient);
+                    multiCrescent.multiplySize(recipient_avgsz/64);
+                    multiCrescent.initImaginarySize(recipient_avgsz);
+                    
+                    let sizeTransition = new VectorTransition([recipient_avgsz], [recipient_avgsz*4], 16);
+                    
+                    multiCrescent.controllers.add(function() {
+                        this.setImaginarySize(sizeTransition.getNext()[0]);
+                    });
+                    
+                    addDrawable(multiCrescent);
                 } else if(type === FX_GOLD_) {
                     let count = irandom(4, 8);
                     
@@ -430,16 +467,59 @@ class TypeDamager extends Interactor {
                     particle.setSpeed([Math.random(), Math.random()]);
                     
                     addEntity(particle);
+                    
+                    let avgsz = rectangle_averagesize(recipient);
+                    
+                    let radialGradient = RectangleDrawable.fromMiddle(recipient.getPositionM(), [avgsz, avgsz]);
+                    radialGradient.setStyle(makeRadialGradientCanvas("#FFFF00FF", "#FF000000"));
+                    radialGradient.setLifespan(12);
+                    
+                    let sizeTransition = new ColorTransition(radialGradient.size, Vector.multiplication(radialGradient.size, 1.5), radialGradient.lifespan);
+                    
+                    radialGradient.controllers.add(function() {
+                        this.setSizeM(sizeTransition.getNext());
+                    });
+                    
+                    addDrawable(radialGradient);
                 } else if(type === FX_ELECTRIC) {
                     let count = 3;
                     
                     for(let i = 0; i < count; ++i) {
-                        let angle = i/count * 2*Math.PI + Math.random() - 0.5;
+                        let angle = i/count * 2*Math.PI + 2*(Math.random() - 0.5);
                         
                         let lightning = new LightningDrawable(recipient.getPositionM(), Vector.addition(recipient.getPositionM(), [averagesize * Math.cos(angle), averagesize * Math.sin(angle)]));
                         
                         addDrawable(lightning);
                     }
+                    
+                    let burstDrawable = PolygonDrawable.from(makeBurstPolygon2(new ColorTransition([2], [4], 16, Math.random), new ColorTransition([0], [20], 16, Math.random), 4));
+                    burstDrawable.setPositionM(recipient.getPositionM());
+                    burstDrawable.setLifespan(8);
+                    burstDrawable.setStyle(new ColorTransition([0, 255, 255, 1], [255, 0, 255, 0], burstDrawable.lifespan, function(t) {return Math.pow(t, 5);}));
+                    
+                    let avgsz = rectangle_averagesize(recipient);
+                    
+                    burstDrawable.multiplySize(avgsz/24);
+                    let imgsizeTransition = new ColorTransition([avgsz], [2*avgsz], 16, function(t) {return Math.pow(t, 1);});
+                    burstDrawable.initImaginarySize(imgsizeTransition.at(0)[0]);
+                    
+                    burstDrawable.controllers.add(function() {
+                        this.setImaginarySize(imgsizeTransition.getNext()[0]);
+                    });
+                    
+                    addDrawable(burstDrawable);
+                    
+                    let radialGradient = RectangleDrawable.fromMiddle(recipient.getPositionM(), [avgsz, avgsz]);
+                    radialGradient.setStyle(makeRadialGradientCanvas("#00FFFF1F", "#00FFFF00"));
+                    let sizeTransition = new ColorTransition(radialGradient.size, Vector.multiplication(radialGradient.size, 2.5));
+                    
+                    radialGradient.controllers.add(function() {
+                        this.setSizeM(sizeTransition.getNext());
+                    });
+                    
+                    radialGradient.setLifespan(12);
+                    
+                    addDrawable(radialGradient);
                 }
                 
                 totalDamage += negotiatedDamage;
@@ -468,7 +548,7 @@ class TypeDamager extends Interactor {
             let ts;
             
             if(ts = CAMERA.findActionWithId("transitionSize")) {
-                CAMERA.setSizeM(ts.sizeTransition.endColor);
+                CAMERA.setSizeM(ts.sizeTransition.vector2);
             }
             
             CAMERA.removeActionsWithId("transitionSize");

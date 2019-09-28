@@ -717,3 +717,17 @@ class SpikeSmokeParticle extends Particle {
         return this;
     }
 }
+
+EC["tree2"] = class Tree2 extends Decoration {
+    constructor() {
+        super(...arguments);
+        this.setStyle(IMG_TREE2);
+    }
+};
+
+EC["invisibleWallAround"] = class InvisibleWallAround extends EntityAround {
+    constructor() {
+        super(...arguments);
+        this.entityClass = EC["invisibleWall"];
+    }
+};

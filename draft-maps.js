@@ -162,7 +162,7 @@ maps["hub"] = {
         {"classId" : "ground", "position" : [-128, 64], "size" : [256, 360-64], "style" : "#FF0000"},
         {"classId" : "ground", "position" : [-256, 56], "size" : [128, 16], "style" : "#0000FF"},
         {"classId" : "ground", "position" : [128, 56], "size" : [128, 16], "style" : "#0000FF"},
-        {"classId" : "lookupDoor", "position" : [-120, 32], "size" : [16, 32], "mapname" : "hpp0", "warpPositionM" : [-176, 70]},
+        {"classId" : "lookupDoor", "position" : [-120, 32], "size" : [16, 32], "mapname" : "hpp0", "warpPositionM" : [16, 112]/*[-176, 70]*/},
         {"classId" : "lookupDoor", "position" : [8, 32], "size" : [16, 32], "mapname" : "maze"},
         {"classId" : "lookupDoor", "position" : [40, 32], "size" : [16, 32], "mapname" : "maze-topdown"},
         {"classId" : "lookupDoor", "position" : [72, 32], "size" : [16, 32], "mapname" : "maze-sideways"},
@@ -171,6 +171,10 @@ maps["hub"] = {
         {"classId" : "dummy", "position" : [144, 32], "size" : [16, 32]},
         {"classId" : "dummy", "position" : [176, 0], "size" : [48, 56]},
         {"classId" : "dummy", "position" : [-136, -56], "size" : [8, 8]},
+        
+        {"classId" : "tree2", "position" : [36, 64-56], "size" : [56, 56]},
+        {"classId" : "tree2", "position" : [4, 64-56], "size" : [56, 56]},
+        {"classId" : "tree2", "position" : [68, 64-56], "size" : [56, 56]},
         
         {"classId" : "sidewaysSetter", "position" : [-640, -360], "size" : [1280, 720]},
         
@@ -196,33 +200,41 @@ maps["maze-water"] = {
 };
 
 maps["hpp0"] = {
-    "camera" : {"positionM" : [0, 0], "size" : [448, 252]},
+    "camera" : {"positionM" : [256, 144], "size" : [256*2, 144*2]},
     "entities" : [
-        {"classId" : "cameraBoundary", "position" : [0, -126], "size" : ["Infinity", 0]},
-        {"classId" : "cameraBoundary", "position" : [0, +126], "size" : ["Infinity", 0]},
-        {"classId" : "cameraBoundary", "position" : [-224, 0], "size" : [0, "Infinity"]},
-        {"classId" : "cameraBoundary", "position" : [+224, 0], "size" : [0, "Infinity"]},
+        // {"classId" : "cameraBoundary", "position" : [0, -126], "size" : ["Infinity", 0]},
+        // {"classId" : "cameraBoundary", "position" : [0, +126], "size" : ["Infinity", 0]},
+        // {"classId" : "cameraBoundary", "position" : [-224, 0], "size" : [0, "Infinity"]},
+        // {"classId" : "cameraBoundary", "position" : [+224, 0], "size" : [0, "Infinity"]},
+        {"classId" : "cameraBoundaryAround", "position" : [0, 0], "size" : [256*2, 144*2]},
         
-        {"classId" : "lookupDoor", "position" : [-200, 46], "size" : [16, 32], "mapname" : "hub", "warpPositionM" : [0, 0]},
+        // {"classId" : "lookupDoor", "position" : [-200, 46], "size" : [16, 32], "mapname" : "hub", "warpPositionM" : [0, 0]},
+        {"classId" : "lookupDoor", "position" : [16, 224], "size" : [16, 32], "mapname" : "hub", "warpPositionM" : [0, 0]},
         
-        {"classId" : "treeTrunk", "position" : [-224, 78], "size" : [448, 48]},
-        {"classId" : "ground", "position" : [+224, 78], "size" : [448, 48]},
+        // {"classId" : "treeTrunk", "position" : [-224, 78], "size" : [448, 48]},
+        // {"classId" : "ground", "position" : [+224, 78], "size" : [448, 48]},
         
         {"classId" : "treeTrunk", "position" : [-224, -126], "size" : [16, 204]},
         {"classId" : "treeTrunk", "position" : [+208, -126], "size" : [16, 164]},
-        {"classId" : "invisibleWall", "position" : [-208, -640], "size" : [0, 514]},
-        {"classId" : "invisibleWall", "position" : [+208, -640], "size" : [0, 514]},
+        // {"classId" : "invisibleWall", "position" : [-208, -640], "size" : [0, 514]},
+        // {"classId" : "invisibleWall", "position" : [+208, -640], "size" : [0, 514]},
+        {"classId" : "invisibleWallAround", "position" : [0, 0], "size" : [512, 288]},
         
         {"classId" : "treePlatform", "position" : [96, -88]},
         {"classId" : "treeTrunk", "position" : [80, -128], "size" : [16, 48]},
         {"classId" : "lookupDoor", "position" : [104, -120], "size" : [16, 32], "mapname" : "hppa", "warpPositionM" : [-128, -16]},
         
-        {"classId" : "autoDoor", "position" : [224, -126], "size" : [448, 252], "mapname" : "hpp1", "warpPositionM" : [-216, 70]},
+        {"classId" : "autoDoor", "position" : [256*2, -126], "size" : [448, 252], "mapname" : "hpp1", "warpPositionM" : [-216, 70]},
         
-        {"classId" : "sidewaysSetter", "position" : [-224, -126], "size" : [448, 252]},
+        // {"classId":"ground","position":[0,0],"size":[16,16]},{"classId":"ground","position":[0,16],"size":[16,16]},{"classId":"ground","position":[0,32],"size":[16,16]},{"classId":"ground","position":[0,48],"size":[16,16]},{"classId":"ground","position":[0,64],"size":[16,16]},{"classId":"ground","position":[0,80],"size":[16,16]},{"classId":"ground","position":[0,128],"size":[16,16]},{"classId":"ground","position":[16,80],"size":[16,16]},{"classId":"ground","position":[16,128],"size":[16,16]},{"classId":"ground","position":[32,32],"size":[16,16]},{"classId":"ground","position":[32,80],"size":[16,16]},{"classId":"ground","position":[32,128],"size":[16,16]},{"classId":"ground","position":[48,32],"size":[16,16]},{"classId":"ground","position":[48,80],"size":[16,16]},{"classId":"ground","position":[48,128],"size":[16,16]},{"classId":"ground","position":[64,32],"size":[16,16]},{"classId":"ground","position":[64,80],"size":[16,16]},{"classId":"ground","position":[64,128],"size":[16,16]},{"classId":"ground","position":[80,32],"size":[16,16]},{"classId":"ground","position":[80,80],"size":[16,16]},{"classId":"ground","position":[80,128],"size":[16,16]},{"classId":"ground","position":[96,32],"size":[16,16]},{"classId":"ground","position":[96,80],"size":[16,16]},{"classId":"ground","position":[96,128],"size":[16,16]},{"classId":"ground","position":[112,32],"size":[16,16]},{"classId":"ground","position":[112,80],"size":[16,16]},{"classId":"ground","position":[112,128],"size":[16,16]},{"classId":"ground","position":[128,32],"size":[16,16]},{"classId":"ground","position":[128,80],"size":[16,16]},{"classId":"ground","position":[128,128],"size":[16,16]},{"classId":"ground","position":[144,32],"size":[16,16]},{"classId":"ground","position":[144,80],"size":[16,16]},{"classId":"ground","position":[144,128],"size":[16,16]},{"classId":"ground","position":[160,32],"size":[16,16]},{"classId":"ground","position":[160,80],"size":[16,16]},{"classId":"ground","position":[160,128],"size":[16,16]},{"classId":"ground","position":[176,32],"size":[16,16]},{"classId":"ground","position":[176,80],"size":[16,16]},{"classId":"ground","position":[176,128],"size":[16,16]},{"classId":"ground","position":[192,32],"size":[16,16]},{"classId":"ground","position":[192,80],"size":[16,16]},{"classId":"ground","position":[192,128],"size":[16,16]},{"classId":"ground","position":[208,32],"size":[16,16]},{"classId":"ground","position":[208,80],"size":[16,16]},{"classId":"ground","position":[208,128],"size":[16,16]},{"classId":"ground","position":[224,32],"size":[16,16]},{"classId":"ground","position":[224,128],"size":[16,16]},{"classId":"ground","position":[240,32],"size":[16,16]},{"classId":"ground","position":[240,48],"size":[16,16]},{"classId":"ground","position":[240,64],"size":[16,16]},{"classId":"ground","position":[240,80],"size":[16,16]},{"classId":"ground","position":[240,96],"size":[16,16]},{"classId":"ground","position":[240,112],"size":[16,16]},{"classId":"ground","position":[240,128],"size":[16,16]},
+        {"classId":"treeTrunk","position":[0,0],"size":[32,32]},{"classId":"treeTrunk","position":[0,32],"size":[32,32]},{"classId":"treeTrunk","position":[0,64],"size":[32,32]},{"classId":"treeTrunk","position":[0,96],"size":[32,32]},{"classId":"treeTrunk","position":[0,128],"size":[32,32]},{"classId":"treeTrunk","position":[0,160],"size":[32,32]},{"classId":"treeTrunk","position":[0,256],"size":[32,32]},{"classId":"treeTrunk","position":[32,160],"size":[32,32]},{"classId":"treeTrunk","position":[32,256],"size":[32,32]},{"classId":"treeTrunk","position":[64,64],"size":[32,32]},{"classId":"treeTrunk","position":[64,160],"size":[32,32]},{"classId":"treeTrunk","position":[64,256],"size":[32,32]},{"classId":"treeTrunk","position":[96,64],"size":[32,32]},{"classId":"treeTrunk","position":[96,160],"size":[32,32]},{"classId":"treeTrunk","position":[96,256],"size":[32,32]},{"classId":"treeTrunk","position":[128,64],"size":[32,32]},{"classId":"treeTrunk","position":[128,160],"size":[32,32]},{"classId":"treeTrunk","position":[128,256],"size":[32,32]},{"classId":"treeTrunk","position":[160,64],"size":[32,32]},{"classId":"treeTrunk","position":[160,160],"size":[32,32]},{"classId":"treeTrunk","position":[160,256],"size":[32,32]},{"classId":"treeTrunk","position":[192,64],"size":[32,32]},{"classId":"treeTrunk","position":[192,160],"size":[32,32]},{"classId":"treeTrunk","position":[192,256],"size":[32,32]},{"classId":"treeTrunk","position":[224,64],"size":[32,32]},{"classId":"treeTrunk","position":[224,160],"size":[32,32]},{"classId":"treeTrunk","position":[224,256],"size":[32,32]},{"classId":"treeTrunk","position":[256,64],"size":[32,32]},{"classId":"treeTrunk","position":[256,160],"size":[32,32]},{"classId":"treeTrunk","position":[256,256],"size":[32,32]},{"classId":"treeTrunk","position":[288,64],"size":[32,32]},{"classId":"treeTrunk","position":[288,160],"size":[32,32]},{"classId":"treeTrunk","position":[288,256],"size":[32,32]},{"classId":"treeTrunk","position":[320,64],"size":[32,32]},{"classId":"treeTrunk","position":[320,160],"size":[32,32]},{"classId":"treeTrunk","position":[320,256],"size":[32,32]},{"classId":"treeTrunk","position":[352,64],"size":[32,32]},{"classId":"treeTrunk","position":[352,160],"size":[32,32]},{"classId":"treeTrunk","position":[352,256],"size":[32,32]},{"classId":"treeTrunk","position":[384,64],"size":[32,32]},{"classId":"treeTrunk","position":[384,160],"size":[32,32]},{"classId":"treeTrunk","position":[384,256],"size":[32,32]},{"classId":"treeTrunk","position":[416,64],"size":[32,32]},{"classId":"treeTrunk","position":[416,160],"size":[32,32]},{"classId":"treeTrunk","position":[416,256],"size":[32,32]},{"classId":"treeTrunk","position":[448,64],"size":[32,32]},{"classId":"treeTrunk","position":[448,256],"size":[32,32]},{"classId":"treeTrunk","position":[480,64],"size":[32,32]},{"classId":"treeTrunk","position":[480,96],"size":[32,32]},{"classId":"treeTrunk","position":[480,128],"size":[32,32]},{"classId":"treeTrunk","position":[480,160],"size":[32,32]},{"classId":"treeTrunk","position":[480,192],"size":[32,32]},{"classId":"treeTrunk","position":[480,224],"size":[32,32]},{"classId":"treeTrunk","position":[480,256],"size":[32,32]},
+        
+        // {"classId" : "sidewaysSetter", "position" : [-224, -126], "size" : [448, 252]},
+        {"classId" : "sidewaysSetter", "position" : [0, 0], "size" : [256*2, 144*2]},
         
         {"classId" : "sunlightDecoration", "position" : [0, 0]},
-        {"classId" : "treeBackground", "position" : [-224, -126], "size" : [448, 252]}
+        // {"classId" : "treeBackground", "position" : [-224, -126], "size" : [448, 252]}
+        {"classId" : "treeBackground", "position" : [0, 0], "size" : [512, 288]}
     ]
 };
 

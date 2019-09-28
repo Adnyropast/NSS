@@ -1,5 +1,5 @@
 
-const AS_GOLD = set_gather("goldFlurry", "rocketPunch", "multi-aimShots");
+const AS_GOLD = set_gather("goldFlurry", "rocketPunch", "multi-aimShots", "goldenJab");
 
 class GoldAbility extends BusyAction {
     constructor() {
@@ -174,3 +174,66 @@ class MultiaimShots extends GoldAbility {
         return this;
     }
 }
+
+class GoldBurstHitbox extends Hitbox {
+    constructor() {
+        super(...arguments);
+        
+        this.setLifespan(16);
+        
+        let c = false;
+        
+        function timing(t) {
+            c = !c;
+            
+            if(c) {
+                return Math.random();
+            }
+            
+            return Math.random()*2;
+        }
+        
+        this.setDrawable(PolygonDrawable.from(makeBurstPolygon2(new ColorTransition([2], [4], 8*2, function() {return Math.random();}), new ColorTransition([16], [20], 8*2, timing), 6)).rotate(Math.random()));
+        this.drawable.initImaginarySize(rectangle_averagesize(this));
+        this.drawable.setStyle(new ColorTransition([0, 255, 255, 0.875], [0, 0, 255, 1], 16, function(t) {return Math.pow(t, 3);}));
+        
+        let sizeTransition = new ColorTransition(this.size, Vector.multiplication(this.size, 1.5), 16, function(t) {return Math.pow(t, 1/1.5);});
+        
+        this.controllers.add(function() {
+            this.setSizeM(sizeTransition.getNext());
+        });
+        
+        this.addInteraction(new TypeDamager({type:FX_GOLD_, value:1}));
+    }
+    
+    updateDrawable() {
+        this.drawable.setImaginarySize(rectangle_averagesize(this));
+        this.drawable.setPositionM(this.getPositionM());
+        
+        return this;
+    }
+}
+
+class GoldenJab extends GoldAbility {
+    constructor() {
+        super();
+        this.setId("goldenJab");
+    }
+    
+    use() {
+        let averagesize = rectangle_averagesize(this.user);
+        
+        let positionM = this.user.getCursorDirection().normalize(averagesize).add(this.user.getPositionM());
+        
+        let hitbox = GoldBurstHitbox.fromMiddle(positionM, [averagesize, averagesize]);
+        hitbox.shareBlacklist(this.user.getBlacklist());
+        
+        addEntity(hitbox);
+        
+        this.end();
+        
+        return this;
+    }
+}
+
+AC["goldenJab"] = GoldenJab;

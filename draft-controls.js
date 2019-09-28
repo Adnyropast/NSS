@@ -320,6 +320,7 @@ let ctrljson = {
         {"keyCode" : 46, "actionId" : "ldelete"},
         {"keyCode" : 49, "actionId" : "lselect"},
         {"keyCode" : 84, "actionId" : "test"},
+        {"keyCode" : [74], "actionId" : "goldenJab"},
     ],
     "keyrepeat" : [
         {"keyCode" : 86, "actionId" : "flamethrower"},
@@ -347,11 +348,12 @@ let ctrljson = {
     "mouseonce" : [
         {"which" : 1, "actionId" : "lplace"},
         // {"which" : 1, "actionId" : "lcreate"},
-        {"which" : 2, "actionId" : "lselect"},
-        {"which" : 3, "actionId" : "lresize"}
+        // {"which" : 2, "actionId" : "lselect"},
+        {"which" : 3, "actionId" : "autoLdelete"}
     ],
     "mouserepeat" : [
-        {"which" : 1, "actionId" : "autoSword"}
+        // {"which" : 1, "actionId" : "autoSword"}
+        {"which" : 1, "actionId" : "plasmaLightning"}
     ],
     "mousetoggle" : [
         // {"which" : 1, "actionId" : ""}
