@@ -11,7 +11,9 @@ class BloodProjectile extends Projectile {
         this.setDrawable(PolygonDrawable.from(roundparticle).multiplySize((this.getWidth() + this.getHeight())/64));
         this.drawable.setPositionM(this.getPositionM());
         this.setStyle(new ColorTransition([0, 255, 255, 1], [0, 127, 255, 1], 8));
+        // this.setStyle(new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1], 8));
         this.drawable.setStrokeStyle(new ColorTransition([0, 0, 255, 1], [0, 0, 127, 1], 8));
+        // this.drawable.setStrokeStyle(new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1], 8));
         
         this.addInteraction(new TypeDamager({"type" : FX_HEART_, "value" : 1}));
         this.addInteraction(new ContactVanishRecipient(3));
@@ -38,12 +40,11 @@ class BloodShot extends Action {
     
     use() {
         if(this.phase <= 1) {
-            var initialPosition = this.user.getPositionM();
-            var targetPosition = this.user.getCursor().getPositionM();
+            let direction = this.user.getCursorDirection();
             
-            var projectile = BloodProjectile.fromMiddle([initialPosition[0], initialPosition[1]], [4, 4]);
+            var projectile = BloodProjectile.fromMiddle(direction.normalized(rectangle_averagesize(this.user) / 2).add(this.user.getPositionM()), [4, 4]);
             
-            projectile.setSpeed(Vector.subtraction(targetPosition, initialPosition).normalize(4));
+            projectile.setSpeed(direction.normalize(4));
             projectile.addInteraction(new DragActor(projectile.speed.normalized(1)));
             projectile.shareBlacklist(this.user.getBlacklist());
             
@@ -84,8 +85,10 @@ class BlowoutShots extends Action {
         }
         
         if(this.phase % this.pace == 0) {
-            var projectile = BloodProjectile.fromMiddle(this.user.getPositionM(), [4, 4]);
-            projectile.setSpeed(new Vector(Math.cos(this.angle), Math.sin(this.angle)).normalize(4));
+            let direction = new Vector(Math.cos(this.angle), Math.sin(this.angle));
+            
+            var projectile = BloodProjectile.fromMiddle(direction.normalized(rectangle_averagesize(this.user) / 2).add(this.user.getPositionM()), [4, 4]);
+            projectile.setSpeed(direction.normalize(4));
             projectile.shareBlacklist(this.user.getBlacklist());
             projectile.setLifespan(20);
             addEntity(projectile);
@@ -112,11 +115,30 @@ class VeinSweep extends SlashAction {
         this.hitbox.removeInteractorWithId("damage");
         this.hitbox.addInteraction(new TypeDamager({type:FX_HEART_, value:1}));
         // console.log(this.hitbox.findInteractorWithId("damage"));
+        
+        this.rct = new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 0], 8, bezierLinear);
     }
     
     updateTrailDrawableStyle(detProgress) {
+        /**
+        
         let ct = new ColorTransition([63, 255, 255, 1], [0, 0, 255, 0], 8, bezierLinear);
         this.trailDrawable.trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), 8, bezierLinear);
+        
+        /**
+        
+        ct = this.rct;
+        this.trailDrawable.trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), 8, bezierLinear);
+        
+        this.trailDrawable.edgeStyle = this.trailDrawable.trailStyle;
+        
+        /**/
+        
+        let ct = new ColorTransition([0, 127, 255, 1], [0, 0, 192, 0], 8, bezierLinear);
+        this.trailDrawable.trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), 8, bezierLinear);
+        this.trailDrawable.edgeStyle = this.trailDrawable.trailStyle;
+        
+        /**/
         
         return this;
     }
@@ -124,12 +146,15 @@ class VeinSweep extends SlashAction {
     transitionsSetup() {
         let face = this.user.getCursorDirection();
         face[0] = Math.sign(face[0]);
+        face[1] = Math.sign(face[1]);
         
         if(face[0] != 0) {
             this.baseAngleTransition = new ColorTransition([-Math.PI/2 + face[0] * Math.PI/4], [-Math.PI/2 + face[0] * 3/4 * Math.PI]);
-            this.baseDistanceTransition = new ColorTransition([0], [16]);
+            this.baseDistanceTransition = new ColorTransition([4], [4]);
             this.bladeAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * 3/4 * Math.PI], [-Math.PI/2 + face[0] * 3/2 * Math.PI]);
             this.bladeWidthTransition = new ColorTransition([32], [32], 1, function(t) {return Math.pow((t - 0.5) / 0.5, 2)});
+            
+            this.hitbox.addInteraction(new DragActor(face.times(0.25)));
         }
         
         return this;

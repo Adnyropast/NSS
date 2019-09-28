@@ -1,14 +1,18 @@
 
+const LGRID = 8;
+
 const CREATED_RECTANGLES = new SetArray();
 let SELECTED_RECTANGLE = null;
 
 function setSelectedRectangle(rectangle) {
-    if(SELECTED_RECTANGLE instanceof Entity) {
-        SELECTED_RECTANGLE.setStyle(LCREATED_DEFSTYLE.copy());
+    if(rectangle instanceof Entity) {
+        if(SELECTED_RECTANGLE instanceof Entity) {
+            SELECTED_RECTANGLE.setStyle(LCREATED_DEFSTYLE.copy());
+        }
+        
+        SELECTED_RECTANGLE = rectangle;
+        rectangle.setStyle(LCREATED_SELSTYLE.copy());
     }
-    
-    SELECTED_RECTANGLE = rectangle;
-    rectangle.setStyle(LCREATED_SELSTYLE.copy());
 }
 
 const LCREATED_DEFSTYLE = (new ColorTransition([0, 255, 255, 1], [0, 255, 255, 0.5], 128)).setLoop(true);
@@ -128,19 +132,17 @@ class LDelete extends Action {
 }
 
 class RoundFocus extends Action {
-    constructor(grid = 8) {
+    constructor() {
         super();
         this.id = "roundFocus";
-        this.order = -0.5
-        
-        this.grid = grid;
+        this.order = -0.5;
     }
     
     use() {
         var cursorPosition = this.user.getCursor().getPosition();
         
         for(var dim = 0; dim < cursorPosition.length; ++dim) {
-            this.user.cursor.setPosition(dim, Math.round(cursorPosition[dim] / this.grid) * this.grid);
+            this.user.cursor.setPosition(dim, Math.round(cursorPosition[dim] / LGRID) * LGRID);
         }
         
         return this.end();
@@ -214,7 +216,7 @@ class LPlace extends Action {
         let cursorPosition = this.user.getCursor().getPositionM();
         
         for(let dim = 0; dim < cursorPosition.length; ++dim) {
-            cursorPosition[dim] = Math.round(cursorPosition[dim] / 8) * 8;
+            cursorPosition[dim] = Math.round(cursorPosition[dim] / LGRID) * LGRID;
         }
         
         let entity = LCreated.from(this.entity);
@@ -227,3 +229,37 @@ class LPlace extends Action {
         return this.end();
     }
 }
+
+AC["lcreate"] = LCreate;
+AC["ldelete"] = LDelete;
+AC["lselect"] = LSelect;
+AC["lplace"] = LPlace;
+AC["lresize"] = LResize;
+
+class AutoLCreate extends Action {
+    constructor() {
+        super();
+        this.setId("autoLcreate");
+    }
+}
+
+class AutoLDelete extends Action {
+    constructor() {
+        super();
+        this.setId("autoLdelete");
+    }
+    
+    use() {
+        if(this.phase == 0) {
+            this.user.addAction(new LSelect());
+        } else if(this.phase == 1) {
+            this.user.addAction(new LDelete());
+            this.end();
+        }
+        
+        return this;
+    }
+}
+
+AC["autoLcreate"] = AutoLCreate;
+AC["autoLdelete"] = AutoLDelete;

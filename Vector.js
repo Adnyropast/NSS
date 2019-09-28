@@ -686,3 +686,72 @@ var rgbVector1 = new Vector(0, 0, 0);
 var rgbVector2 = new Vector(255, 191, 127);
 
 /**/
+
+class VectorTransition {
+    constructor(vector1, vector2, duration = 1, timing = function timing(x) {return x;}) {
+        this.vector1 = vector1;
+        this.vector2 = vector2;
+        this.duration = duration;
+        this.step = -1;
+        this.timing = timing;
+        
+        this.stepDirection = +1;
+        this.loop = false;
+    }
+    
+    static from(vectorTransition) {
+        return new this(vectorTransition.vector1, vectorTransition.vector2, vectorTransition.duration, vectorTransition.timing).setLoop(vectorTransition.loop);
+    }
+    
+    at(t) {
+        let vector = new Vector();
+        let minDim = Math.min(this.vector1.length, this.vector2.length);
+        
+        for(let dim = 0; dim < minDim; ++dim) {
+            vector[dim] = this.vector1[dim] + this.timing(t) * (this.vector2[dim] - this.vector1[dim]);
+        }
+        
+        return vector;
+    }
+    
+    getProgress() {return this.step / this.duration;}
+    
+    getNext() {
+        this.step += this.stepDirection;
+        
+        if(this.step > this.duration) {
+            this.step = this.duration;
+            
+            if(this.loop) {
+                this.stepDirection *= -1;
+            }
+        } if(this.step < 0) {
+            this.step = 0;
+            
+            if(this.loop) {
+                this.stepDirection *= -1;
+            }
+        }
+        
+        return this.at(this.getProgress());
+    }
+    
+    setDuration(duration) {
+        this.duration = duration;
+        this.step = -1;
+        this.stepDirection = +1;
+        
+        return this;
+    }
+    
+    getDuration() {return this.duration;}
+    
+    setLoop(loop) {this.loop = loop; return this;}
+    
+    copy() {
+        return this.constructor.from(this);
+    }
+    
+    setStep(step) {this.step = step; return this;}
+    getStep() {return this.step;}
+}

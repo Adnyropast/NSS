@@ -105,7 +105,7 @@ EC["adnyropast"] = class Adnyropast extends PlayableCharacter {
     constructor(position, size) {
         super(position, size);
         // this.setRegeneration(0.0625);
-        this.addAction(new Regeneration(0.0625));
+        // this.addAction(new Regeneration(0.0625));
         
         this.cursorDistance = 32;
         
@@ -124,7 +124,7 @@ EC["adnyropast"] = class Adnyropast extends PlayableCharacter {
     
     addAction(action) {
         action.setUseCost(0);
-        
+  
         return super.addAction(action);
     }
 };
