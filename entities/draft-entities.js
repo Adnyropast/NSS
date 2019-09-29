@@ -182,6 +182,8 @@ class WaterArea extends Area {
         this.addInteraction(new BrakeActor(BRK_WATER));
         this.addInteraction(new ThrustRecipient(THRUSTFACTOR_WATER));
         this.addInteraction(new WaterActor());
+        
+        this.drawable.setZIndex(-10);
     }
 }
 
@@ -250,15 +252,18 @@ class GoldSmokeParticle extends Particle {
         this.drawable.multiplySize(rectangle_averagesize(this)/16);
         
         this.setStyle(new ColorTransition([0, 255, 255, 127], [0, 255, 255, 0], 60));
-        this.setStyle(new ColorTransition([0, 255, 255, 1], [127, 255, 255, 0.5], 32));
+        this.setStyle(new ColorTransition([0, irandom(191, 255), 255, 1], [0, 63, 255, 0], 32, function(t) {return Math.pow(t, 4);}));
         this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
+        this.drawable.initImaginarySize(rectangle_averagesize(this));
     }
     
     updateDrawable() {
         this.drawable.setPositionM(this.getPositionM());
-        this.drawable.multiplySize(1/1.03125);
+        // this.drawable.multiplySize(1/1.03125);
+        this.drawable.setImaginarySize(rectangle_averagesize(this));
         
         this.drawable.setImaginaryAngle(this.speed.getAngle());
+        
         
         return this;
     }
@@ -729,5 +734,40 @@ EC["invisibleWallAround"] = class InvisibleWallAround extends EntityAround {
     constructor() {
         super(...arguments);
         this.entityClass = EC["invisibleWall"];
+    }
+};
+
+EC["breakableWood"] = class BreakableWood extends EC["treeTrunk"] {
+    constructor() {
+        super(...arguments);
+        
+        this.addInteraction(new TypeDamageable());
+        // this.resetEnergy(20);
+    }
+    
+    ondefeat() {
+        let positionM = this.getPositionM();
+        let avgsz = rectangle_averagesize(this);
+        let count = 8;
+        
+        for(let i = 0; i < count; ++i) {
+            let angle = i/(count-1) * 2*Math.PI;
+            
+            let particle = RectangleDrawable.fromMiddle(positionM, this.size);
+            particle.setStyle(IMG_TREETRUNK);
+            particle.setLifespan(16);
+            
+            let sizeTransition = new VectorTransition(this.size, [0, 0], particle.lifespan);
+            let positionTransition = new VectorTransition(positionM, Vector.fromAngle(angle).normalize(avgsz).add(positionM), particle.lifespan, function(t) {return Math.pow(t, 1/4)});
+            
+            particle.controllers.add(function() {
+                this.setSize(sizeTransition.getNext());
+                this.setPositionM(positionTransition.getNext());
+            });
+            
+            addDrawable(particle);
+        }
+        
+        return super.ondefeat();
     }
 };

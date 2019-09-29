@@ -385,6 +385,9 @@ class TypeDamager extends Interactor {
         if(!this.hit.includes(interrecipient)) {
             let averagesize = (actor.getWidth() + actor.getHeight() + recipient.getWidth() + recipient.getHeight()) / 4;
             let totalDamage = 0;
+            let actorPositionM = actor.getPositionM();
+            let recipientPositionM = recipient.getPositionM();
+            let middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
             
             for(var i = 0; i < this.offenses.length; ++i) {
                 var type = this.offenses[i].type;
@@ -394,14 +397,14 @@ class TypeDamager extends Interactor {
                 recipient.hurt(negotiatedDamage);
                 
                 if(type === FX_SHARP) {
-                    addDrawable(new CutDrawable(Vector.addition(actor.getPositionM(), recipient.getPositionM()).divide(2), [Math.random() * 2- 1, Math.random() * 2 - 1]).multiplySize(averagesize/16));
+                    addDrawable(new CutDrawable(middlePosition, [Math.random() * 2- 1, Math.random() * 2 - 1]).multiplySize(averagesize/16));
                     
-                    let c = 3 + Math.round(Math.random());
+                    let c = irandom(4, 8);
                     
                     for(let i = 0; i < c; ++i) {
                         let angle = i * 2*Math.PI/c;
                         
-                        let particle = DiamondParticle.fromMiddle(Vector.addition(actor.getPositionM(), recipient.getPositionM()).divide(2), [0, 0]);
+                        let particle = DiamondParticle.fromMiddle(middlePosition, [0, 0]);
                         
                         particle.setSpeed((new Vector(irandom(averagesize/12, averagesize/8), 0)).rotate(angle + Math.random()));
                         particle.getDrawable().rotate(particle.speed.getAngle()).multiplySize(averagesize/16);
@@ -446,17 +449,27 @@ class TypeDamager extends Interactor {
                     
                     addDrawable(multiCrescent);
                 } else if(type === FX_GOLD_) {
-                    let count = irandom(4, 8);
+                    let count = 8;
                     
                     for(let i = 0; i < count; ++i) {
-                        let angle = i * 2*Math.PI/count;
-                        
-                        var particle = GoldSmokeParticle.fromMiddle(Vector.addition(actor.getPositionM(), recipient.getPositionM()).divide(2), [averagesize, averagesize]);
+                        var particle = GoldSmokeParticle.fromMiddle(Vector.addition(actor.getPositionM(), recipient.getPositionM()).divide(2), [averagesize/1.5, averagesize/1.5]);
                         
                         let direction = getDD(actor.locate(recipient))[0];
                         let vector = actor.speed.normalized();
                         vector[direction.dimension] += direction.sign;
-                        particle.setSpeed(vector.rotate(Math.random() * 2 - 1).normalize(Math.random() * (averagesize / 8)));
+                        particle.setSpeed(vector.rotate(irandom(-1, 1)/8).normalize(Math.random() * (averagesize / 8)));
+                        
+                        addEntity(particle);
+                    }
+                    
+                    for(let i = 0; i < count; ++i) {
+                        let angle = i * 2*Math.PI/count;
+                        
+                        let particle = GoldSmokeParticle.fromMiddle(recipient.getPositionM(), [averagesize, averagesize]);
+                        
+                        let direction = Vector.fromAngle(angle);
+                        
+                        particle.setSpeed(direction.normalized(irandom(averagesize/16, averagesize/8)).rotate(Math.random()));
                         
                         addEntity(particle);
                     }

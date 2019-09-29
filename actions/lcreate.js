@@ -1,6 +1,10 @@
 
 const LGRID = 8;
 
+function roundTo(value, grid = LGRID) {
+    return Math.round(value / grid) * grid;
+}
+
 const CREATED_RECTANGLES = new SetArray();
 let SELECTED_RECTANGLE = null;
 
@@ -23,6 +27,7 @@ class LCreated extends Entity {
         super(...arguments);
         
         this.setZIndex(-1000).setStyle(LCREATED_DEFSTYLE.copy());
+        this.drawable.setStrokeStyle((new ColorTransition([0, 192, 255, 0.5], [0, 63, 255, 0.5], 128)).setLoop(true));
     }
 }
 
@@ -142,7 +147,7 @@ class RoundFocus extends Action {
         var cursorPosition = this.user.getCursor().getPosition();
         
         for(var dim = 0; dim < cursorPosition.length; ++dim) {
-            this.user.cursor.setPosition(dim, Math.round(cursorPosition[dim] / LGRID) * LGRID);
+            this.user.cursor.setPosition(dim, roundTo(cursorPosition[dim]));
         }
         
         return this.end();
@@ -159,13 +164,25 @@ class LSelect extends Action {
         let potentials = new SetArray();
         let cursor = this.user.getCursor();
         
+        /**
+        
         for(let i = 0; i < cursor.collidedWith.length; ++i) {
             if(cursor.collidedWith[i] instanceof LCreated) {
                 potentials.add(cursor.collidedWith[i]);
             }
         }
         
+        /**/
         
+        let cursorPositionM = cursor.getPositionM();
+        
+        for(let i = 0; i < CREATED_RECTANGLES.length; ++i) {
+            let rectangle = CREATED_RECTANGLES[i];
+            
+            if(rectangle.collidesWithPoint(cursorPositionM)) {
+                potentials.add(rectangle);
+            }
+        }
         
         potentials.sort(function(a, b) {
             let distA = Vector.distance(a.getPositionM(), cursor.getPositionM());
@@ -185,11 +202,11 @@ function rsAddEntity(rectangle) {
 }
 
 function rsJSON(rectangle) {
-    return "{}";
+    return '{"classId" : "lcreated", "position" : [' + rectangle.position.join(", ") + '], "size" : [' + rectangle.size.join(", ") + ']}';
 }
 
-function getMap(rectangles = CREATED_RECTANGLES, rsFunction = rsAddEntity) {
-    var prefix = "", suffix = ";", separator = "\n";
+function getCreatedMap(rectangles = CREATED_RECTANGLES, rsFunction = rsJSON) {
+    var prefix = "", suffix = ",", separator = "\n";
     
     var string = "";
     
@@ -216,7 +233,7 @@ class LPlace extends Action {
         let cursorPosition = this.user.getCursor().getPositionM();
         
         for(let dim = 0; dim < cursorPosition.length; ++dim) {
-            cursorPosition[dim] = Math.round(cursorPosition[dim] / LGRID) * LGRID;
+            cursorPosition[dim] = roundTo(cursorPosition[dim]);
         }
         
         let entity = LCreated.from(this.entity);
@@ -240,6 +257,67 @@ class AutoLCreate extends Action {
     constructor() {
         super();
         this.setId("autoLcreate");
+        
+        this.area = new LCreated([NaN, NaN], [0, 0]);
+    }
+    
+    use() {
+        let cursorPosition = this.user.cursor.getPositionM();
+        
+        if(this.phase == 0) {
+            this.area.setPosition(cursorPosition);
+            
+            addEntity(this.area);
+        } else {
+            this.area.setSize(Vector.subtraction(cursorPosition, this.area.position));
+        }
+        
+        return this;
+    }
+    
+    onend() {
+        // for(let dim = 0; dim < cursorPosition.length; ++dim) {
+            // cursorPosition[dim] = roundTo(cursorPosition[dim]);
+        // }
+        
+        let lgrid = 16;
+        
+        let minX = roundTo(this.area.getX1(), lgrid);
+        let minY = roundTo(this.area.getY1(), lgrid);
+        let maxX = roundTo(this.area.getX2(), lgrid);
+        let maxY = roundTo(this.area.getY2(), lgrid);
+        
+        if(maxX < minX) {
+            let x = minX;
+            minX = maxX;
+            maxX = x;
+        } if(maxY < minY) {
+            let x = minY;
+            minY = maxY;
+            maxY = x;
+        }
+        
+        for(let x = minX; x < maxX; x += lgrid) {
+            for(let y = minY; y < maxY; y += lgrid) {
+                let rectangle = new LCreated([x, y], [lgrid, lgrid]);
+                
+                CREATED_RECTANGLES.add(rectangle);
+                addEntity(rectangle);
+            }
+        }
+        
+        if(maxX - minX < lgrid && maxY - minY < lgrid) {
+            console.log(minX, minY, maxX, maxY);
+            
+            let rectangle = new LCreated([roundTo(this.area.getXM() - lgrid/2, lgrid), roundTo(this.area.getYM() - lgrid/2, lgrid)], [lgrid, lgrid]);
+            
+            CREATED_RECTANGLES.add(rectangle);
+            addEntity(rectangle);
+        }
+        
+        removeEntity(this.area);
+        
+        return this;
     }
 }
 

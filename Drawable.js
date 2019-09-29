@@ -49,6 +49,16 @@ class Drawable {
     
     setCamera(camera) {this.camera = camera; return this;}
     getCamera() {return this.camera;}
+    
+    getStrokeStyle() {
+        if(this.strokeStyle instanceof AnimatedImages) {
+            return this.strokeStyle.getCurrent();
+        } else if(this.strokeStyle instanceof ColorTransition) {
+            return this.strokeStyle.getCurrentStyle();
+        }
+        
+        return this.strokeStyle;
+    }
 }
 
 class RectangleDrawable extends Rectangle {
@@ -65,6 +75,7 @@ class RectangleDrawable extends Rectangle {
         
         this.camera = null;
         this.controllers = new SetArray();
+        this.strokeStyle = INVISIBLE;
     }
     
     getZIndex() {return this.zIndex;}
@@ -161,6 +172,9 @@ class RectangleDrawable extends Rectangle {
             context.fillRect(0, 0, width, height);
         }
         
+        context.strokeStyle = this.getStrokeStyle();
+        context.strokeRect(0, 0, width, height);
+        
         } catch(error) {
             if(!this.sss) {
                 this.sss = true;
@@ -180,6 +194,9 @@ class RectangleDrawable extends Rectangle {
     
     setCamera(camera) {this.camera = camera; return this;}
     getCamera() {return this.camera;}
+    
+    setStrokeStyle(strokeStyle) {this.strokeStyle = strokeStyle; return this;}
+    getStrokeStyle() {return Drawable.prototype.getStrokeStyle.bind(this)();}
 }
 
 /**
@@ -283,11 +300,7 @@ class PolygonDrawable extends Polygon {
     setLifespan(lifespan) {this.lifespan = lifespan; return this;}
     
     getStrokeStyle() {
-        if(this.strokeStyle instanceof ColorTransition) {
-            return this.strokeStyle.getCurrentStyle();
-        }
-        
-        return this.strokeStyle;
+        return Drawable.prototype.getStrokeStyle.bind(this)();
     }
     
     setStrokeStyle(strokeStyle) {this.strokeStyle = strokeStyle; return this;}
@@ -638,8 +651,8 @@ class CutDrawable extends PolygonDrawable {
         this.rotate(-this.angle);
         // this.shrinkM(this.direction.normalized(1));
         // this.stretchM(this.direction.normalized(4).rotate(Math.PI/2));
-        this.shrinkM([0.25, 0]);
-        this.stretchM([0, 1]);
+        this.shrinkM([0.5, 0]);
+        this.stretchM([0, 8]);
         
         // this.multiplySize(1/1.0625);
         this.rotate(+this.angle);
@@ -908,3 +921,5 @@ class MultiPolygonDrawable extends MultiPolygon {
     
     setLifespan(lifespan) {this.lifespan = lifespan; return this;}
 }
+
+let flamedrawable = PolygonDrawable.from(flameparticle);

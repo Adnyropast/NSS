@@ -353,7 +353,11 @@ class HapleBattler extends Battler {
             
         }});
         this.visibleList.addItem({name:"Attack", use:function use() {
-            battler.addPick(new SKILLS["attack"]);
+            let skill = new SKILLS["attack"];
+            battler.selectedMove = skill;
+            battler.controltype = "targetpick";
+            battler.autoReady = false;
+            // battler.addPick(skill);
         }});
         this.visibleList.addItem({name:"Strong Attack", use:function use() {
             
@@ -368,19 +372,67 @@ class HapleBattler extends Battler {
             battler.addPick(new SKILLS["flee"]);
         }});
         
+        this.autoReady = true;
+        this.controltype = ["moveselect", "targetpick"][0];
+        this.targetcursor = 0;
+        this.selectedMove = null;
+        
+        this.targets = new SetArray();
+        
         this.battlerPlayerController = function() {
-            if(keyList.value(K_UP) == 1) {
-                this.visibleList.decIndex();
-            } if(keyList.value(K_DOWN) == 1) {
-                this.visibleList.incIndex();
-            } if(keyList.value(13) == 1) {
-                this.visibleList.getItem().use();
-                
-                this.setReady(true);
+            if(this.controltype === "moveselect") {
+                if(keyList.value(K_UP) == 1) {
+                    this.visibleList.decIndex();
+                } if(keyList.value(K_DOWN) == 1) {
+                    this.visibleList.incIndex();
+                } if(keyList.value(13) == 1) {
+                    this.visibleList.getItem().use();
+                    
+                    if(this.autoReady) {
+                        this.setReady(true);
+                    }
+                }
+            } else if(this.controltype === "targetpick") {
+                if(keyList.value(K_LEFT) == 1) {
+                    --this.targetcursor;
+                    
+                    if(this.targetcursor < 0) {this.targetcursor = 0;}
+                } if(keyList.value(K_RIGHT) == 1) {
+                    ++this.targetcursor;
+                    
+                    if(this.targetcursor >= BATTLERS.length) {this.targetcursor = BATTLERS.length - 1;}
+                } if(keyList.value(K_UP) == 1) {
+                    this.targets[this.targetcursor] = true;
+                } if(keyList.value(K_DOWN) == 1) {
+                    this.targets[this.targetcursor] = false;
+                } if(keyList.value(K_CONFIRM) == 1) {
+                    let targets = [];
+                    
+                    for(let i = 0; i < BATTLERS.length; ++i) {
+                        if(this.targets[i]) {
+                            targets.push(BATTLERS[i]);
+                        }
+                    }
+                    
+                    this.selectedMove.targets.push.apply(this.selectedMove.targets, targets);
+                    this.addPick(this.selectedMove);
+                    this.autoReady = true;
+                    this.controltype = "moveselect";
+                    this.setReady(true);
+                } if(keyList.value(K_ESC) == 1) {
+                    this.autoReady = true;
+                    this.controltype = "moveselect";
+                }
             }
         };
         
         this.multiDrawable = (new MultiDrawable()).setCamera(this.drawable.getCamera());
+        this.selectedColorTransition = (new ColorTransition([255, 255, 0, 1], [255, 255, 159, 1], 128)).setLoop(true);
+        
+        this.targetDrawable = PolygonDrawable.from(diamondparticle);
+        this.targetDrawable.setStyle((new ColorTransition([0, 255, 255, 1], [0, 191, 255, 1], 64)).setLoop(true));
+        this.targetDrawable.setCamera(this.drawable.camera).setCameraMode(this.drawable.cameraMode);
+        this.targetDrawable.multiplySize(1/4);
     }
     
     getCommandsPage() {
@@ -417,7 +469,8 @@ class HapleBattler extends Battler {
             option.setContent(visibleOptions[i].name);
             
             if(visibleOptions[i] == this.visibleList.getItem()) {
-                option.setStyle("yellow");
+                // option.setStyle("yellow");
+                option.setStyle(this.selectedColorTransition.getNextStyle());
             }
             
             this.multiDrawable.add(option);
@@ -427,6 +480,16 @@ class HapleBattler extends Battler {
         tfparams["padding-top"] = 0;
         
         // this.drawable.
+        
+        if(this.controltype === "targetpick") {
+            BATTLEDRAWABLES.add(this.targetDrawable);
+            
+            let drawable = BATTLERS[this.targetcursor].drawable;
+            
+            this.targetDrawable.setPositionM(Vector.addition(drawable.getPositionM(), [0, -drawable.getHeight()/2 - 8]));
+        } else {
+            BATTLEDRAWABLES.remove(this.targetDrawable);
+        }
         
         return this;
     }

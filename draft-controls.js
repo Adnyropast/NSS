@@ -346,14 +346,15 @@ let ctrljson = {
         // {"keyCode" : [67], "actionId" : "followMe"},
     ],
     "mouseonce" : [
-        {"which" : 1, "actionId" : "lplace"},
+        // {"which" : 1, "actionId" : "lplace"},
         // {"which" : 1, "actionId" : "lcreate"},
         // {"which" : 2, "actionId" : "lselect"},
-        {"which" : 3, "actionId" : "autoLdelete"}
     ],
     "mouserepeat" : [
+        {"which" : 1, "actionId" : "autoLcreate"},
         // {"which" : 1, "actionId" : "autoSword"}
-        {"which" : 1, "actionId" : "plasmaLightning"}
+        // {"which" : 1, "actionId" : "plasmaLightning"}
+        {"which" : 3, "actionId" : "autoLdelete"}
     ],
     "mousetoggle" : [
         // {"which" : 1, "actionId" : ""}

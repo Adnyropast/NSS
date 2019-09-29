@@ -498,6 +498,7 @@ class FinalCutter4 extends FinalCutter3 {
         this.slashDuration = 12;
         this.nextAction = FinalCutter5;
         this.setUseCost(0);
+        this.endlag = 0;
     }
     
     transitionsSetup() {

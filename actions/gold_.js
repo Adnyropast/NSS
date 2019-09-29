@@ -108,6 +108,22 @@ class RocketPunchProjectile extends Projectile {
         
         return this;
     }
+    
+    update() {
+        super.update();
+        
+        if(this.lifeCounter % 1 == 0) {
+            let particle = GoldSmokeParticle.fromMiddle(this.getPositionM(), this.size);
+            
+            let angle = irandom(0, 360)*Math.PI/180;
+            
+            particle.setSpeed(Vector.fromAngle(angle).normalize(Math.random() * 2 - 1));
+            
+            addEntity(particle);
+        }
+        
+        return this;
+    }
 }
 
 class RocketPunch extends GoldAbility {
@@ -126,17 +142,77 @@ class RocketPunch extends GoldAbility {
         if(this.phase == 0) {
             this.user.hurt(this.getUseCost());
             this.setRemovable(false);
+            
+            
+            
+            let particle = PolygonDrawable.from(makeRandomPolygon(16, 16, 16));
+            particle.setLifespan(16);
+            particle.setStyle(new ColorTransition([255, 255, 255, 0], [0, 255, 255, 0.75], particle.lifespan));
+            
+            particle.setPositionM(this.user.getPositionM());
+            
+            let sizeTransition = new VectorTransition([16], [0], particle.lifespan);
+            particle.initImaginarySize(sizeTransition.at(0)[0]);
+            
+            let user = this.user;
+            
+            particle.controllers.add(function() {
+                this.setImaginarySize(sizeTransition.getNext()[0]);
+                this.setPositionM(user.getPositionM());
+            });
+            
+            addDrawable(particle);
+        }
+        
+        if(this.phase < 8) {
+            let count = 2;
+            
+            for(let i = 0; i < count; ++i) {
+                let particle = PolygonDrawable.from(makeRandomPolygon(16, 16, 16));
+                
+                particle.setLifespan(8);
+                particle.setStyle(new ColorTransition([0, 0, 255, 0], [0, 255, 255, 1], particle.lifespan));
+                particle.multiplySize(1/8);
+                
+                let angle = Math.random() * 2*Math.PI;
+                
+                let positionM = this.user.getPositionM();
+                
+                let positionTransition = new VectorTransition([irandom(16, 32) * Math.cos(angle) + positionM[0], irandom(16, 32) * Math.sin(angle) + positionM[1]], positionM, particle.lifespan);
+                
+                particle.controllers.add(function() {
+                    this.setPositionM(positionTransition.getNext());
+                });
+                
+                addDrawable(particle);
+            }
         }
         
         if(this.phase == 16) {
-            var projectile = RocketPunchProjectile.fromMiddle([this.user.getPositionM(0), this.user.getPositionM(1)], [8, 8]);
+            let positionM = this.user.getPositionM();
+            let direction = this.user.getCursorDirection();
+            let startPosition = direction.normalized(rectangle_averagesize(this.user)/2).add(positionM);
             
-            projectile.setSpeed(this.user.getCursorDirection().normalize(8));
+            var projectile = RocketPunchProjectile.fromMiddle(startPosition, [8, 8]);
+            
+            projectile.setSpeed(direction.normalized(8));
             // projectile.setForce(projectile.speed.times(2));
             projectile.addInteraction(new DragActor(projectile.speed.times(1)));
             projectile.shareBlacklist(this.user.getBlacklist());
             
             addEntity(projectile);
+            
+            let count = 8;
+            
+            for(let i = 0; i < count; ++i) {
+                let angle = (i+Math.random()*2-1)/(count-1) * 2*Math.PI;
+                
+                let particle = GoldSmokeParticle.fromMiddle(startPosition, [12, 12]);
+                
+                particle.setSpeed(Vector.fromAngle(angle).normalize(Math.random()+1));
+                
+                addEntity(particle);
+            }
             
             this.user.setFace(projectile.speed[0]);
             
@@ -204,6 +280,7 @@ class GoldBurstHitbox extends Hitbox {
         });
         
         this.addInteraction(new TypeDamager({type:FX_GOLD_, value:1}));
+        this.drawable.setZIndex(-1);
     }
     
     updateDrawable() {

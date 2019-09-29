@@ -681,6 +681,12 @@ class Rectangle {
         return this.position[2] + this.size[2];
     }
     
+    /* 29/09/2019 */
+    
+    getX1() {return this.position[0];}
+    getY1() {return this.position[1];}
+    getZ1() {return this.position[2];}
+    
     getWidth() {/* 14/01/2019 */
         return this.size[0];
     } getHeight() {
@@ -700,6 +706,10 @@ class Rectangle {
     setX2(x2) {this.position[0] = x2 - this.size[0]; return this;}
     setY2(y2) {this.position[1] = y2 - this.size[1]; return this;}
     setZ2(z2) {this.position[2] = z2 - this.size[2]; return this;}
+    
+    setX1(x1) {this.position[0] = x1; return this;}
+    setY1(y1) {this.position[1] = y1; return this;}
+    setZ1(z1) {this.position[2] = z1; return this;}
     
     setWidth(width) {this.size[0] = width; return this;}
     setHeight(height) {this.size[1] = height; return this;}

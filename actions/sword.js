@@ -116,6 +116,7 @@ class OverheadSlash extends SwordSlashAction {
         this.center = null;
         
         this.setUseCost(3);
+        this.setUseCost(1.5);
         this.det = 3;
     }
     
@@ -173,6 +174,7 @@ class UpwardArcSlash extends SwordSlashAction {
         this.hitbox.addInteraction(new DragActor([0, -4]));
         
         this.setUseCost(3);
+        this.setUseCost(2);
     }
     
     transitionsSetup() {
@@ -333,6 +335,7 @@ class DownwardArcSlash extends SwordSlashAction {
         this.hitbox.addInteraction(new DragActor([0, +4]));
         
         this.setUseCost(3);
+        this.setUseCost(2);
     }
     
     transitionsSetup() {

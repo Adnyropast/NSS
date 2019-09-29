@@ -1,4 +1,20 @@
 
+class GameLoop {
+    constructor() {
+        this.drawables = new SetArray();
+        this.camera = null;
+    }
+    
+    update() {
+        
+    }
+}
+
+const GAMELOOP = new GameLoop();
+const WORLDLOOP = new GameLoop();
+const BATTLELOOP = new GameLoop();
+const ESCAPELOOP = new GameLoop();
+
 const NOENTITY = new SetArray();
 const ENTITIES = new SetArray();
 const COLLIDABLES = new SetArray();
@@ -743,6 +759,7 @@ function battleUpdate() {
     // 
     
     for(let i = 0; i < BATTLEDRAWABLES.length; ++i) {
+        BATTLEDRAWABLES[i].update();
         BATTLEDRAWABLES[i].draw(context);
     }
     /*
@@ -825,17 +842,15 @@ let gameControllers = new SetArray();
 function gameUpdate() {
     if(gamePhase == "world") {
         worldUpdate();
-    } else if(gamePhase == "battle") {
-        battleUpdate();
-    }
-    
-    if(gamePhase == "escapeMenu") {
-        escapeMenu();
-    } else {
+        
         if(keyList.value(K_ESC) == 1) {
             backupPhase = gamePhase;
             switchPhase("escapeMenu");
         }
+    } else if(gamePhase == "battle") {
+        battleUpdate();
+    } else if(gamePhase == "escapeMenu") {
+        escapeMenu();
     }
     
     // 
