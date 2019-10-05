@@ -381,7 +381,7 @@ class TrailDrawable {
         
         // this.edgePolygons = [];
         
-        this.curveFunction = function(progression) {return Math.pow(progression, 1/1.125);}
+        this.curveFunction = powt(1/1.125);
         
         this.otherTrails = new SetArray();
     }
@@ -410,7 +410,7 @@ class TrailDrawable {
         let currentIndex = this.getCount() - 1;
         if(lastIndex < 0) {lastIndex = 0;}
         
-        let polygonDrawable = (new PolygonDrawable([this.farPoints[lastIndex], this.farPoints[currentIndex], this.closePoints[currentIndex], this.closePoints[lastIndex]])).setStyle(ColorTransition.from(this.trailStyle)).setLifespan(this.trailStyle.duration).setCamera(this.camera);
+        let polygonDrawable = (new PolygonDrawable([this.farPoints[lastIndex], this.farPoints[currentIndex], this.closePoints[currentIndex], this.closePoints[lastIndex]])).setStyle(this.trailStyle.copy().setStep(this.trailStyle.getStep())).setLifespan(this.trailStyle.duration).setCamera(this.camera);
         
         // polygonDrawable.translate(Vector.subtraction(farPoint, closePoint).normalize(16));
         

@@ -136,8 +136,8 @@ EC["director"] = Director;
 class Hazard extends Ground {
     constructor(position, size) {
         super(position, size);
-        // this.setOffense("default", 1);
-        this.addInteraction(new TypeDamager([{"type" : "default", "value" : 1}]));
+        this.setTypeOffense("default", 1);
+        this.addInteraction(new TypeDamager());
     }
 }
 
@@ -192,7 +192,6 @@ EC["waterArea"] = WaterArea;
 class Target extends Entity {
     constructor(position, size) {
         super(position, size);
-        // this.setEffectFactor("default", 1);
         this.addInteraction(new TypeDamageable());
     }
 }
@@ -353,11 +352,11 @@ class Projectile extends Hitbox {
         // this.setBrakeExponent(0);
         // this.setForceFactor(0);
         // this.setRegeneration(-1);
-        // this.setOffense(FX_PIERCING, 1);
+        this.setTypeOffense(FX_PIERCING, 1);
         
         this.setLifespan(16);
         
-        this.addInteraction(new TypeDamager([{"type" : FX_PIERCING, "value" : 1}]));
+        this.addInteraction(new TypeDamager());
         // this.addInteraction(new ReplaceRecipient());
         this.addInteraction(new ContactVanishRecipient(1));
     }
@@ -374,6 +373,8 @@ EC["autoDoor"] = class AutoDoor extends Entity {
     }
     
     setMapwarp(mapname, warpPositionM) {
+        this.mapname = mapname;
+        this.warpPositionM = warpPositionM;
         this.addInteraction(new MapWarper(mapname, warpPositionM));
         
         return this;
@@ -394,11 +395,24 @@ EC["autoDoor"] = class AutoDoor extends Entity {
         
         return door;
     }
+    
+    getData() {
+        let data = super.getData();
+        
+        data.mapname = this.mapname;
+        data.warpPositionM = this.warpPositionM;
+        
+        return data;
+    }
 };
 
 EC["lookupDoor"] = class LookupDoor extends EC["autoDoor"] {
     setMapwarp(mapname, warpPositionM) {
+        this.mapname = mapname;
+        this.warpPositionM = warpPositionM;
         this.addInteraction(new LookupMapWarper(mapname, warpPositionM));
+        
+        return this;
     }
 };
 
@@ -437,8 +451,10 @@ class PitArea extends Area {
     constructor(position, size) {
         super(position, size);
         
-        this.addInteraction(new TypeDamager({"type" : "void", "value" : Infinity}));
+        this.addInteraction(new TypeDamager());
         this.setStyle(makeStyledCanvas(makeCTile("#3F3F3F3F", "#0000007F", "FFFFFF3F"), this.getWidth(), this.getHeight()));
+        
+        this.setTypeOffense("void", Infinity);
     }
 }
 
@@ -448,8 +464,8 @@ EC["mazeGenerator"] = class MazeGenerator extends Entity {
     constructor(position, size) {
         super(position, size);
         this.mazeSize;
-        this.cellSize;
-        this.wallSize;
+        this.cellSize = undefined; [64, 16*3];
+        this.wallSize = undefined; [8, 8];
         this.mode;
     }
     
@@ -461,9 +477,9 @@ EC["mazeGenerator"] = class MazeGenerator extends Entity {
         
         let mazeGenerator = super.fromData(data);
         
-        mazeGenerator.mazeSize = mazeSize;
-        mazeGenerator.cellSize = cellSize;
-        mazeGenerator.wallSize = wallSize;
+        mazeGenerator.mazeSize = mazeSize || mazeGenerator.mazeSize;
+        mazeGenerator.cellSize = cellSize || mazeGenerator.cellSize;
+        mazeGenerator.wallSize = wallSize || mazeGenerator.wallSize;
         mazeGenerator.mode = mode;
         
         return mazeGenerator;
@@ -494,6 +510,7 @@ class TransitionCover extends Entity {
     
     onremove() {
         transitionOut(16);
+        saveMapState();
         loadMap(this.mapname);
         setGameTimeout(function() {
             maptransitioning = false;
@@ -686,6 +703,8 @@ class MazeWall extends EC["ground"] {
     }
 }
 
+EC["mazeWall"] = MazeWall;
+
 const smokeColorTransition2 = new ColorTransition([255, 255, 255, 255 / 255], [223, 223, 223, 0 / 255], 28, function(t) {return Math.pow(t, 5)});
 
 class SpikeSmokeParticle extends Particle {
@@ -771,3 +790,14 @@ EC["breakableWood"] = class BreakableWood extends EC["treeTrunk"] {
         return super.ondefeat();
     }
 };
+
+EC["mazeGroundArea"] = class MazeGroundArea extends GroundArea {
+    constructor() {
+        super(...arguments);
+        
+        
+        this.drawable.setZIndex(ALMOST_ZERO)//.setStyle(makeStyledCanvas(mazeStyle, groundArea.getWidth(), groundArea.getHeight()));
+        
+        this.drawable.setStyle(makeRepeatedTileFrom(IMG_GRASSTILE, this.getWidth(), this.getHeight()));
+    }
+}

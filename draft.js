@@ -35,24 +35,6 @@ const FX_DARK = effectsCount++;
 const FX_POISON = effectsCount++;
 const FX_GOLD_ = effectsCount++;
 
-let playerClassId = "haple";
-
-function getPlayerClass() {
-    if(EC.hasOwnProperty(playerClassId)) {
-        return EC[playerClassId];
-    }
-    
-    return PlayableCharacter;
-}
-
-function setPlayerClassId(id) {
-    playerClassId = id;
-}
-
-let hitsCount = 0;
-
-let playerPositionM = new Vector(0, 0);
-
 // 
 
 function getDD(bits) {
@@ -644,6 +626,8 @@ class VisibleList {
     decIndex() {return this.setIndex(this.index-1);}
     
     getItem() {return this.items[this.index];}
+    
+    empty() {this.items.splice(0, Infinity); return this;}
 }
 
 function rectangle_averagesize() {
@@ -666,3 +650,11 @@ function rectangle_averagesize() {
 function irandom(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
+
+function powt(pow) {
+    return function timing(t) {
+        return Math.pow(t, pow);
+    };
+}
+
+const FRIGHT = +1, FLEFT = -1;

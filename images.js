@@ -4,6 +4,9 @@ const INVISIBLE = "#00000000";
 const CV_WHITE = [255, 255, 255, 1];
 const CV_BLACK = [0, 0, 0, 1];
 const CV_INVISIBLE = [0, 0, 0, 0];
+const CV_RED = [255, 0, 0, 1];
+const CV_GREEN = [0, 255, 0, 1];
+const CV_BLUE = [0, 0, 255, 1];
 
 function hexToColorVector(hex) {
     hex = hex.replace(/#/, "")
@@ -162,7 +165,9 @@ var IMG_SEED = loadImage("images/seed.png");
 
 var IMG_GRASSTILE = loadImage("images/grass_tile.png");
 
-var ANIM_HAPLE = {
+const IMGCHAR = {};
+
+IMGCHAR["haple"] = {
     "std-right" : new AnimatedImages([loadImage("images/haple/std-right.png")]),
     "std-left" : new AnimatedImages([loadImage("images/haple/std-left.png")]),
     "run-right" : (new AnimatedImages([loadImage("images/haple/run-right0.png"), loadImage("images/haple/run-right1.png"), loadImage("images/haple/run-right2.png"), loadImage("images/haple/run-right3.png")])).setIcpf(12),
@@ -180,12 +185,14 @@ var ANIM_HAPLE = {
     "crouch-right" : new AnimatedImages([loadImage("images/haple/crouch-right.png")]),
     "crouch-left" : new AnimatedImages([loadImage("images/haple/crouch-left.png")]),
     "swim-right" : (new AnimatedImages([loadImage("images/haple/swim-right0.png"), loadImage("images/haple/swim-right1.png")])).setIcpf(12),
-    "swim-left" : (new AnimatedImages([loadImage("images/haple/swim-left0.png"), loadImage("images/haple/swim-left1.png")])).setIcpf(12)
+    "swim-left" : (new AnimatedImages([loadImage("images/haple/swim-left0.png"), loadImage("images/haple/swim-left1.png")])).setIcpf(12),
+    "battle-right" : (new AnimatedImages([loadImage("images/haple/battle-right.png")])),
+    "icon" : loadImage("images/haple/icon.png"),
 };
 
 let CT_TEN = (new ColorTransition(CV_WHITE, [0, 255, 255, 1], 32)).setLoop(true);
 
-let ANIM_TEN = {
+IMGCHAR["ten"] = {
     "std-right" : CT_TEN,
     "std-left" : CT_TEN,
     "run-right" : ColorTransition.from(CT_TEN).setDuration(8),
@@ -203,7 +210,8 @@ let ANIM_TEN = {
     "crouch-right" : (new ColorTransition([0, 255, 0, 1], [127, 255, 127, 1], 64)).setLoop(true),
     "crouch-left" : (new ColorTransition([0, 255, 0, 1], [127, 255, 127, 1], 64)).setLoop(true),
     "swim-right" : ColorTransition.from(CT_TEN).setDuration(12),
-    "swim-right" : ColorTransition.from(CT_TEN).setDuration(12)
+    "swim-right" : ColorTransition.from(CT_TEN).setDuration(12),
+    "icon" : loadImage("images/ten/icon.png")
 };
 
 const IMG_TREETRUNK = loadImage("images/treetrunk.png");
@@ -212,6 +220,10 @@ const IMG_TREEBACKGROUND = loadImage("images/treebackground.png");
 const IMG_DEFBLOCK = loadImage("images/def_block.png");
 const IMG_SKYTILE = loadImage("images/sky_tile.png");
 const IMG_TREE2 = loadImage("images/tree2.png");
+
+IMGCHAR["adnyropast"] = {
+    "icon" : loadImage("images/adnyropast/icon.png"),
+};
 
 // 
 
@@ -393,3 +405,102 @@ function canvas_clone(canvas) {
     
     return clone;
 }
+
+class MultiColorTransition extends ColorTransition {
+    constructor(colorVectors, duration = 1, timing = bezierLinear) {
+        super();
+        
+        this.vectors = Vector.from(colorVectors);
+        this.duration = duration;
+        this.step = -1;
+        this.timing = timing;
+        this.stepDirection = +1;
+        this.loopType = ["none", "alternate", "repeat"][0];
+    }
+    
+    static from(multiColorTransition) {
+        return (new this(multiColorTransition.vectors, multiColorTransition.duration, multiColorTransition.timing)).setLoopType(multiColorTransition.loopType);
+    }
+    
+    at(t) {
+        let vector = Vector.filled(4, 0);
+        
+        for(let i = 0; i < this.vectors.length - 1; ++i) {
+            let vector0 = this.vectors[i];
+            let progress0 = i / (this.vectors.length - 1);
+            let vector1 = this.vectors[i+1];
+            let progress1 = (i+1) / (this.vectors.length - 1);
+            
+            if(progress0 <= t && t <= progress1) {
+                let tt = (t - progress0) / (progress1 - progress0);
+                
+                let ttt = this.timing(tt);
+                
+                for(let dim = 0; dim < vector.length; ++dim) {
+                    vector[dim] = vector0[dim] + ttt * (vector1[dim] - vector0[dim]);
+                }
+                
+                break;
+            }
+        }
+        
+        return vector;
+    }
+    
+    getProgress() {return this.step / this.duration;}
+    
+    getNext() {
+        this.step += this.stepDirection;
+        
+        if(this.step > this.duration) {
+            this.step = this.duration;
+            
+            if(this.loopType === "alternate") {
+                this.stepDirection *= -1;
+            } else if(this.loopType === "repeat") {
+                this.step = 0;
+            }
+        } if(this.step < 0) {
+            this.step = 0;
+            
+            if(this.loopType === "alternate") {
+                this.stepDirection *= -1;
+            } else if(this.loopType === "repeat") {
+                this.step = this.duration;
+            }
+        }
+        
+        return this.at(this.getProgress());
+    }
+    
+    setDuration(duration) {
+        this.duration = duration;
+        this.step = -1;
+        this.stepDirection = +1;
+        
+        return this;
+    }
+    
+    getDuration() {return this.duration;}
+    
+    setLoopType(loopType) {this.loopType = loopType; return this;}
+    
+    copy() {return this.constructor.from(this);}
+    
+    setStep(step) {this.step = step; return this;}
+    getStep() {return this.step;}
+    
+    getStyleAt(t) {
+        return rgba(this.at(t));
+    }
+    
+    getNextStyle() {
+        return rgba(this.getNext());
+    }
+    
+    getCurrentStyle() {
+        return rgba(this.at(this.getProgress()));
+    }
+}
+
+const CT_RAINBOW = (new MultiColorTransition([[255, 0, 0, 1], [255, 127, 0, 1], [255, 255, 0, 1], [127, 255, 0, 1], [0, 255, 0, 1], [0, 255, 127, 1], [0, 255, 255, 1], [0, 127, 255, 1], [0, 0, 255, 1], [127, 0, 255, 1], [255, 0, 255, 1], [255, 0, 127, 1], [255, 0, 0, 1]])).setLoopType("repeat");

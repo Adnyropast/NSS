@@ -119,7 +119,7 @@ class PlayableCharacter extends Character {
     }
     
     onstatehurt() {
-        if(this.faceSave == "right") {
+        if(this.faceSave === FRIGHT) {
             this.setAnimStyle("hurt-right");
         } else {
             this.setAnimStyle("hurt-left");
@@ -130,12 +130,12 @@ class PlayableCharacter extends Character {
     
     onstateswim() {
         if(this.route[0] > this.getPositionM(0)) {
-            this.faceSave = "right";
+            this.faceSave = FRIGHT;
         } else if(this.route[0] < this.getPositionM(0)) {
-            this.faceSave = "left";
+            this.faceSave = FLEFT;
         }
         
-        if(this.faceSave == "right") {
+        if(this.faceSave == FRIGHT) {
             this.setAnimStyle("swim-right");
         } else {
             this.setAnimStyle("swim-left");
@@ -145,7 +145,7 @@ class PlayableCharacter extends Character {
     }
     
     onstatewater() {
-        if(this.faceSave == "right") {
+        if(this.faceSave === FRIGHT) {
             this.setAnimStyle("water-right");
         } else {
             this.setAnimStyle("water-left");
@@ -172,7 +172,7 @@ class PlayableCharacter extends Character {
             this.faceSave = "left";
         }
         /**/
-        if(this.faceSave == "right") {
+        if(this.faceSave === FRIGHT) {
             this.setAnimStyle("jump-right");
         } else {
             this.setAnimStyle("jump-left");
@@ -189,7 +189,7 @@ class PlayableCharacter extends Character {
             this.faceSave = "left";
         }
         /**/
-        if(this.faceSave == "right") {
+        if(this.faceSave === FRIGHT) {
             this.setAnimStyle("fall-right");
         } else {
             this.setAnimStyle("fall-left");
@@ -201,13 +201,13 @@ class PlayableCharacter extends Character {
     onstatewalk() {
         // if(this.route[0] > this.getPositionM(0)) {
         if(this.speed[0] > 0) {
-            this.faceSave = "right";
+            this.faceSave = FRIGHT;
         // } else if(this.route[0] < this.getPositionM(0)) {
         } else if(this.speed[0] < 0) {
-            this.faceSave = "left";
+            this.faceSave = FLEFT;
         }
         
-        if(this.faceSave == "right") {
+        if(this.faceSave === FRIGHT) {
             this.setAnimStyle("run-right");
         } else {
             this.setAnimStyle("run-left");
@@ -261,7 +261,7 @@ class PlayableCharacter extends Character {
     }
     
     onstatecrouch() {
-        if(this.faceSave == "right") {
+        if(this.faceSave === FRIGHT) {
             this.setAnimStyle("crouch-right");
         } else {
             this.setAnimStyle("crouch-left");
@@ -271,7 +271,7 @@ class PlayableCharacter extends Character {
     }
     
     onstatestd() {
-        if(this.faceSave == "right") {
+        if(this.faceSave === FRIGHT) {
             this.setAnimStyle("std-right");
         } else {
             this.setAnimStyle("std-left");
@@ -308,7 +308,7 @@ class ComposedAction extends Action {
     }
 }
 
-let movementCost = 0.125;
+let movementCost = 0.09375;
 
 class MovementLeft extends Action {
     constructor() {

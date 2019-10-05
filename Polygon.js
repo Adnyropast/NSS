@@ -461,7 +461,7 @@ class Polygon extends Array {
                         let vect = maxPosition[dim] - minPosition[dim];
                         let proportion = (point[dim] - minPosition[dim]) / vect;
                         
-                        console.log(dim, point[dim], proportion);
+                        // console.log(dim, point[dim], proportion);
                         
                         point[dim] += proportion * vector[dim];
                     } else if(vector[dim] > 0) {

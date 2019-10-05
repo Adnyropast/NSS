@@ -3,6 +3,18 @@ var entityId = -1;
 
 const EC = {};
 
+function entity_getClassId(entity) {
+    for(let i in EC) {
+        if(entity.constructor === EC[i]) {
+            return i;
+        }
+    }
+    
+    console.warn(entity.constructor.name, "not found in EC.");
+    
+    return "nf";
+}
+
 class Entity extends Rectangle {
     constructor(position, size) {
         super(position, size);
@@ -91,6 +103,20 @@ class Entity extends Rectangle {
         
         this.lifeCounter = 0;
         this.lifespan = -1;
+        
+        this.preposition = Vector.from(this.position);
+        this.presize = Vector.from(this.size);
+        
+        this.stats = {};
+        
+        this.events = {
+            "defeat" : []
+        };
+        
+        this.drawables = new SetArray();
+        
+        this.resistances = {};
+        this.offenses = {};
     }
     
     setSpeed(speed) {
@@ -117,11 +143,6 @@ class Entity extends Rectangle {
     }
     
     updateDrawable() {
-        // if(this.drawable != null) {
-            // this.drawable.setSize(this.getSize());
-            // this.drawable.setPosition(this.getPosition());
-        // }
-        
         return this;
     }
     
@@ -307,37 +328,43 @@ class Entity extends Rectangle {
         return this;
     }
     
-    // setEffectFactor(type, factor) {
-        // for(var i = 0; i < this.effects.length; ++i) {
-            // var eff = this.effects[i];
+    setTypeResistance(type, factor) {
+        this.resistances[type] = factor;
+        
+        /**
+        for(var i = 0; i < this.effects.length; ++i) {
+            var eff = this.effects[i];
             
-            // if(eff.type == type) {
-                // eff.factor = factor;
+            if(eff.type == type) {
+                eff.factor = factor;
                 
-                // return this;
-            // }
-        // }
+                return this;
+            }
+        }
         
-        // this.effects.push({"type" : type, "factor" : factor});
-        
-        // return this;
-    // }
+        this.effects.push({"type" : type, "factor" : factor});
+        /**/
+        return this;
+    }
     
-    // setOffense(type, offense) {
-        // for(var i = 0; i < this.effects.length; ++i) {
-            // var eff = this.effects[i];
+    setTypeOffense(type, offense) {
+        this.offenses[type] = offense;
+        
+        /**
+        for(var i = 0; i < this.effects.length; ++i) {
+            var eff = this.effects[i];
             
-            // if(eff.type == type) {
-                // eff.offense = offense;
+            if(eff.type == type) {
+                eff.offense = offense;
                 
-                // return this;
-            // }
-        // }
+                return this;
+            }
+        }
         
-        // this.effects.push({"type" : type, "offense" : offense});
-        
-        // return this;
-    // }
+        this.effects.push({"type" : type, "offense" : offense});
+        /**/
+        return this;
+    }
     
     // getEffect(type) {
         // var def = {"type" : "default", "factor" : 0, "offense" : 0};
@@ -525,6 +552,75 @@ class Entity extends Rectangle {
     
     replace(other, type, bounce = 0) {
         if(type == -1) {
+            let preposition = other.preposition;
+            let presize = other.presize;
+            
+            if(preposition[0] < this.preposition[0] + this.presize[0] && preposition[0] + presize[0] > this.preposition[0]) {
+                if(preposition[1] + presize[1]/2 < this.preposition[1] + this.presize[1]/2) {
+                    // console.log("up");
+                    other.replaceStateObject({name:"lastReplaced", value:4, countdown:2});
+                    
+                    return this.replace(other, 4, bounce);
+                } else {
+                    // console.log("down");
+                    other.replaceStateObject({name:"lastReplaced", value:8, countdown:2});
+                    
+                    return this.replace(other, 8, bounce);
+                }
+            }
+            
+            if(preposition[1] < this.preposition[1] + this.presize[1] && preposition[1] + presize[1] > this.preposition[1]) {
+                if(preposition[0] + presize[0]/2 < this.preposition[0] + this.presize[0]/2) {
+                    // console.log("left");
+                    other.replaceStateObject({name:"lastReplaced", value:1, countdown:2});
+                    
+                    return this.replace(other, 1, bounce);
+                } else {
+                    // console.log("right");
+                    other.replaceStateObject({name:"lastReplaced", value:2, countdown:2});
+                    
+                    return this.replace(other, 2, bounce);
+                }
+            }
+            
+            /**
+            
+            if(other.speed[0] > other.speed[1]) {
+                if(other.getXM() < this.getXM()) {
+                    console.log("left");
+                    other.replaceStateObject({name:"lastReplaced", value:1, countdown:2});
+                    
+                    return this.replace(other, 1, bounce);
+                } else {
+                    console.log("right");
+                    other.replaceStateObject({name:"lastReplaced", value:2, countdown:2});
+                    
+                    return this.replace(other, 2, bounce);
+                }
+            } if(other.speed[1] > other.speed[0]) {
+                if(other.getYM() < this.getYM()) {
+                    console.log("up");
+                    other.replaceStateObject({name:"lastReplaced", value:4, countdown:2});
+                    
+                    return this.replace(other, 4, bounce);
+                } else {
+                    console.log("down");
+                    other.replaceStateObject({name:"lastReplaced", value:8, countdown:2});
+                    
+                    return this.replace(other, 8, bounce);
+                }
+            }
+            
+            /**/
+            
+            let lastReplaced = other.findState("lastReplaced");
+            
+            if(lastReplaced) {
+                return this.replace(other, lastReplaced.value, bounce);
+            }
+            
+            /**/
+            
             return this.replace(other, this.locate(other), bounce);
         }
         
@@ -558,6 +654,9 @@ class Entity extends Rectangle {
     }
     
     update() {
+        this.preposition = Vector.from(this.position);
+        this.presize = Vector.from(this.size);
+        
         for(let i = 0; i < this.controllers.length; ++i) {
             this.controllers[i].bind(this)();
         }
@@ -572,6 +671,7 @@ class Entity extends Rectangle {
         
         if(this.energy <= 0) {
             this.ondefeat();
+            this.triggerEvents("defeat");
             removeEntity(this);
         }
         
@@ -822,6 +922,9 @@ class Entity extends Rectangle {
     
     onadd() {
         addDrawable(this.drawable);
+        for(let i = 0; i < this.drawables.length; ++i) {
+            addDrawable(this.drawables[i]);
+        }
         
         this.added = true;
         
@@ -839,6 +942,9 @@ class Entity extends Rectangle {
     onremove() {
         this.removeBlacklist(this);
         removeDrawable(this.drawable);
+        for(let i = 0; i < this.drawables.length; ++i) {
+            removeDrawable(this.drawables[i]);
+        }
         
         this.added = false;
         
@@ -851,6 +957,7 @@ class Entity extends Rectangle {
         }
         
         for(let i = this.actions.length - 1; i >= 0; --i) {
+            if(this.actions[i] instanceof Action) this.actions[i].setRemovable(true);
             this.removeActionAt(i);
         }
         
@@ -976,6 +1083,53 @@ class Entity extends Rectangle {
     }
     
     onland(obstacle) {return this;}
+    
+    replaceStateObject(object) {
+        this.removeState(object.name);
+        this.addStateObject(object);
+        
+        return this;
+    }
+    
+    setStats(stats) {
+        for(let i in stats) {
+            this.stats[i] = stats[i];
+        }
+        
+        return this;
+    }
+    
+    clearStats() {
+        for(let i in this.stats) {
+            delete this.stats[i];
+        }
+        
+        return this;
+    }
+    
+    addStats(stats) {
+        for(let i in stats) {
+            if(!this.stats.hasOwnProperty(i)) {
+                this.stats[i] = stats[i];
+            }
+        }
+        
+        return this;
+    }
+    
+    triggerEvents(name) {
+        if(Array.isArray(this.events[name])) {
+            for(let i = 0; i < this.events[name].length; ++i) {
+                this.events[name][i]();
+            }
+        }
+        
+        return this;
+    }
+    
+    getData() {
+        return {position : this.position, size : this.size};
+    }
 }
 
 class Hitbox extends Entity {

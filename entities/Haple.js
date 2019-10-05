@@ -7,11 +7,11 @@ EC["haple"] = class Haple extends PlayableCharacter {
         
         this.cursorDistance = 32;
         
-        this.addActset(AS_GOLD, AS_CUTTER, AS_SWORD, "zoneEngage", AS_FIRE, AS_PLASMA);
+        this.addActset(AS_GOLD, AS_CUTTER, AS_SWORD, "zoneEngage", AS_FIRE, AS_PLASMA, AS_ARTIST);
         
         this.setBattler(HapleBattler.fromEntity(this));
         
-        this.anim = ANIM_HAPLE;
+        this.anim = IMGCHAR["haple"];
         
         this.setDrawable(RectangleDrawable.from(this));
         this.drawable.setSize([16, 16]);

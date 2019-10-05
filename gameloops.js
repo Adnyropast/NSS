@@ -56,15 +56,7 @@ function removeEntity(entity) {
     COLLIDABLES.remove(entity);
     // DRAWABLES.remove(entity);
     
-    if(entity == PLAYER && entity.getEnergy() <= 0) {
-        setGameTimeout(function() {
-            transitionIn();
-        }, 48);
-        setGameTimeout(function() {
-            loadMap("hub");
-            transitionOut();
-        }, 64);
-        
+    if(entity == PLAYER) {
         PLAYER = null;
     }
 }
@@ -199,6 +191,16 @@ function setPlayer(entity) {
     entity.addInteraction(new MapWarpable);
     entity.battler.setPlayable(true);
     entity.addAction(new FollowMe());
+    
+    entity.events["defeat"].push(function() {
+        setGameTimeout(function() {
+            transitionIn();
+        }, 48);
+        setGameTimeout(function() {
+            loadMap(saves[currentSave].lastMap);
+            transitionOut();
+        }, 64);
+    });
     
     addEntity(entity);
 }
@@ -342,7 +344,7 @@ function worldUpdate() {
         
         if(drawable instanceof Rectangle) {
             for(let dim = 0; dim < 2; ++dim) {
-                if(CAMERA.getPosition1(dim) >= drawable.getPosition2(dim) || CAMERA.getPosition2(dim) <= drawable.getPosition1(dim)) {
+                if(loadZone.getPosition1(dim) >= drawable.getPosition2(dim) || loadZone.getPosition2(dim) <= drawable.getPosition1(dim)) {
                     return false;
                 }
             }
@@ -353,7 +355,7 @@ function worldUpdate() {
         let drawablePositionM = drawable.getPositionM();
         
         for(let dim = 0; dim < 2; ++dim) {
-            if(CAMERA.getPosition1() >= drawablePositionM[dim] || CAMERA.getPosition2(dim) <= drawablePositionM[dim]) {
+            if(loadZone.getPosition1() >= drawablePositionM[dim] || loadZone.getPosition2(dim) <= drawablePositionM[dim]) {
                 return false;
             }
         }
@@ -768,14 +770,58 @@ function battleUpdate() {
     }*/
 }
 
+let escapeCounter = 0;
+
 const DMENU_ESC = new DirectionalMenu();
-DMENU_ESC.addButton([64, 64]);
-DMENU_ESC.addButton([208, 64]);
-DMENU_ESC.addButton([352, 64]);
+const ESC_LIST = new VisibleList(9);
+
+function escapeMenuStart() {
+    DMENU_ESC.buttons.splice(0, Infinity);
+    
+    let c = 0;
+    
+    for(let i in characters) {
+        let button = [64 + 144*c, 64];
+        button.character = characters[i];
+        button.characterName = i;
+        button.icon = IMGCHAR[characters[i].classId].icon;
+        
+        DMENU_ESC.addButton(button);
+        
+        ++c;
+    }
+    
+    DMENU_ESC.focus = DMENU_ESC.buttons[0];
+    
+    ESC_LIST.empty();
+    
+    c = 0;
+    
+    for(let i in characters) {
+        let button = [64 + 144*c, 64];
+        button.character = characters[i];
+        button.characterName = i;
+        button.icon = IMGCHAR[characters[i].classId].icon;
+        
+        ESC_LIST.addItem(button);
+        
+        ++c;
+    }
+}
 
 function escapeMenu() {
+    if(escapeCounter === 0) {
+        escapeMenuStart();
+    }
+    
     if(keyList.value(K_DIRECTION) == 1) {
         DMENU_ESC.move(getKDirection());
+    }
+    
+    if(keyList.value(K_LEFT) == 1) {
+        ESC_LIST.decIndex();
+    } if(keyList.value(K_RIGHT) == 1) {
+        ESC_LIST.incIndex();
     }
     
     if(keyList.value(K_ESC) == 1) {
@@ -783,10 +829,20 @@ function escapeMenu() {
     }
     
     if(keyList.value(K_CONFIRM) == 1) {
+        updateSavedCharacter();
+        
         let positionM = PLAYER.getPositionM();
         removeEntity(PLAYER);
-        setPlayerClassId(PIDC[DMENU_ESC.buttons.indexOf(DMENU_ESC.focus)]);
-        setPlayer(getPlayerClass().fromMiddle(positionM));
+        
+        // setPlayerClassId(PIDC[DMENU_ESC.buttons.indexOf(DMENU_ESC.focus)]);
+        // setPlayer(getPlayerClass().fromMiddle(positionM));
+        
+        currentCharacter = DMENU_ESC.focus.characterName;
+        currentCharacter = ESC_LIST.getItem().characterName;
+        
+        let player = getSavedCharacter();
+        player.initPositionM(positionM);
+        setPlayer(player);
         
         switchPhase(backupPhase);
     }
@@ -796,18 +852,39 @@ function escapeMenu() {
     context.fillStyle = "#00003F";
     context.fillRect(0, 0, CANVAS.width, CANVAS.height);
     
-    context.fillStyle = "#DFDFDF";
+    /**
     
     for(let i = 0; i < DMENU_ESC.buttons.length; ++i) {
         let button = DMENU_ESC.buttons[i];
         
-        context.fillRect(button[0] - 64, button[1] - 64, 128, 128);
+        if(button === DMENU_ESC.focus) {context.fillStyle = "#FFFF00";}
+        else {context.fillStyle = "#00FFFF";}
+        
+        let x = button[0] - 64;
+        let y = button[1] - 64;
+        let width = 128;
+        let height = 128;
+        
+        context.fillRect(x, y, width, height);
+        context.drawImage(button.icon, x, y, width, height);
     }
     
-    let focus = DMENU_ESC.focus;
+    /**/
     
-    context.fillStyle = "#FFFF00";
-    context.fillRect(focus[0] - 64, focus[1] - 64, 128, 128);
+    let visibles = ESC_LIST.getVisible();
+    
+    for(let i = 0; i < visibles.length; ++i) {
+        if(visibles[i] === ESC_LIST.getItem()) {context.fillStyle = "#FFFF00";}
+        else {context.fillStyle = "#00FFFF";}
+        
+        let x = i * 144;
+        let y = 0;
+        let width = 128;
+        let height = 128;
+        
+        context.fillRect(x, y, width, height);
+        context.drawImage(visibles[i].icon, x, y, width, height);
+    }
 }
 
 const GLOBALDRAWABLES = new SetArray();
@@ -851,6 +928,11 @@ function gameUpdate() {
         battleUpdate();
     } else if(gamePhase == "escapeMenu") {
         escapeMenu();
+        ++escapeCounter;
+    }
+    
+    if(gamePhase !== "escapeMenu") {
+        escapeCounter = 0;
     }
     
     // 
@@ -917,7 +999,7 @@ function loadCheck() {
             }
         }
         
-        loadMap("hub");
+        loadMap(saves[currentSave].lastMap);
         transitionIn(), transitionOut();
         
         switchLoop(gameUpdate, WORLD_PACE);

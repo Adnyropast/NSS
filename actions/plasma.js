@@ -5,7 +5,7 @@ class PlasmaEffect extends Hitbox {
     constructor() {
         super(...arguments);
         
-        this.addInteraction(new TypeDamager({type:FX_ELECTRIC, value:1}));
+        this.addInteraction(new TypeDamager());
         this.setDrawable(PolygonDrawable.from(makeBurstPolygon2(new ColorTransition([2], [4], 16, Math.random), new ColorTransition([0], [20], 16, Math.random), 6)));
         this.drawable.rotate(Math.random());
         let avgsz = rectangle_averagesize(this);
@@ -19,6 +19,8 @@ class PlasmaEffect extends Hitbox {
         this.controllers.add(function() {
             this.setSizeM(sizeTransition.getNext());
         });
+        
+        this.setTypeOffense(FX_ELECTRIC, 1);
     }
     
     updateDrawable() {
@@ -47,26 +49,28 @@ class PlasmaLightning extends BusyAction {
                 this.user.hurt(this.getUseCost());
             }
         }
+        let cursorDirection = this.user.getCursorDirection();
+        
+        if(cursorDirection.getNorm() > this.maxRange) {
+            cursorDirection.normalize(this.maxRange);
+        }
+        
+        let cursorPositionM = Vector.addition(this.user.getPositionM(), cursorDirection);
         
         if(this.phase % 1 == 0 && this.phase < 16) {
-            let cursorDirection = this.user.getCursorDirection();
-            
-            if(cursorDirection.getNorm() > this.maxRange) {
-                cursorDirection.normalize(this.maxRange);
-            }
-            
-            let cursorPositionM = Vector.addition(this.user.getPositionM(), cursorDirection);
             
             addDrawable(new LightningDrawable(this.user.getPositionM(), cursorPositionM));
             // addDrawable(new LightningDrawable(this.user.getPositionM(), cursorPositionM));
             // addDrawable(new LightningDrawable(this.user.getPositionM(), cursorPositionM));
             
+            this.user.setFace(cursorDirection[0]);
+        }
+        
+        if(this.phase % 4 == 0 && this.phase < 16) {
             let hitbox = PlasmaEffect.fromMiddle(cursorPositionM, [2, 2]);
             hitbox.shareBlacklist(this.user.getBlacklist());
             
             addEntity(hitbox);
-            
-            this.user.setFace(cursorDirection[0]);
         }
         
         if(this.phase == 32) {

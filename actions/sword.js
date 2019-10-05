@@ -10,7 +10,7 @@ class SwordAbility extends BusyAction {
 class SlashEffect extends Hitbox {
     constructor(position, size) {
         super(position, size);
-        // this.setOffense(FX_SHARP, 1);
+        this.setTypeOffense(FX_SHARP, 1);
         
         var grd = CANVAS.getContext("2d").createLinearGradient(0, 0, 0, this.getHeight());
         grd.addColorStop(0, "#00FFFF00");
@@ -19,7 +19,7 @@ class SlashEffect extends Hitbox {
         this.setStyle(grd);
         this.setStyle(INVISIBLE);
         
-        this.addInteraction(new TypeDamager([{"type" : FX_SHARP, "value" : 1}]));
+        this.addInteraction(new TypeDamager());
     }
 }
 
@@ -31,6 +31,8 @@ class SwordSlashAction extends SlashAction {
         this.endlag = 0;
         
         this.swordDrawable = MultiPolygonDrawable.from(makeSwordMultiPolygon());
+        
+        this.swordDrawable.setLifespan(32);
         
         let drawables = this.swordDrawable;
         
@@ -49,13 +51,13 @@ class SwordSlashAction extends SlashAction {
         
         this.swordDrawable.zIndex = -10;
         
-        let otherTrail = new TrailDrawable();
-        otherTrail.edgeWidth = 2;
-        this.trailDrawable.otherTrails.add(otherTrail);
+        // let otherTrail = new TrailDrawable();
+        // otherTrail.edgeWidth = 2;
+        // this.trailDrawable.otherTrails.add(otherTrail);
         
-        for(let i = 0; i < 3; ++i) {
+        for(let i = 0; i < 4; ++i) {
             let otherTrail = new TrailDrawable();
-            otherTrail.edgeWidth = irandom(-8, +2);
+            otherTrail.edgeWidth = 4-i*4; irandom(-8, +2);
             this.trailDrawable.otherTrails.add(otherTrail);
         }
     }
@@ -76,7 +78,7 @@ class SwordSlashAction extends SlashAction {
         
         return this;
     }
-    /**
+    /**/
     onadd() {
         addDrawable(this.swordDrawable);
         
@@ -124,6 +126,10 @@ class OverheadSlash extends SwordSlashAction {
         let face = this.user.getCursorDirection();
         face[0] = Math.sign(face[0]);
         face[1] = Math.sign(face[1]);
+        
+        if(face[0] == 0) {
+            face[0] = this.user.faceSave;
+        }
         
         this.baseAngleTransition = new ColorTransition([-Math.PI/2 - 2 * 2*face[0] * 0.1875], [-Math.PI/2 + 8 * 2*face[0] * 0.1875]);
         
@@ -178,7 +184,7 @@ class UpwardArcSlash extends SwordSlashAction {
     }
     
     transitionsSetup() {
-        let hface = this.user.faceSave == "right" ? +1 : -1;
+        let hface = this.user.faceSave;
         
         this.baseAngleTransition = new ColorTransition([-Math.PI/2 - Math.PI/2], [-Math.PI/2 + Math.PI/2]);
         this.baseDistanceTransition = new ColorTransition([12], [12]);
@@ -339,7 +345,7 @@ class DownwardArcSlash extends SwordSlashAction {
     }
     
     transitionsSetup() {
-        let hface = this.user.faceSave == "right" ? +1 : -1;
+        let hface = this.user.faceSave;
         
         this.baseAngleTransition = new ColorTransition([Math.PI/2 + Math.PI/4], [Math.PI/2 - 3/4 * Math.PI]);
         this.baseDistanceTransition = new ColorTransition([12], [12]);

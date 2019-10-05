@@ -161,7 +161,8 @@ class ZoneEngage extends BusyAction {
             this.wind = Hitbox.shared(this.zone);
             this.wind.shareBlacklist(this.user.getBlacklist());
             this.wind.addInteraction(new VacuumDragActor(-0.5));
-            this.wind.addInteraction(new TypeDamager([{"type" : FX_WIND, "value" : 0.5}]));
+            this.wind.addInteraction(new TypeDamager());
+            this.wind.setTypeOffense(FX_WIND, 0.5);
             addEntity(this.wind);
             
             this.zone.setStyle(makeRadialGradientCanvas("cyan", "rgba(0, 255, 255, 0)", 256, 256));
@@ -450,6 +451,7 @@ class SlashAction extends BusyAction {
         }
         
         if(this.phase == this.startlag) {
+            if(this.hitbox.lifespan === -1) {this.hitbox.setLifespan(this.slashDuration)}
             this.hitbox.shareBlacklist(this.user.getBlacklist());
             addEntity(this.hitbox);
             addDrawable(this.trailDrawable);
@@ -459,28 +461,30 @@ class SlashAction extends BusyAction {
             let positionTransition = new ColorTransition(this.lastPositionM || userPositionM, userPositionM);
             
             for(let i = 1; i <= this.det; ++i) {
-                let progress = Math.max(0, (this.phase - this.startlag - 1 + i/this.det) / this.slashDuration);
+                let progress = (this.phase - this.startlag - 1+i/this.det) / this.slashDuration;
                 
-                let baseAngle = this.baseAngleTransition.at(progress)[0];
-                
-                let baseDistance = this.baseDistanceTransition.at(progress)[0];
-                let baseDirection = new Vector(Math.cos(baseAngle), Math.sin(baseAngle));
-                
-                let basePosition = Vector.addition(positionTransition.at(i/this.det), baseDirection.normalized(baseDistance));
-                
-                let bladeAngle = this.bladeAngleTransition.at(progress)[0];
-                let bladeWidth = this.bladeWidthTransition.at(progress)[0];
-                
-                let bladeDirection = (new Vector(Math.cos(bladeAngle), Math.sin(bladeAngle))).normalize(bladeWidth);
-                
-                this.hitbox.setSize([bladeWidth, bladeWidth]);
-                this.hitbox.setPositionM(basePosition.plus(bladeDirection.divided(2)));
-                
-                this.updateTrailDrawableStyle(i/this.det);
-                
-                let edgeWidth = this.edgeWidthTransition.at(progress)[0];
-                
-                this.trailDrawable.addSized(basePosition, bladeAngle, bladeWidth, bladeWidth - edgeWidth);
+                if(progress >= 0) {
+                    let baseAngle = this.baseAngleTransition.at(progress)[0];
+                    
+                    let baseDistance = this.baseDistanceTransition.at(progress)[0];
+                    let baseDirection = new Vector(Math.cos(baseAngle), Math.sin(baseAngle));
+                    
+                    let basePosition = Vector.addition(positionTransition.at(i/this.det), baseDirection.normalized(baseDistance));
+                    
+                    let bladeAngle = this.bladeAngleTransition.at(progress)[0];
+                    let bladeWidth = this.bladeWidthTransition.at(progress)[0];
+                    
+                    let bladeDirection = (new Vector(Math.cos(bladeAngle), Math.sin(bladeAngle))).normalize(bladeWidth);
+                    
+                    this.hitbox.setSize([bladeWidth, bladeWidth]);
+                    this.hitbox.setPositionM(basePosition.plus(bladeDirection.divided(2)));
+                    
+                    this.updateTrailDrawableStyle(i/this.det);
+                    
+                    let edgeWidth = this.edgeWidthTransition.at(progress)[0];
+                    
+                    this.trailDrawable.addSized(basePosition, bladeAngle, bladeWidth, bladeWidth - edgeWidth);
+                }
             }
             
             this.lastPositionM = userPositionM;

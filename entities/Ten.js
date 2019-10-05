@@ -4,7 +4,7 @@ EC["ten"] = class Ten extends PlayableCharacter {
         super(position, size);
         
         this.addActset(AS_HEART);
-        this.anim = ANIM_TEN;
+        this.anim = IMGCHAR["ten"];
         
         this.resetEnergy(200);
     }

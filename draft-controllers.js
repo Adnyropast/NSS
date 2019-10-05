@@ -106,7 +106,7 @@ function enemyController() {
         
         this.route = this.cursor.getPositionM();
         this.addAction(new Movement());
-        this.addAction(new EntityCharge([{"type" : "enemy", "value" : 8}]));
+        this.addAction(new EnemyCharge());
         
         if(this.cursor.target.getY2() < this.getY()) {
             let jump = new Jump();

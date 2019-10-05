@@ -11,11 +11,13 @@ class FireEffect extends Hitbox {
         this.setLifespan(24);
         
         this.addInteraction(new DragRecipient(-0.25 * Math.random()));
-        this.addInteraction(new TypeDamager({type:FX_FIRE, value:0.125}));
+        this.addInteraction(new TypeDamager());
         
         this.setSelfBrake(1.0625);
         this.addInteraction(new ReplaceRecipient());
         this.addInteraction(new StunActor(1));
+        
+        this.setTypeOffense(FX_FIRE, 0.125);
     }
     
     updateDrawable() {
@@ -67,6 +69,15 @@ class Flamethrower extends BusyAction {
 
 AC["flamethrower"] = Flamethrower;
 
+class BurningHitbox extends Hitbox {
+    constructor() {
+        super(...arguments);
+        
+        this.setTypeOffense(FX_FIRE, 4);
+        this.addInteraction(new TypeDamager());
+    }
+}
+
 class BurningAttack extends BusyAction {
     constructor() {
         super();
@@ -74,6 +85,8 @@ class BurningAttack extends BusyAction {
         
         this.setUseCost(16);
         this.saveTypeDamageable = null;
+        this.saveStunRecipient = null;
+        this.hitbox = null;
     }
     
     use() {
@@ -83,10 +96,15 @@ class BurningAttack extends BusyAction {
         
         if(this.phase == 8) {
             if(this.user.getEnergy() > this.getUseCost()) {
-                this.user.addInteraction(new TypeDamager({type:FX_FIRE, value:4}));
+                this.hitbox = BurningHitbox.shared(this.user);
+                this.hitbox.shareBlacklist(this.user.getBlacklist());
+                this.hitbox.collide_priority = this.user.collide_priority - 1;
+                addEntity(this.hitbox);
                 this.user.hurt(this.getUseCost());
                 this.saveTypeDamageable = this.user.findInterrecipientWithId("damage");
                 this.user.removeInterrecipientWithId("damage");
+                this.saveStunRecipient = this.user.findInterrecipientWithId("stun");
+                this.user.removeInterrecipientWithId("stun");
             } else {
                 this.setRemovable(true);
                 return this.end();
@@ -105,13 +123,21 @@ class BurningAttack extends BusyAction {
             
             addEntity(particle);
         } else if(this.phase == 48) {
-            this.user.removeInteractorWithId("damage");
-            this.user.addInteraction(this.saveTypeDamageable);
+            // this.user.removeInteractorWithId("damage");
+            
             this.setRemovable(true);
             this.end();
         }
         
         return this;
+    }
+    
+    onend() {
+        removeEntity(this.hitbox);
+        this.user.addInteraction(this.saveTypeDamageable);
+        this.user.addInteraction(this.saveStunRecipient);
+        
+        return super.onend();
     }
 }
 

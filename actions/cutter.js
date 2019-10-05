@@ -17,7 +17,7 @@ class Cutter extends Hitbox {
         super(...arguments);
         
         // this.setStyle("cyan");
-        this.addInteraction(new TypeDamager({"type" : FX_SHARP, "value" : 0.125}).setRehit(9));
+        this.addInteraction((new TypeDamager()).setRehit(9));
         this.addInteraction(new ContactVanishRecipient(1));
         
         this.addActset(AS_MOVEMENT);
@@ -29,18 +29,7 @@ class Cutter extends Hitbox {
         this.previousPositionM = null;
         
         this.setLifespan(64);
-        /**
-        let t = 0;
         
-        this.controllers.add(function controller(entity) {
-            ++t;
-            
-            if(t % 9 == 0) {
-                this.addInteraction(new TypeDamager({"type" : FX_SHARP, "value" : 0.125}));
-                this.addInteraction(new DragActor(this.speed.normalized(0.125)));
-            }
-        });
-        /**/
         this.bladeDrawable = PolygonDrawable.from(cutterdrawable).multiplySize(1/2);
         this.bladeDrawable.setPositionM(this.getPositionM());
         // this.bladeDrawable.setStyle(new ColorTransition([0, 255, 255, 1], [0, 0, 255, 1], 64));
@@ -51,7 +40,7 @@ class Cutter extends Hitbox {
         
         let lifespan = 12;
         let otherTrail = new TrailDrawable();
-        otherTrail.edgeWidth = 1;
+        otherTrail.edgeWidth = 2;
         otherTrail.trailStyle = new ColorTransition([255, 255, 255, irandom(75, 100)/100], [0, 255, 255, 0], lifespan, bezierLinear);
         this.trailDrawable.otherTrails.add(otherTrail);
         otherTrail = new TrailDrawable();
@@ -65,6 +54,8 @@ class Cutter extends Hitbox {
             otherTrail.trailStyle = new ColorTransition([255, 255, 255, irandom(75, 100)/100], [0, 255, 255, 0], lifespan, bezierLinear);
             this.trailDrawable.otherTrails.add(otherTrail);
         }
+        
+        this.setTypeOffense(FX_SHARP, 0.125);
     }
     
     updateDrawable() {
@@ -75,7 +66,7 @@ class Cutter extends Hitbox {
         if(this.previousPositionM != null) {positionTransition = new ColorTransition(this.previousPositionM, positionM)}
         
         let rotation = 2*Math.PI/6;
-        let det = 12;
+        let det = 6;
         
         for(let i = 0; i < det; ++i) {
             this.angle += rotation/det;
@@ -162,7 +153,6 @@ class CutterDash extends SlashAction {
         
         this.direction = null;
         this.damageableSave = null;
-        this.cutterDamager = new TypeDamager([{"type" : FX_SHARP, "value" : 4}]);
         
         this.setUseCost(4);
         
@@ -207,14 +197,12 @@ class CutterDash extends SlashAction {
     onadd() {
         this.damageableSave = this.user.findInterrecipientWithId("damage");
         this.user.removeInterrecipientWithId("damage");
-        // this.user.addInteraction(this.cutterDamager);
         
         return this;
     }
     
     onend() {
         this.user.addInteraction(this.damageableSave);
-        // this.user.removeInteractorWithId("damage");
         
         return this;
     }
@@ -270,7 +258,7 @@ class FinalCutter1 extends SlashAction {
         this.face = null;
         this.type = "";
         
-        this.slashDuration = 10;
+        this.slashDuration = 6;
         
         this.baseDistanceTransition = new ColorTransition([6], [2], 1, forthBackTiming);
         
@@ -284,21 +272,21 @@ class FinalCutter1 extends SlashAction {
         
         this.setUseCost(3);
         
-        let otherTrail = new TrailDrawable();
-        otherTrail.edgeWidth = 2;
-        this.trailDrawable.otherTrails.add(otherTrail);
+        // let otherTrail = new TrailDrawable();
+        // otherTrail.edgeWidth = 2;
+        // this.trailDrawable.otherTrails.add(otherTrail);
         
-        for(let i = 0; i < 3; ++i) {
+        for(let i = 0; i < 4; ++i) {
             let otherTrail = new TrailDrawable();
-            otherTrail.edgeWidth = irandom(-8, +2);
+            otherTrail.edgeWidth = 2 - i * 2; irandom(-8, +2);
             this.trailDrawable.otherTrails.add(otherTrail);
         }
     }
     
     updateTrailDrawableStyle(detProgress) {
         if(detProgress == 1) {
-            this.trailDrawable.trailStyle = new ColorTransition([255, 255, 127, 1], [0, 255, 255, 0], 12);
-            this.trailDrawable.trailStyle = cutterEdgeStyle;
+            this.trailDrawable.trailStyle = new ColorTransition([255, 255, 127, 1], [0, 255, 255, 0], 8);
+            // this.trailDrawable.trailStyle = cutterEdgeStyle;
         } else {
             this.trailDrawable.trailStyle = new ColorTransition([127*detProgress, 255, 255, 1], [0, 0, 255, 0], 8);
             this.trailDrawable.trailStyle = new ColorTransition([255, 255, 255 * detProgress, 1], [127, 127, 63 + (255 - 63) * detProgress, 0], 8);
@@ -392,7 +380,7 @@ function finalCutter2BladeTransition(t) {
 function ovalTransition(t) {
     let angle = t * 2*Math.PI;
     
-    let distance = Math.sqrt(Math.pow(1*Math.cos(angle), 2) + 0.75*Math.pow(Math.sin(angle), 2));
+    let distance = Math.sqrt(Math.pow(1*Math.cos(angle), 2) + Math.pow(1*Math.sin(angle), 2));
     
     // console.log(distance);
     
@@ -407,7 +395,7 @@ class FinalCutter2 extends FinalCutter1 {
         this.face = null;
         this.type = "";
         
-        this.slashDuration = 10;
+        // this.slashDuration = 10;
         this.hitbox.setLifespan(this.slashDuration + 1);
         
         this.followup = FinalCutter3;
@@ -449,7 +437,7 @@ class FinalCutter3 extends FinalCutter2 {
         super();
         this.setId("finalCutter3");
         
-        this.slashDuration = 12;
+        this.slashDuration = 8;
         
         this.hitbox.setLifespan(this.slashDuration + 1);
         
@@ -525,6 +513,46 @@ class FinalCutter4 extends FinalCutter3 {
     }
 }
 
+class CutterWave extends Hitbox {
+    constructor() {
+        super(...arguments);
+        
+        this.setDrawable(null);
+        
+        this.addInteraction(new TypeDamager());
+        this.setLifespan(24);
+        
+        for(let i = 0; i < 2; ++i) {
+            let drawable = PolygonDrawable.from(makeSpikePolygon(7, new VectorTransition([-Math.PI/4], [+Math.PI/4]), function() {return irandom(8, 10)}, function() {return irandom(12, 20)}, 6));
+            drawable.multiplySize(2);
+            drawable.rotate(Math.PI);
+            drawable.setStyle(new ColorTransition([255, 255, 0, 1], [255, 127, 0, 0], 16, powt(6)));
+            
+            this.drawables.add(drawable);
+        }
+        
+        for(let i = 0; i < 2; ++i) {
+            let drawable = PolygonDrawable.from(makeSpikePolygon(7, new VectorTransition([-Math.PI/4], [+Math.PI/4]), function() {return irandom(8, 10)}, function() {return irandom(12, 20)}, 6));
+            drawable.multiplySize(1.5);
+            drawable.rotate(Math.PI);
+            drawable.setStyle(new ColorTransition([0, 255, 255, 1], [0, 127, 255, 0], 16, powt(6)));
+            
+            this.drawables.add(drawable);
+        }
+        
+        this.setTypeOffense(FX_SHARP, 1);
+    }
+    
+    updateDrawable() {
+        for(let i = 0; i < this.drawables.length; ++i) {
+            this.drawables[i].setPositionM(this.getPositionM());
+            this.drawables[i].setImaginaryAngle(this.speed.getAngle());
+        }
+        
+        return this;
+    }
+}
+
 class FinalCutter5 extends FinalCutter4 {
     constructor() {
         super();
@@ -536,8 +564,9 @@ class FinalCutter5 extends FinalCutter4 {
         this.followup = null;
         this.nextAction = null;
         
-        this.hitbox.removeInteractorWithId("typeDamage");
-        this.hitbox.addInteraction(new TypeDamager([{"type" : FX_SHARP, "value" : 4}]));
+        this.hitbox.setTypeOffense(FX_SHARP, 4);
+        
+        this.face0 = 0;
     }
     
     transitionsSetup() {
@@ -562,6 +591,25 @@ class FinalCutter5 extends FinalCutter4 {
             this.hitbox.addInteraction(new DragActor([face[0] * 2, 0]));
         }
         
+        this.face0 = face[0];
+        
+        return this;
+    }
+    
+    use() {
+        super.use();
+        
+        if(this.phase == 4) {
+            let direction = new Vector(this.face0, 0);
+            
+            let hitbox = CutterWave.fromMiddle(direction.normalize(rectangle_averagesize(this.user)/4).plus(this.user.getPositionM()), [16, 16]);
+            hitbox.shareBlacklist(this.user.getBlacklist());
+            
+            hitbox.setSpeed(direction.normalize(6));
+            
+            addEntity(hitbox);
+        }
+        
         return this;
     }
 }
@@ -584,7 +632,8 @@ class AutoCutter extends CutterAbility {
         } else if(this.phase == 2) {
             let user = this.user;
             
-            if(this.detectionBox.collidedWith.find(function(entity) {return user.opponents.includes(entity);})) {
+            // if(this.detectionBox.collidedWith.find(function(entity) {return user.opponents.includes(entity);})) {
+            if(this.detectionBox.collidedWith.find(function(entity) {return entity !== user && entity.findInterrecipientWithId("damage");})) {
                 this.user.addAction(new FinalCutter1());
             } else {
                 this.user.addAction(new CutterBoomerang());
@@ -602,3 +651,5 @@ class AutoCutter extends CutterAbility {
 }
 
 AC["autoCutter"] = AutoCutter;
+
+AC["cutterDash"] = CutterDash;

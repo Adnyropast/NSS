@@ -15,8 +15,10 @@ class BloodProjectile extends Projectile {
         this.drawable.setStrokeStyle(new ColorTransition([0, 0, 255, 1], [0, 0, 127, 1], 8));
         // this.drawable.setStrokeStyle(new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1], 8));
         
-        this.addInteraction(new TypeDamager({"type" : FX_HEART_, "value" : 1}));
+        this.addInteraction(new TypeDamager());
         this.addInteraction(new ContactVanishRecipient(3));
+        
+        this.setTypeOffense(FX_HEART_, 1);
     }
     
     updateDrawable() {
@@ -112,11 +114,13 @@ class VeinSweep extends SlashAction {
         this.slashDuration = 12;
         this.det = 3;
         
+        this.hitbox = new Hitbox([NaN, NaN], [1, 1]);
         this.hitbox.removeInteractorWithId("damage");
-        this.hitbox.addInteraction(new TypeDamager({type:FX_HEART_, value:1}));
-        // console.log(this.hitbox.findInteractorWithId("damage"));
+        this.hitbox.addInteraction(new TypeDamager());
         
         this.rct = new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 0], 8, bezierLinear);
+        
+        this.hitbox.setTypeOffense(FX_HEART_, 1);
     }
     
     updateTrailDrawableStyle(detProgress) {

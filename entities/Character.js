@@ -94,9 +94,8 @@ class Character extends Entity {
         this.addInteraction(new WallRecipient());
         this.addInteraction(new LadderRecipient());
         
-        this.faceSave = "right";
+        this.faceSave = FRIGHT;
         
-        this.stats = {};
         this.stats["walk-speed"] = 0.5;
         this.stats["walk-speed-tired"] = 0.25;
         this.stats["air-speed"] = 0.5;
@@ -106,10 +105,13 @@ class Character extends Entity {
         
         this.stats["climb-speed"] = 0.25;
         this.stats["jump-force"] = 1.875;
-        this.stats["jump-force"] = 1.75;
+        this.stats["jump-force"] = 1.5;
         this.stats["regeneration"] = 0.0625;
         
         this.controllers.add(healController);
+        
+        this.stats["walljump-angle"] = 0.39269908169872414;
+        this.stats["walljump-force"] = 1.5;
     }
     
     static fromData(data) {
@@ -168,10 +170,10 @@ class Character extends Entity {
     }
     
     setFace(face) {
-        if(face === "right" || face > 0) {
-            this.faceSave = "right";
-        } else if(face === "left" || face < 0) {
-            this.faceSave = "left";
+        if(face === FRIGHT || face > 0) {
+            this.faceSave = FRIGHT;
+        } else if(face === FLEFT || face < 0) {
+            this.faceSave = FLEFT;
         }
         
         return this;
@@ -199,6 +201,13 @@ class Character extends Entity {
         particle.resetSpikeDrawable(irandom(6, 9), new ColorTransition([-Math.PI/2], [+Math.PI/2]), function() {return irandom(8, 10);}, function() {return irandom(14, 18);}, 6);
         
         addEntity(particle);
+        
+        return this;
+    }
+    
+    initPositionM(positionM) {
+        this.setPositionM(...arguments);
+        this.cursor.setPositionM(...arguments);
         
         return this;
     }
@@ -299,47 +308,5 @@ class FocusClosest extends FocusAction {
         this.user.cursor.centerTarget();
         
         return this;
-    }
-}
-
-class EntityCharge extends BusyAction {
-    constructor(typeDamage) {
-        super();
-        this.setId("entityCharge");
-        
-        this.hitbox = new Hitbox([0, 0], [0, 0]);
-        this.hitbox.addInteraction(new TypeDamager(typeDamage));
-        this.hitbox.addInteraction(new VacuumDragActor(-2));
-        this.hitbox.setLifespan(16);
-        this.hitbox.addInteraction(new StunActor(12));
-    }
-    
-    use() {
-        if(this.phase == 0) {
-            this.hitbox.size = this.user.size;
-            this.hitbox.position = this.user.position;
-            this.hitbox.shareBlacklist(this.user.getBlacklist());
-            addEntity(this.hitbox);
-            
-            let thrust = this.user.findState("thrust");
-            
-            if(typeof thrust == "undefined") {thrust = 0;}
-            else {thrust = thrust.value;}
-            
-            this.user.drag(this.user.getCursorDirection().normalize(thrust * 16));
-            
-            this.setRemovable(false);
-        } else if(this.phase == 24) {
-            this.setRemovable(true);
-            this.end();
-        }
-        
-        return this;
-    }
-    
-    onend() {
-        removeEntity(this.hitbox);
-        
-        return super.onend();
     }
 }

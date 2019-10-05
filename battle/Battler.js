@@ -344,7 +344,7 @@ class HapleBattler extends Battler {
         let battler = this;
         
         this.skillset = set_gather("attack", "flee");
-        this.drawable.setStyle(ANIM_HAPLE["std-right"]);
+        this.drawable.setStyle(IMGCHAR["haple"]["battle-right"]);
         // this.drawable.setSize([16, 16]);
         
         this.visibleList = (new VisibleList()).setType("auto");

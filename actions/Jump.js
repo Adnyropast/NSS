@@ -256,9 +256,10 @@ class AutoJump extends Action {
             } else if(typeof wallState != "undefined") {
                 this.wallSide = wallState.side;
                 
-                this.direction.rotate(this.wallSide / 4.5).multiply(1.375);
+                this.direction.rotate(this.wallSide * this.user.stats["walljump-angle"]).normalize(this.user.stats["walljump-force"]);
                 
                 this.jumpAction = new WallJump();
+                
                 this.jumpAction.direction = this.direction;
                 this.user.addAction(this.jumpAction);
             } else if(ladder) {

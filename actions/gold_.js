@@ -14,11 +14,11 @@ class GoldSolid extends Hitbox {
         this.setDrawable(PolygonDrawable.from(flameparticle).multiplySize(1/4));
         this.drawable.setPositionM(this.getPositionM());
         this.setStyle(new ColorTransition([255, 255, 0, 1], [0, 255, 255, 0.75], 16));
-        // this.setOffense("gold", 1);
+        this.setTypeOffense(FX_GOLD_, 0.25);
         this.setLifespan(16);
         this.setSelfBrake(1.09375);
         
-        this.addInteraction(new TypeDamager([{"type" : FX_GOLD_, "value" : 1}]));
+        this.addInteraction(new TypeDamager());
         this.addInteraction(new ContactVanishRecipient(1));
     }
     
@@ -45,16 +45,18 @@ class GoldFlurry extends GoldAbility {
         }
         
         this.phase %= this.phaseLimit;
-        this.t = this.phase % (2 * Math.PI);
+        this.t = this.phase % (2 * Math.PI) * 16;
         
-        if(this.phase % 8 == 0) {
+        if(this.phase % 6 == 0) {
             this.user.hurt(this.getUseCost());
             
-            var hitbox = GoldSolid.fromMiddle(this.user.getPositionM(), [8, 8]);
+            let direction = this.user.getCursorDirection();
+            
+            var hitbox = GoldSolid.fromMiddle(direction.normalized(rectangle_averagesize(this.user)/2).add(this.user.getPositionM()), [8, 8]);
             hitbox.shareBlacklist(this.user.getBlacklist());
             
-            hitbox.setSpeed(this.user.getCursorDirection().rotate(Math.sin(this.t) * 0.25).normalize(4));
-            hitbox.addInteraction(new DragActor(hitbox.speed.normalized(0.25)));
+            hitbox.setSpeed(direction.rotated(Math.sin(this.t) * 0.25).normalize(4));
+            hitbox.addInteraction(new DragActor(hitbox.speed.normalized(0.0625)));
             
             addEntity(hitbox);
         }
@@ -86,12 +88,12 @@ class RocketPunchProjectile extends Projectile {
         // this.setBrakeExponent(0);
         // this.setForceFactor(0);
         // this.setRegeneration(-1);
-        // this.setOffense(FX_PIERCING, 16);
+        this.setTypeOffense(FX_GOLD_, 4);
         
         this.setZIndex(-97);
         this.setLifespan(24);
         
-        this.addInteraction(new TypeDamager([{"type" : FX_GOLD_, "value" : 4}]));
+        this.addInteraction(new TypeDamager());
         let sizeTransition = new ColorTransition(Vector.multiplication(size, 1/2), size, 24, backForthTiming);
         
         this.controllers.add(function() {
@@ -279,8 +281,10 @@ class GoldBurstHitbox extends Hitbox {
             this.setSizeM(sizeTransition.getNext());
         });
         
-        this.addInteraction(new TypeDamager({type:FX_GOLD_, value:1}));
+        this.addInteraction(new TypeDamager());
         this.drawable.setZIndex(-1);
+        
+        this.setTypeOffense(FX_GOLD_, 1);
     }
     
     updateDrawable() {
