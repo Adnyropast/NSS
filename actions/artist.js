@@ -74,8 +74,8 @@ class BrushSlash extends SlashAction {
     use() {
         super.use();
         
-        if(this.phase >= 4 && this.phase <= 6) {
-            let count = 6;
+        if(this.phase >= 4 && this.phase <= 8) {
+            let count = 6 - Math.abs(5 - this.phase);
             let positionM = this.hitbox.getPositionM();
             let avgsz = rectangle_averagesize(this.hitbox);
             
@@ -95,9 +95,6 @@ class BrushSlash extends SlashAction {
     
     updateTrailDrawableStyle(detProgress) {
         this.trailDrawable.trailStyle.step = 16 * (1-detProgress) / this.trailDrawable.trailStyle.duration;
-        
-        console.log(detProgress, 1 - detProgress);
-        // console.log(this.trailDrawable.trailStyle.copy().getCurrentStyle());
         
         return this;
     }

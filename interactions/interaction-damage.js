@@ -381,15 +381,17 @@ typeImpacts[FX_ELECTRIC] = function onimpact(actor, recipient) {
 
 typeImpacts["paint"] = function(actor, recipient) {
     let count = 12;
-    let positionM = recipient.getPositionM();
-    let avgsz = rectangle_averagesize(recipient);
+    let actorPositionM = actor.getPositionM();
+    let recipientPositionM = recipient.getPositionM();
+    let avgsz = rectangle_averagesize(actor);
+    let middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
     
     for(let i = 0; i < count; ++i) {
         let angle = ((i+Math.random())/count) * 2*Math.PI;
         let direction = Vector.fromAngle(angle);
         
-        let particle = PaintDroplet.fromMiddle(direction.normalized(avgsz/8).add(positionM), [avgsz, avgsz]);
-        particle.setSpeed(direction.normalized(irandom(2, avgsz/2)/8));
+        let particle = PaintDroplet.fromMiddle(direction.normalized(avgsz/8).add(middlePosition), [avgsz, avgsz]);
+        particle.setSpeed(direction.normalized(irandom(2, avgsz)/8));
         
         addEntity(particle);
     }

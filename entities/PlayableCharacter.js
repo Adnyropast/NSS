@@ -64,7 +64,11 @@ class PlayableCharacter extends Character {
     
     getAnimStyle(id) {
         if(this.anim != null && this.anim.hasOwnProperty(id)) {
-            return this.anim[id].copy();
+            if(this.anim[id] instanceof AnimatedImages || this.anim[id] instanceof ColorTransition) {
+                return this.anim[id].copy();
+            }
+            
+            return this.anim[id];
         }
         
         return this.defaultAnimStyle;
@@ -83,6 +87,24 @@ class PlayableCharacter extends Character {
             
             if(this.hasState("hurt")) {
                 this.onstatehurt();
+            } else if(this.actions.find(function(a) {return a instanceof BusyAction})) {
+                let direction = this.getCursorDirection();
+                
+                console.log(direction);
+                
+                if(Math.abs(direction[0]) >= Math.abs(direction[1])) {
+                    if(direction[0] > 0) {
+                        this.setAnimStyle("attack-right");
+                    } else {
+                        this.setAnimStyle("attack-left");
+                    }
+                } else {
+                    if(direction[1] > 0) {
+                        this.setAnimStyle("attack-down");
+                    } else {
+                        this.setAnimStyle("attack-up");
+                    }
+                }
             } else if(this.hasState("water")) {
                 if(this.hasState("moving")) {
                     this.onstateswim();

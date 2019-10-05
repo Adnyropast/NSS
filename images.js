@@ -188,6 +188,10 @@ IMGCHAR["haple"] = {
     "swim-left" : (new AnimatedImages([loadImage("images/haple/swim-left0.png"), loadImage("images/haple/swim-left1.png")])).setIcpf(12),
     "battle-right" : (new AnimatedImages([loadImage("images/haple/battle-right.png")])),
     "icon" : loadImage("images/haple/icon.png"),
+    "attack-right" : loadImage("images/haple/attack-right.png"),
+    "attack-left" : loadImage("images/haple/attack-left.png"),
+    "attack-up" : loadImage("images/haple/attack-up.png"),
+    "attack-down" : loadImage("images/haple/attack-down.png")
 };
 
 let CT_TEN = (new ColorTransition(CV_WHITE, [0, 255, 255, 1], 32)).setLoop(true);
