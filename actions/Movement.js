@@ -60,7 +60,7 @@ class Movement extends Action {
             
             let gravityDirection = this.user.findState("gravity");
             
-            if(typeof gravityDirection == "undefined") {gravityDirection = [0, 0];}
+            if(typeof gravityDirection == "undefined" || this.user.hasState("ladder")) {gravityDirection = [0, 0];}
             else {gravityDirection = gravityDirection.direction;}
             
             for(var dim = 0; dim < gravityDirection.length; ++dim) {

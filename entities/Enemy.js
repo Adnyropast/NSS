@@ -93,7 +93,7 @@ class EnemyCharge extends BusyAction {
         this.hitbox.addInteraction(new TypeDamager());
         this.hitbox.addInteraction(new VacuumDragActor(-2));
         this.hitbox.setLifespan(16);
-        this.hitbox.addInteraction(new StunActor(12));
+        this.hitbox.addInteraction(new StunActor(8));
         
         this.hitbox.setTypeOffense("enemy", 8);
     }
@@ -113,7 +113,9 @@ class EnemyCharge extends BusyAction {
             this.user.drag(this.user.getCursorDirection().normalize(thrust * 16));
             
             this.setRemovable(false);
-        } else if(this.phase == 24) {
+        } else if(this.phase == 16) {
+            removeEntity(this.hitbox);
+        } else if(this.phase == 32) {
             this.setRemovable(true);
             this.end();
         }

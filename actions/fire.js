@@ -17,7 +17,7 @@ class FireEffect extends Hitbox {
         this.addInteraction(new ReplaceRecipient());
         this.addInteraction(new StunActor(1));
         
-        this.setTypeOffense(FX_FIRE, 0.125);
+        this.setTypeOffense(FX_FIRE, 0.5);
     }
     
     updateDrawable() {

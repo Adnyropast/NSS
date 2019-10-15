@@ -12,7 +12,7 @@ const cutterdrawable = new PolygonDrawable([[16, 0], [12, 12], [0, 12], [-8, 8],
 
 const cutterEdgeStyle = new ColorTransition([255, 223, 0, 1], [255, 223, 0, 0], 16);
 
-class Cutter extends Hitbox {
+class Cutter extends TrailerEntity {
     constructor() {
         super(...arguments);
         
@@ -22,7 +22,7 @@ class Cutter extends Hitbox {
         
         this.addActset(AS_MOVEMENT);
         
-        this.trailDrawable = new TrailDrawable();
+        // this.trailDrawable = new TrailDrawable();
         this.trailDrawable.edgeStyle = cutterEdgeStyle;
         this.angle = 0;
         
@@ -55,7 +55,10 @@ class Cutter extends Hitbox {
             this.trailDrawable.otherTrails.add(otherTrail);
         }
         
-        this.setTypeOffense(FX_SHARP, 0.125);
+        this.setTypeOffense(FX_SHARP, 1);
+        this.addInteraction(new StunActor());
+        
+        this.drawables.add(this.bladeDrawable);
     }
     
     updateDrawable() {
@@ -89,20 +92,6 @@ class Cutter extends Hitbox {
         this.previousPositionM = positionM;
         
         return super.updateDrawable();
-    }
-    
-    onadd() {
-        addDrawable(this.trailDrawable);
-        addDrawable(this.bladeDrawable);
-        
-        return super.onadd();
-    }
-    
-    onremove() {
-        removeDrawable(this.trailDrawable);
-        removeDrawable(this.bladeDrawable);
-        
-        return super.onremove();
     }
 }
 

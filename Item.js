@@ -23,6 +23,10 @@ class Item {
         
         return 0;
     }
+    
+    consumeBy(entity) {
+        return this;
+    }
 }
 
 class ConsumableItem extends Item {
@@ -31,11 +35,26 @@ class ConsumableItem extends Item {
     }
 }
 
-class Apple extends ConsumableItem {
+class Food extends ConsumableItem {
+    constructor() {
+        super();
+        
+        this.energy = 0;
+    }
+    
+    consumeBy(entity) {
+        entity.heal(this.energy);
+        
+        return this;
+    }
+}
+
+class Apple extends Food {
     constructor() {
         super("apple");
         
         this.id = 0;
+        this.energy = 8;
     }
 }
 
@@ -50,5 +69,5 @@ class WeaponItem extends Item {
 }
 
 var items = {
-    "apple"
+    "apple" : Apple
 };

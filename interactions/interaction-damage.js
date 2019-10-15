@@ -185,7 +185,7 @@ class TypeDamageable extends Interrecipient {
  */
 
 class StunActor extends Interactor {
-    constructor(timeout = 24) {
+    constructor(timeout = 16) {
         super();
         this.setId("stun");
         this.timeout = timeout;
@@ -237,7 +237,7 @@ typeImpacts[FX_SHARP] = function onimpact(actor, recipient) {
     
     // 
     
-    c = 3;
+    c = 4;
     let startAngle = 0, endAngle = 0;
     let multiCrescent = new MultiPolygonDrawable();
     
@@ -246,7 +246,7 @@ typeImpacts[FX_SHARP] = function onimpact(actor, recipient) {
         
         let angleTransition = new VectorTransition([startAngle], [endAngle]);
         
-        let drawable = PolygonDrawable.from(makeCrescentPolygon(16, angleTransition, new VectorTransition([18], [16], 1, function(t) {return ovalTransition(t/2);}), new VectorTransition([6], [16], 1, function(t) {return ovalTransition(t/2);})));
+        let drawable = PolygonDrawable.from(makeCrescentPolygon(16, angleTransition, new MultiColorTransition([[16], [17], [16]], 1, function(t) {return powt(1)(t);}), new MultiColorTransition([[16], [16], [16]], 1, function(t) {return powt(1)(t);})));
         
         drawable.setStyle(new ColorTransition([255, 255, 255, 1], [255, 255, 255, 0], 16));
         
@@ -295,7 +295,7 @@ typeImpacts[FX_GOLD_] = function onimpact(actor, recipient) {
     for(let i = 0; i < count; ++i) {
         let angle = i * 2*Math.PI/count;
         
-        let particle = GoldSmokeParticle.fromMiddle(recipient.getPositionM(), [bothAvgsz, bothAvgsz]);
+        let particle = GoldSmokeParticle.fromMiddle(actorPositionM, [bothAvgsz, bothAvgsz]);
         
         let direction = Vector.fromAngle(angle);
         
@@ -310,6 +310,8 @@ typeImpacts[FX_FIRE] = function onimpact(actor, recipient) {
     const actorPositionM = actor.getPositionM();
     const recipientPositionM = recipient.getPositionM();
     const middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
+    
+    /**
     
     let particle = FireParticle.fromMiddle(recipient.getPositionM(), recipient.getSize());
     particle.drawable.multiplySize((recipient.getWidth() + recipient.getHeight())/2/16);
@@ -331,6 +333,16 @@ typeImpacts[FX_FIRE] = function onimpact(actor, recipient) {
     });
     
     addDrawable(radialGradient);
+    
+    /**/
+    
+    let count = 2;
+    
+    for(let i = 0; i < count; ++i) {
+        let particle = FireParticle.fromMiddle(Vector.addition(actorPositionM, (new Vector(Math.random(), Math.random())).normalize(8)), [16, 16]);
+        // particle.drawable.setZIndex(Math.random() - 0.25);
+        addEntity(particle);
+    }
 };
 
 typeImpacts[FX_ELECTRIC] = function onimpact(actor, recipient) {
@@ -383,7 +395,7 @@ typeImpacts["paint"] = function(actor, recipient) {
     let count = 12;
     let actorPositionM = actor.getPositionM();
     let recipientPositionM = recipient.getPositionM();
-    let avgsz = rectangle_averagesize(actor);
+    let avgsz = 16; rectangle_averagesize(actor);
     let middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
     
     for(let i = 0; i < count; ++i) {
@@ -392,6 +404,42 @@ typeImpacts["paint"] = function(actor, recipient) {
         
         let particle = PaintDroplet.fromMiddle(direction.normalized(avgsz/8).add(middlePosition), [avgsz, avgsz]);
         particle.setSpeed(direction.normalized(irandom(2, avgsz)/8));
+        
+        addEntity(particle);
+    }
+};
+
+typeImpacts[FX_HEART_] = function(actor, recipient) {
+    let actorPositionM = actor.getPositionM();
+    let recipientPositionM = recipient.getPositionM();
+    let middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
+    
+    let drawable = (new PolygonDrawable(makePathPolygon(makeSpiralPath(0, 4*Math.PI, 0, 32, 32)))).setStyle(new ColorTransition([0, 63, 255, 1], [0, 63, 255, 0], 16, powt(4)));
+    
+    drawable.setLifespan(16);
+    drawable.setPositionM(middlePosition);
+    drawable.multiplySize(1/32);
+    drawable.rotate(Math.random() * 2*Math.PI);
+    
+    let sizeTransition = new VectorTransition([1], [32], 16, powt(1/2));
+    
+    drawable.controllers.add(function() {
+        this.setImaginarySize(sizeTransition.getNext()[0]);
+        this.rotate(Math.PI/32);
+    });
+    
+    addDrawable(drawable);
+    
+    let count = irandom(8, 12);
+    
+    for(let i = 0; i < count; ++i) {
+        let angle = ((i+Math.random())/count) * 2*Math.PI;
+        let direction = Vector.fromAngle(angle);
+        let sz = irandom(8, 12);
+        
+        let particle = PaintDroplet.fromMiddle(middlePosition, [sz, sz]);
+        particle.setStyle(new ColorTransition([0, 63, 255, 1], [0, 63, 255, 0], 16, powt(8)));
+        particle.setSpeed(direction.normalized(irandom(1, 4)));
         
         addEntity(particle);
     }

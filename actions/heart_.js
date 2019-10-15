@@ -148,21 +148,66 @@ class VeinSweep extends SlashAction {
     }
     
     transitionsSetup() {
-        let face = this.user.getCursorDirection();
+        let direction = this.user.getCursorDirection();
+        let face = Vector.from(direction);
         face[0] = Math.sign(face[0]);
         face[1] = Math.sign(face[1]);
         
-        if(face[0] != 0) {
+        if(face[0] == 0  && face[1] == 0) {
+            
+        } else if(Math.abs(direction[0]) >= Math.abs(direction[1])) {
             this.baseAngleTransition = new ColorTransition([-Math.PI/2 + face[0] * Math.PI/4], [-Math.PI/2 + face[0] * 3/4 * Math.PI]);
             this.baseDistanceTransition = new ColorTransition([4], [4]);
             this.bladeAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * 3/4 * Math.PI], [-Math.PI/2 + face[0] * 3/2 * Math.PI]);
             this.bladeWidthTransition = new ColorTransition([32], [32], 1, function(t) {return Math.pow((t - 0.5) / 0.5, 2)});
-            
-            this.hitbox.addInteraction(new DragActor(face.times(0.25)));
+        } else {
+            this.baseAngleTransition = new VectorTransition([face[1] * Math.PI/2 - Math.PI], [face[1] * Math.PI/2 + Math.PI]);
+            this.baseDistanceTransition = new VectorTransition([4], [4]);
+            this.bladeAngleTransition = this.baseAngleTransition;
+            this.bladeWidthTransition = new VectorTransition([32], [32]);
         }
+        
+        this.hitbox.addInteraction(new DragActor(face.times(0.25)));
         
         return this;
     }
 }
 
 AC["veinSweep"] = VeinSweep;
+
+function makeSpiralPath(startAngle, endAngle, minDistance, maxDistance, count = 16) {
+    let points = [];
+    
+    let angleTransition = new VectorTransition([startAngle], [endAngle]);
+    let distanceTransition = new VectorTransition([minDistance], [maxDistance]);
+    
+    for(let i = 0; i < count; ++i) {
+        let angle = angleTransition.at(i / (count-1))[0];
+        let distance = distanceTransition.at(i / (count-1))[0];
+        
+        points.push(Vector.fromAngle(angle).normalize(distance));
+    }
+    
+    return points;
+}
+
+function makePathPolygon(path) {
+    let polygon = [];
+    let reverse = [];
+    
+    polygon.push(path[0]);
+    
+    for(let i = 1; i < path.length - 1; ++i) {
+        let point = path[i];
+        let vector = Vector.subtraction(point, path[i-1]);
+        let normal = (new Vector(-vector[1], vector[0])).normalize();
+        
+        polygon.push(Vector.addition(point, normal));
+        reverse.push(Vector.subtraction(point, normal));
+    }
+    
+    polygon.push(path[path.length - 1]);
+    polygon.push.apply(polygon, reverse.reverse());
+    
+    return polygon;
+}

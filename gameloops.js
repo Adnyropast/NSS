@@ -280,6 +280,11 @@ window.addEventListener("blur", function(event) {
 
 /**/
 
+addEventListener("blur", gamePause);
+addEventListener("focus", gameResume);
+
+/**/
+
 let worldCounter = 0;
 
 let loadZone = new Entity([NaN, NaN, NaN], [896, 504, 896]);
@@ -1019,4 +1024,67 @@ function gamePause() {
     clearInterval(gameInterval);
 } function gameResume() {
     switchLoop(gameLoop, gamePace);
+}
+
+function optimizeEntities(entities) {
+    let optimized = entities; SetArray.from(entities);
+    let changed = true;
+    
+    while(changed) {
+        changed = false;
+        let i = 0;
+        
+        while(!changed && i < optimized.length) {
+            let entity0 = optimized[i];
+            
+            let j = i + 1;
+            
+            while(!changed && j < optimized.length) {
+                let entity1 = optimized[j];
+                
+                if(entity0.constructor === entity1.constructor && entity0.getDimension() === entity1.getDimension()) {
+                    if(
+                    entity0.getX1() === entity1.getX1() && entity0.getX2() === entity1.getX2() && entity0.getY1() <= entity1.getY2() && entity1.getY1() <= entity0.getY2()
+                    || entity0.getY1() === entity1.getY1() && entity0.getY2() === entity1.getY2() && entity0.getX1() <= entity1.getX2() && entity1.getX1() <= entity0.getX2()
+                    ) {
+                        let dimension = entity0.getDimension();
+                        
+                        let position = new Vector(dimension);
+                        let size = new Vector(dimension);
+                        
+                        for(let dim = 0; dim < dimension; ++dim) {
+                            position[dim] = Math.min(entity0.getPosition1(dim), entity1.getPosition1(dim));
+                            size[dim] = Math.max(entity0.getPosition2(dim), entity1.getPosition2(dim)) - position[dim];
+                        }
+                        
+                        let newEntity = new (entity0.constructor)(position, size);
+                        
+                        /**
+                        optimized.push(newEntity);
+                        optimized.splice(i, 2);
+                        // optimized.add(newEntity);
+                        // optimized.remove(entity0);
+                        // optimized.remove(entity1);
+                        /**/
+                        addEntity(newEntity);
+                        removeEntity(entity0);
+                        removeEntity(entity1);
+                        /**/
+                        changed = true;
+                    }
+                }
+                
+                ++j;
+            }
+            
+            ++i;
+        }
+    }
+    
+    return optimized;
+}
+
+function gameResumeFor(duration = 1) {
+    gameResume();
+    setGameTimeout(gamePause, duration);
 }

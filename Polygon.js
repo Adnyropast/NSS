@@ -524,6 +524,88 @@ class Polygon extends Array {
         
         return this;
     }
+    
+    collidesWithPoint(point) {
+        let lr = "left";
+        
+        for(let i = 0; i < this.size(); ++i) {
+            let corner = this.getPoint(i);
+            let next = this.getPoint((i+1 >= this.size()) ? 0 : i+1);
+            
+            let postVector = Vector.subtraction(next, corner);
+            let pointDirection = Vector.subtraction(point, corner);
+            
+            if(i === 0) {
+                if(postVector.checkLeft(pointDirection)) {
+                    lr = "left";
+                } else {
+                    lr = "right";
+                }
+            } else {
+                if(lr === "left" && !postVector.checkLeft(pointDirection)) {
+                    return false;
+                } if(lr === "right" && !postVector.checkRight(pointDirection)) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+        
+        for(let i = 0; i < this.size(); ++i) {
+            let corner = this.getPoint(i);
+            let previous = this.getPoint((i-1 < 0) ? this.size()-1 : i-1);
+            let next = this.getPoint((i+1 >= this.size()) ? 0 : i+1);
+            
+            let preVector = Vector.subtraction(previous, corner);
+            let postVector = Vector.subtraction(next, corner);
+            let pointDirection = Vector.subtraction(point, corner);
+            
+        }
+        
+        return true;
+    }
+    
+    collides(polygon) {
+        for(let i = 0; i < polygon.size(); ++i) {
+            if(this.collidesWithPoint(polygon[i])) {
+                return true;
+            }
+        }
+        
+        for(let i = 0; i < this.size(); ++i) {
+            let vector1 = Vector.subtraction(this[(i+1 >= this.size()) ? (0) : (i+1)], this[i]);
+            
+            for(let j = 0; j < polygon.size(); ++j) {
+                let vector2 = Vector.subtraction(polygon[(j+1 >= polygon.size()) ? (0) : (j+1)], polygon[j]);
+                
+                let kt = linesKT(this[i], vector1, polygon[j], vector2);
+                
+                if(kt.k >= 0 && kt.k <= 1 && kt.t >= 0 && kt.t <= 1) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+        
+        let center = (new Array(this.getDimension())).fill(0);
+        let count = 0;
+        
+        for(let dim = 0; dim < this.getDimension(); ++dim) {
+            for(let i = 0; i < this.size(); ++i) {
+                center[dim] += this[i][dim];
+            }
+            
+            for(let i = 0; i < polygon.size(); ++i) {
+                center[dim] += polygon[i][dim];
+            }
+            
+            center[dim] /= this.size() + polygon.size();
+        }
+        
+        return this.collidesWithPoint(center) && polygon.collidesWithPoint(center);
+    }
 }
 
 /**/
@@ -928,4 +1010,16 @@ function makeCrescentPolygon(count, angleTransition, closeDistanceTransition, fa
     }
     
     return new Polygon(crescentPolygon.concat(reverse.reverse()));
+}
+
+function makeRegularPolygon(count = 3, distance = 16) {
+    let polygon = new Polygon();
+    
+    for(let i = 0; i < count; ++i) {
+        let angle = i/count * 2*Math.PI;
+        
+        polygon.push([distance * Math.cos(angle), distance * Math.sin(angle)]);
+    }
+    
+    return polygon;
 }

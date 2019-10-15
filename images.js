@@ -426,8 +426,12 @@ class MultiColorTransition extends ColorTransition {
         return (new this(multiColorTransition.vectors, multiColorTransition.duration, multiColorTransition.timing)).setLoopType(multiColorTransition.loopType);
     }
     
+    getDimension() {
+        return this.vectors[0].length;
+    }
+    
     at(t) {
-        let vector = Vector.filled(4, 0);
+        let vector = Vector.filled(this.getDimension(), 0);
         
         for(let i = 0; i < this.vectors.length - 1; ++i) {
             let vector0 = this.vectors[i];
@@ -508,3 +512,10 @@ class MultiColorTransition extends ColorTransition {
 }
 
 const CT_RAINBOW = (new MultiColorTransition([[255, 0, 0, 1], [255, 127, 0, 1], [255, 255, 0, 1], [127, 255, 0, 1], [0, 255, 0, 1], [0, 255, 127, 1], [0, 255, 255, 1], [0, 127, 255, 1], [0, 0, 255, 1], [127, 0, 255, 1], [255, 0, 255, 1], [255, 0, 127, 1], [255, 0, 0, 1]])).setLoopType("repeat");
+
+const IMGBG = {};
+
+IMGBG["sky0"] = loadImage("images/background/sky0.png");
+IMGBG["sky1"] = loadImage("images/background/sky1.png");
+IMGBG["sky2"] = loadImage("images/background/sky2.png");
+IMGBG["sky3"] = loadImage("images/background/sky3.png");

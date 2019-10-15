@@ -117,6 +117,11 @@ class Entity extends Rectangle {
         
         this.resistances = {};
         this.offenses = {};
+        
+        this.stats["effectiveEnergy"] = 1;
+        this.stats["realEnergy"] = 1;
+        
+        this.items = new SetArray();
     }
     
     setSpeed(speed) {
@@ -264,17 +269,17 @@ class Entity extends Rectangle {
     // 
     
     getRealEnergy() {
-        return this.realEnergy;
+        return this.stats["realEnergy"]; return this.realEnergy;
     }
     
     setRealEnergy(realEnergy) {
-        this.realEnergy = realEnergy;
+        this.stats["realEnergy"] = this.realEnergy = realEnergy;
         
         return this;
     }
     
     getEnergyRatio() {
-        return this.energy / this.realEnergy;
+        return this.energy / this.getRealEnergy();
     }
     
     getEnergy() {
@@ -284,8 +289,8 @@ class Entity extends Rectangle {
     setEnergy(energy) {
         this.energy = energy;
         
-        if(this.energy > this.realEnergy) {
-            this.energy = this.realEnergy;
+        if(this.energy > this.getRealEnergy()) {
+            this.energy = this.getRealEnergy();
         }
         
         return this;
@@ -293,10 +298,10 @@ class Entity extends Rectangle {
     
     resetEnergy(realEnergy) {
         if(arguments.length == 0) {
-            this.setEnergy(this.realEnergy);
+            this.setEnergy(this.getRealEnergy());
         } else {
             this.setRealEnergy(realEnergy);
-            this.setEnergy(this.realEnergy);
+            this.setEnergy(this.getRealEnergy());
         }
         
         return this;
@@ -518,8 +523,8 @@ class Entity extends Rectangle {
     heal(value = 1) {
         this.energy += value;
         
-        if(this.energy > this.realEnergy) {
-            this.energy = this.realEnergy;
+        if(this.energy > this.getRealEnergy()) {
+            this.energy = this.getRealEnergy();
         }
         
         return this;
@@ -552,6 +557,8 @@ class Entity extends Rectangle {
     
     replace(other, type, bounce = 0) {
         if(type == -1) {
+            /**/
+            
             let preposition = other.preposition;
             let presize = other.presize;
             
@@ -559,12 +566,12 @@ class Entity extends Rectangle {
                 if(preposition[1] + presize[1]/2 < this.preposition[1] + this.presize[1]/2) {
                     // console.log("up");
                     other.replaceStateObject({name:"lastReplaced", value:4, countdown:2});
-                    
+                    return this.replace(other, this.locate(other), bounce);
                     return this.replace(other, 4, bounce);
                 } else {
                     // console.log("down");
                     other.replaceStateObject({name:"lastReplaced", value:8, countdown:2});
-                    
+                    return this.replace(other, this.locate(other), bounce);
                     return this.replace(other, 8, bounce);
                 }
             }
@@ -573,12 +580,12 @@ class Entity extends Rectangle {
                 if(preposition[0] + presize[0]/2 < this.preposition[0] + this.presize[0]/2) {
                     // console.log("left");
                     other.replaceStateObject({name:"lastReplaced", value:1, countdown:2});
-                    
+                    return this.replace(other, this.locate(other), bounce);
                     return this.replace(other, 1, bounce);
                 } else {
                     // console.log("right");
                     other.replaceStateObject({name:"lastReplaced", value:2, countdown:2});
-                    
+                    return this.replace(other, this.locate(other), bounce);
                     return this.replace(other, 2, bounce);
                 }
             }

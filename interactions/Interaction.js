@@ -380,6 +380,7 @@ class GroundActor extends Interactor {
         
         if(recipient.locate(this.getActor()) & 8) {
             recipient.addState("actuallyGrounded");
+            recipient.replaceStateObject({name:"midairJump", count:recipient.stats["midairJump-count"]});
         }
         
         return this;
@@ -659,6 +660,9 @@ class WaterRecipient extends Interrecipient {
     }
 }
 
+const CVF_OBSTACLE = 1;
+const CVF_CHARACTER = 2;
+
 class ContactVanishActor extends Interactor {
     constructor(flags) {
         super();
@@ -801,7 +805,7 @@ class WallActor extends Interactor {
         let locate = recipient.locate(actor);
         
         if(locate & 1 || locate & 2) {
-            recipient.addStateObject({"name" : "wall", "countdown" : 1, "locate" : locate, "side" : !!(locate & 1) - !!(locate & 2)});
+            recipient.addStateObject({"name" : "wall", "countdown" : 10, "locate" : locate, "side" : !!(locate & 1) - !!(locate & 2)});
         }
         
         return this;
@@ -829,6 +833,8 @@ class LadderActor extends Interactor {
         if(typeof maintainState != "undefined") {
             recipient.addState("ladder");
             maintainState.countdown = 2;
+            recipient.findState("thrust").value = 0.25;
+            recipient.brake(1.25);
         } else if(recipient.hasState("lookup")) {
             recipient.addState("ladder");
             recipient.addStateObject({"name" : "ladder-maintain", "countdown" : 2});

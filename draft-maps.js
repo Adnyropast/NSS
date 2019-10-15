@@ -1,6 +1,18 @@
 
 // 
 
+function makeEntityFromData(entityData) {
+    let entityClass = Entity;
+    
+    if(EC.hasOwnProperty(entityData.classId)) {
+        entityClass = EC[entityData.classId];
+    } else {
+        console.warn(entityData.classId + " not registered in EC.");
+    }
+    
+    return entityClass.fromData(object_clone(entityData));
+}
+
 function loadFromData(data) {
     let lists = {
         "camera" : null,
@@ -18,15 +30,8 @@ function loadFromData(data) {
     
     for(var i = 0; i < data.entities.length; ++i) {
         let entityData = data.entities[i];
-        let entityClass = Entity;
         
-        if(EC.hasOwnProperty(entityData.classId)) {
-            entityClass = EC[entityData.classId];
-        } else {
-            console.warn(entityData.classId + " not registered in EC.");
-        }
-        
-        lists.entities.push(entityClass.fromData(object_clone(entityData)));
+        lists.entities.push(makeEntityFromData(entityData));
     }
     
     if(Array.isArray(data["drawables"])) for(let i = 0; i < data.drawables.length; ++i) {
@@ -150,6 +155,13 @@ function loadTest() {
 
 var maps = {};
 
+maps["test-background"] = {
+    "camera" : {"positionM" : [256, 144], "size" : [512, 288]},
+    "entities" : [
+        {"classId" : "skyDecoration", "position" : [0, 0], "size" : [512, 288]}
+    ]
+};
+
 maps["hub"] = {
     "camera" : {"positionM" : [0, 0]},
     "entities" : [
@@ -171,13 +183,15 @@ maps["hub"] = {
         {"classId" : "ground", "position" : [-128, 64], "size" : [256, 360-64], "style" : "#FF0000"},
         {"classId" : "ground", "position" : [-256, 56], "size" : [128, 16], "style" : "#0000FF"},
         {"classId" : "ground", "position" : [128, 56], "size" : [128, 16], "style" : "#0000FF"},
-        {"classId" : "lookupDoor", "position" : [-120, 32], "size" : [16, 32], "mapname" : "hpp0", "warpPositionM" : [40, 248]/*[-176, 70]*/},
+        // {"classId" : "lookupDoor", "position" : [-120, 32], "size" : [16, 32], "mapname" : "hpp0", "warpPositionM" : [40, 248]/*[-176, 70]*/},
         // {"classId" : "lookupDoor", "position" : [-120, 32], "size" : [16, 32], "mapname" : "hpp1", "warpPositionM" : [16, 56]},
         // {"classId" : "lookupDoor", "position" : [-120, 32], "size" : [16, 32], "mapname" : "hpp2", "warpPositionM" : [16, 248]},
+        {"classId" : "lookupDoor", "position" : [-120, 32], "size" : [16, 32], "mapname" : "hpp3", "warpPositionM" : [16, 56]},
         {"classId" : "lookupDoor", "position" : [8, 32], "size" : [16, 32], "mapname" : "maze"},
         {"classId" : "lookupDoor", "position" : [40, 32], "size" : [16, 32], "mapname" : "maze-topdown"},
         {"classId" : "lookupDoor", "position" : [72, 32], "size" : [16, 32], "mapname" : "maze-sideways"},
         {"classId" : "lookupDoor", "position" : [104, 32], "size" : [16, 32], "mapname" : "maze-water"},
+        {"classId" : "lookupDoor", "position" : [-88, 32], "size" : [16, 32], "mapname" : "maze0"},
         
         {"classId" : "dummy", "position" : [144, 32], "size" : [16, 32]},
         {"classId" : "dummy", "position" : [176, 0], "size" : [48, 56]},
@@ -208,6 +222,11 @@ maps["maze-sideways"] = {
 
 maps["maze-water"] = {
     "entities" : [{"classId" : "mazeGenerator", "mode" : "sideways-water"}]
+};
+
+maps["maze0"] = {
+    "camera" : {"positionM" : [256, 144], "size" : [512, 288]},
+    "entities" : [{"classId" : "mazeGenerator", "mode" : "test"}]
 };
 
 maps["hpp0"] = {
@@ -507,7 +526,7 @@ maps["hpp2"] = {
         // {"classId" : "treeTrunk", "position" : [-224, 78], "size" : [448, 48]},
         
         {"classId" : "autoDoor", "position" : [-512, 0], "size" : [512, 288], "mapname" : "hpp1", "warpPositionM" : [504, 248]},
-        {"classId" : "autoDoor", "position" : [512, 0], "size" : [512, 288], "mapname" : "hpp2", "warpPositionM" : [16, 248]},
+        {"classId" : "autoDoor", "position" : [512, 0], "size" : [512, 288], "mapname" : "hpp3", "warpPositionM" : [16, 56]},
         {"classId" : "autoDoor", "position" : [0, 288], "size" : [512, 288], "mapname" : "hpp2", "warpPositionM" : [16, 248]},
         
         {"classId" : "treeTrunk", "position" : [0, 256], "size" : [16, 16]},
@@ -722,6 +741,195 @@ maps["hpp2"] = {
         {"classId" : "sidewaysSetter", "position" : [0, 0], "size" : [512, 288]},
         {"classId" : "sunlightDecoration", "position" : [0, 0]},
         {"classId" : "treeBackground", "position" : [0, 0], "size" : [512, 288]}
+    ]
+};
+
+maps["hpp3"] = {
+    "camera" : {"positionM" : [256, 144], "size" : [512, 288]},
+    "entities" : [
+        {"classId" : "cameraBoundaryAround", "position" : [0, 0], "size" : [256*2, 144*2]},
+        {"classId" : "invisibleWall", "position" : [0, -288], "size" : [512, 288]},
+        
+        {"classId" : "autoDoor", "position" : [-512, 0], "size" : [512, 288], "mapname" : "hpp2", "warpPositionM" : [504, 56]},
+        
+        {"classId" : "treeTrunk", "position" : [0, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [0, 128], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [64, 128], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [0, 192], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [64, 192], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [64, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [80, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [96, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [112, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [128, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [144, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [160, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [176, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [192, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [208, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [224, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [240, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [256, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [272, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [288, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [304, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [320, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [336, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [352, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [368, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [384, 64], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [0, 80], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [64, 80], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [128, 80], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [192, 80], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [256, 80], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [320, 80], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [336, 80], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [352, 80], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [368, 80], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [0, 96], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [64, 96], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [128, 96], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [192, 96], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [256, 96], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [320, 96], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [336, 96], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [352, 96], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [0, 112], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [64, 112], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [128, 112], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [192, 112], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [256, 112], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [320, 112], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [336, 112], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [128, 128], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [192, 128], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [256, 128], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [320, 128], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [128, 192], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [192, 192], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [256, 192], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [0, 208], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [64, 208], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [128, 208], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [192, 208], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [256, 208], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [0, 224], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [0, 240], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [64, 224], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [64, 240], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [128, 224], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [128, 240], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [192, 224], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [192, 240], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [256, 224], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [256, 240], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [320, 192], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [320, 208], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [320, 224], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [384, 192], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [384, 208], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [384, 224], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [400, 192], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [400, 208], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [400, 224], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [416, 192], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [416, 208], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [416, 224], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [432, 192], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [432, 208], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [432, 224], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [448, 192], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [448, 208], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [464, 192], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [320, 240], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [384, 240], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [400, 240], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [416, 240], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [0, 144], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [0, 160], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [0, 176], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [0, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [0, 272], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [0, 0], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [16, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [32, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [48, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [64, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [80, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [96, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [112, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [128, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [144, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [160, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [176, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [192, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [208, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [224, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [240, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [256, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [272, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [288, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [304, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [320, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [336, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [352, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [368, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [384, 256], "size" : [16, 16]},
+        {"classId" : "treeTrunk", "position" : [400, 256], "size" : [16, 16]},
+        
+        {"classId" : "breakableWood", "position" : [16, 64], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [32, 64], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [48, 64], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [16, 128], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [32, 128], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [48, 128], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [80, 128], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [96, 128], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [112, 128], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [144, 128], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [160, 128], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [176, 128], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [208, 128], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [224, 128], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [240, 128], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [272, 128], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [288, 128], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [304, 128], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [16, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [32, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [48, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [80, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [96, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [112, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [144, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [160, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [176, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [208, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [224, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [240, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [272, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [288, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [304, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [336, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [352, 192], "size" : [16, 16]},
+        {"classId" : "breakableWood", "position" : [368, 192], "size" : [16, 16]},
+        
+        {"classId" : "breakableWood", "position" : [16, 80], "size" : [48, 48]},
+        {"classId" : "breakableWood", "position" : [80, 80], "size" : [48, 48]},
+        {"classId" : "breakableWood", "position" : [144, 80], "size" : [48, 48]},
+        {"classId" : "breakableWood", "position" : [272, 80], "size" : [48, 48]},
+        {"classId" : "breakableWood", "position" : [208, 80], "size" : [48, 48]},
+        {"classId" : "breakableWood", "position" : [16, 208], "size" : [48, 48]},
+        {"classId" : "breakableWood", "position" : [80, 208], "size" : [48, 48]},
+        {"classId" : "breakableWood", "position" : [144, 208], "size" : [48, 48]},
+        {"classId" : "breakableWood", "position" : [208, 208], "size" : [48, 48]},
+        {"classId" : "breakableWood", "position" : [272, 208], "size" : [48, 48]},
+        {"classId" : "breakableWood", "position" : [336, 208], "size" : [48, 48]},
+        
+        {"classId" : "sidewaysSetter", "position" : [0, 0], "size" : [512, 288]},
+        {"classId" : "sunlightDecoration", "position" : [0, 0]},
+        {"classId" : "skyDecoration", "position" : [0, 0], "size" : [512, 288]}
     ]
 };
 
@@ -951,6 +1159,7 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
         
         // entities.push(groundArea);
         map.entities.push({classId : "mazeGroundArea", position : groundArea.position, size : groundArea.size});
+        map.entities.push({classId : "sunlightDecoration", position : [0, 0]});
     } else if(mode == "sideways") {
         // entities.push((new AirArea([0, 0], actualMazeSize)));
         // entities.push((new GravityField([0, 0], actualMazeSize)));
@@ -986,3 +1195,73 @@ function loadMaze(mazeSize = [10, 10], cellSize = [128, 96], wallSize = [32, 32]
 // loadMaze([10, 10]);
 <!-- loadMaze([Math.floor(Math.random() * 7 + 3), Math.floor(Math.random() * 7 + 3)]); -->
 <!-- loadTest(); -->
+
+function str_divideCells(string, width = 32, height = 18) {
+    let strings = [];
+    let firstIndexOfRow = 0;
+    let stringIndex = firstIndexOfRow;
+    let stringY = 0;
+    let beg = true;
+    
+    for(let i = 0; i < string.length; ++i) {
+        // console.log(string[i], i - stringY, stringY, stringIndex);
+        
+        if(!beg && (i - stringY) % width == 0) {
+            strings[stringIndex] += '\n';
+            ++stringIndex;
+            beg = true;
+        } else {
+            beg = false;
+        }
+        
+        if(string.charAt(i) === '\n') {
+            ++stringY;
+            
+            if(stringY % height == 0) {
+                firstIndexOfRow = strings.length;
+            }
+            
+            stringIndex = firstIndexOfRow;
+        } else {
+            if(!strings[stringIndex]) {
+                strings[stringIndex] = [];
+            }
+            
+            strings[stringIndex] += string.charAt(i);
+        }
+    }
+    
+    return strings;
+}
+
+function stringToMaps(string, width = 32, height = 18) {
+    let strings = str_divideCells(...arguments);
+    
+    let maps = [];
+    let mapIndex = 0;
+    let x = 0, y = 0;
+    
+    for(let i = 0; i < strings.length; ++i) {
+        let str = strings[i];
+        maps[i] = [];
+        
+        for(let j = 0; j < str.length; ++j) {
+            console.log(str.charAt(j), x, y);
+            
+            if(str.charAt(j) === '\n') {
+                ++y;
+                x = -1;
+            } else if(str.charAt(j) !== '-') {
+                maps[i].push({classId : str.charAt(j), position : [16*x, 16*y], size : [16, 16]});
+            }
+            
+            ++x;
+            
+            if(y >= height) {
+                y = 0;
+            }
+        }
+    }
+    
+    return maps;
+}

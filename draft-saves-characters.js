@@ -22,6 +22,11 @@ let characters = {};
 characters[0] = makeCharacter("adnyropast");
 
 characters["haple0"] = makeHapleCharacter();
+characters["haple1"] = makeHapleCharacter();
+characters["haple1"].stats["regeneration"] = 2;
+characters["haple2"] = makeHapleCharacter();
+characters["haple2"].energy = 1;
+characters["haple2"].stats["realEnergy"] = 1;
 
 characters["ten0"] = makeCharacter("ten");
 
@@ -54,7 +59,9 @@ function makeHapleCharacter() {
             "regeneration" : 0.0625,
             
             "walljump-angle" : 0.2617993877991494,
-            "walljump-force" : 1.9375
+            "walljump-force" : 1.9375,
+            
+            "midairJump-count" : 1
         },
         "energy" : 50
     };

@@ -234,7 +234,8 @@ class CameraBoundary extends Entity {
         // this.setEffectFactor("default", 0);
         
         this.addInteraction(new CameraReplaceActor());
-        this.setStyle("#FF0000");
+        // this.setStyle("#FF0000");
+        this.setStyle(INVISIBLE);
     }
 }
 

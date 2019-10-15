@@ -341,3 +341,21 @@ class AutoLDelete extends Action {
 
 AC["autoLcreate"] = AutoLCreate;
 AC["autoLdelete"] = AutoLDelete;
+
+AC["lSave"] = class LSave extends Action {
+    constructor() {
+        super();
+        this.setId("lSave");
+    }
+    
+    use() {
+        if(this.phase === 0) {
+            let a = document.createElement("a");
+            a.href = "data:text/json," + getCreatedMap();
+            a.download = "map";
+            a.click();
+        }
+        
+        return this;
+    }
+}

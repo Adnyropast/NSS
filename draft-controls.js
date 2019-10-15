@@ -321,6 +321,7 @@ let ctrljson = {
         {"keyCode" : 49, "actionId" : "lselect"},
         {"keyCode" : 84, "actionId" : "test"},
         {"keyCode" : [74], "actionId" : "goldenJab"},
+        {"keyCode" : [97], "actionId" : "lSave"}
     ],
     "keyrepeat" : [
         {"keyCode" : 86, "actionId" : "flamethrower"},
@@ -341,7 +342,8 @@ let ctrljson = {
         {"keyCode" : [69], "actionId" : "zoneEngage"},
         {"keyCode" : [73], "actionId" : "autoCutter"},
         {"keyCode" : [80, 82], "actionId" : "rocketPunch"},
-        {"keyCode" : [66], "actionId" : "brushSlash"}
+        {"keyCode" : [66], "actionId" : "brushSlash"},
+        {"keyCode" : [84], "actionId" : "paintSpray"}
     ],
     "keytoggle" : [
         // {"keyCode" : [67], "actionId" : "followMe"},

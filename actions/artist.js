@@ -1,5 +1,5 @@
 
-const AS_ARTIST = set_gather("brushSlash");
+const AS_ARTIST = set_gather("brushSlash", "paintBomb", "paintSpray");
 
 class PaintDroplet extends Entity {
     constructor() {
@@ -101,3 +101,127 @@ class BrushSlash extends SlashAction {
 }
 
 AC["brushSlash"] = BrushSlash;
+
+class PaintBombEntity extends Hitbox {
+    constructor() {
+        super(...arguments);
+        
+        let avgsz = rectangle_averagesize(this);
+        
+        this.setDrawable(PolygonDrawable.from(makeRegularPolygon(16, avgsz/2)));
+        this.drawable.setStyle(MultiColorTransition.from(CT_RAINBOW).setDuration(32));
+        this.drawable.initImaginarySize(avgsz);
+        
+        this.addInteraction(new DragRecipient(0.5));
+        this.addInteraction(new ContactVanishRecipient(CVF_OBSTACLE));
+        this.addInteraction(new TypeDamager());
+        this.setTypeOffense("paint", 4);
+        this.addInteraction(new BrakeRecipient(0.5));
+    }
+    
+    updateDrawable() {
+        this.drawable.setPositionM(this.getPositionM());
+        
+        return this;
+    }
+    
+    onremove() {
+        typeImpacts["paint"](this, this);
+        
+        return super.onremove();
+    }
+    
+    update() {
+        super.update();
+        
+        if(this.speed.isZero()) {
+            removeEntity(this);
+        }
+        
+        return this;
+    }
+}
+
+class PaintBomb extends BusyAction {
+    constructor() {
+        super();
+        this.setId("paintBomb");
+    }
+    
+    use() {
+        if(this.phase == 3) {
+            let direction = this.user.getCursorDirection();
+            
+            let bomb = PaintBombEntity.fromMiddle(Vector.addition(this.user.getPositionM(), direction.normalized(rectangle_averagesize(this.user)/2)), [8, 8]);
+            bomb.setSpeed(direction.normalized(4));
+            bomb.shareBlacklist(this.user.getBlacklist());
+            
+            addEntity(bomb);
+        } if(this.phase == 16) {
+            this.end();
+        }
+        
+        return this;
+    }
+}
+
+AC["paintBomb"] = PaintBomb;
+
+class PaintCloud extends Hitbox {
+    constructor(position, size) {
+        super(...arguments);
+        
+        this.setDrawable(PolygonDrawable.from(makeRandomPolygon(32, 14, 16)));
+        let ct = MultiColorTransition.from(CT_RAINBOW).setDuration(64);
+        for(let i = 0; i < ct.vectors.length; ++i) {
+            ct.vectors[i] = Array.from(ct.vectors[i]);
+            ct.vectors[i][3] = 0.375;
+        }
+        this.drawable.setStyle(ct);
+        this.setLifespan(256);
+        
+        this.drawable.initImaginarySize(rectangle_averagesize(this));
+        
+        let sizeTransition = new MultiColorTransition([[1, 1], size, size, size, size, [0, 0]], this.lifespan);
+        
+        this.controllers.add(function() {
+            this.setSizeM(sizeTransition.getNext());
+        });
+        
+        this.addInteraction(new BrakeRecipient(1));
+        this.addInteraction((new TypeDamager()).setRehit(32));
+        this.setTypeOffense("paint", 0.125);
+    }
+    
+    updateDrawable() {
+        this.drawable.setPositionM(this.getPositionM());
+        this.drawable.setImaginarySize(rectangle_averagesize(this));
+        
+        return this;
+    }
+}
+
+class PaintSpray extends BusyAction {
+    constructor() {
+        super();
+        this.setId("paintSpray");
+    }
+    
+    use() {
+        this.phase %= this.phaseLimit;
+        
+        if(this.phase % 8 == 0) {
+            let direction = this.user.getCursorDirection();
+            
+            let cloud = PaintCloud.fromMiddle(Vector.addition(this.user.getPositionM(), direction.normalized(rectangle_averagesize(this.user)/2)), [16, 16]);
+            cloud.setSpeed(direction.normalized(1));
+            cloud.shareBlacklist(this.user.getBlacklist());
+            
+            addEntity(cloud);
+        }
+        
+        return this;
+    }
+}
+
+AC["paintSpray"] = PaintSpray;

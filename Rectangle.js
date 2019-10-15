@@ -620,43 +620,43 @@ class Rectangle {
     
     /*  * 22/11/2018 */
     
-    getPosition1(d) {
+    getPosition1(dim) {
         if(arguments.length == 0) {
             return Array.from(this.position);
         }
         
-        return this.position[d];
-    } getPositionM(d) {
+        return this.position[dim];
+    } getPositionM(dim) {
         if(arguments.length == 0) {
             var positionM = [];
             
-            for(var i = 0; i < this.getDimension(); ++i) {
-                positionM[i] = this.position[i] + this.size[i] / 2;
+            for(var dim = 0; dim < this.getDimension(); ++dim) {
+                positionM[dim] = this.position[dim] + this.size[dim] / 2;
             }
             
             return positionM;
         }
         
-        return this.position[d] + this.size[d] / 2;
-    } getPosition2(d) {
+        return this.position[dim] + this.size[dim] / 2;
+    } getPosition2(dim) {
         if(arguments.length == 0) {
             var position2 = [];
             
-            for(var i = 0; i < this.getDimension(); ++i) {
-                position2[i] = this.position[i] + this.size[i];
+            for(var dim = 0; dim < this.getDimension(); ++dim) {
+                position2[dim] = this.position[dim] + this.size[dim];
             }
             
             return position2;
         }
         
-        return this.position[d] + this.size[d];
+        return this.position[dim] + this.size[dim];
     }
-    getSize(d) {
+    getSize(dim) {
         if(arguments.length == 0) {
             return Array.from(this.size);
         }
         
-        return this.size[d];
+        return this.size[dim];
     }
     
     /* 14/01/2019 */

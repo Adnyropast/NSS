@@ -666,7 +666,7 @@ function makeFireParticle() {
     
     fireparticle.setStyle(new ColorTransition([255, 255, 127, 1], [255, 0, 0, 0.375], 24, function(t) {return Math.pow(t, 1)}));
     fireparticle.setLifespan(24);
-        
+    
     return fireparticle;
 }
 

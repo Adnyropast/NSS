@@ -1,7 +1,7 @@
 
 var jumps = [];
 
-const AS_JUMP = set_gather(ACT_JUMP, "autoJump", "wallJump");
+const AS_JUMP = set_gather(ACT_JUMP, "autoJump", "wallJump", "midairJump");
 
 class Jump extends Action {
     constructor() {
@@ -104,7 +104,7 @@ class Jump extends Action {
             
             particle1.setSpeed(direction1);
             // particle1.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), 8, 16, 6);
-            particle1.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
+            particle1.resetSpikeDrawable(irandom(4, 6), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
             
             addEntity(particle1);
             
@@ -114,7 +114,7 @@ class Jump extends Action {
             
             particle2.setSpeed(direction2);
             // particle2.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), 8, 16, 6);
-            particle2.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
+            particle2.resetSpikeDrawable(irandom(4, 6), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
             
             addEntity(particle2);
             
@@ -131,6 +131,10 @@ class Jump extends Action {
             if(isAlmostZero(this.direction[i])) {
                 this.direction[i] = 0;
             }
+        }
+        
+        if(this.phase > 0 && this.user.hasState("grounded")) {
+            return this.end("grounded");
         }
         
         if(this.direction.isZero()) {
@@ -160,7 +164,24 @@ class Jump extends Action {
     }
 }
 
-class MidairJump extends Jump {}
+class MidairJump extends Jump {
+    constructor() {
+        super();
+        this.setId("midairJump");
+    }
+    
+    use() {
+        if(this.phase == 0) {
+            this.user.setSpeed(1, -4);
+        }
+        
+        if(this.phase > 30) {
+            this.end();
+        }
+        
+        return this;
+    }
+}
 
 class EnergyJump extends Jump {
     use() {
@@ -233,7 +254,9 @@ class AutoJump extends Action {
             let wallState = this.user.findState("wall");
             let ladder = this.user.hasState("ladder");
             
-            if(!grounded && typeof wallState == "undefined" && !ladder) {
+            let midairJump = this.user.findState("midairJump");
+            
+            if(!grounded && typeof wallState == "undefined" && !ladder && !midairJump) {
                 return this;
             }
             
@@ -267,6 +290,11 @@ class AutoJump extends Action {
                 this.jumpAction.direction = this.direction;
                 
                 this.user.addAction(this.jumpAction);
+            } else if(midairJump.count > 0) {
+                --midairJump.count;
+                this.jumpAction = new MidairJump();
+                
+                this.user.addAction(this.jumpAction);
             }
         }
         
@@ -297,6 +325,8 @@ class WallJump extends Action {
     
     use() {
         if(this.phase === 0) {
+            this.user.removeState("wall");
+            
             let averagesize = rectangle_averagesize(this.user);
             let positionM = Vector.addition(this.user.getPositionM(), this.direction.normalized(-averagesize/2));
             

@@ -2,6 +2,8 @@
 let saves = [];
 
 saves["name1"] = makeNewGame();
+// saves["name1"].lastMap = "test-background";
+
 saves["save2"] = makeNewGame();
 
 let currentSave = "name1";
@@ -25,11 +27,17 @@ function saveMapState() {
 function getCurrentMapState() {
     let map = {
         camera : {positionM : CAMERA.getPositionM(), size : CAMERA.size},
-        entities : []
+        entities : entitiesToData(ENTITIES)
     };
     
-    for(let i = 0; i < ENTITIES.length; ++i) {
-        let entity = ENTITIES[i];
+    return map;
+}
+
+function entitiesToData(entities) {
+    let dataSet = [];
+    
+    for(let i = 0; i < entities.length; ++i) {
+        let entity = entities[i];
         
         let classId = entity_getClassId(entity);
         
@@ -37,9 +45,9 @@ function getCurrentMapState() {
             let data = entity.getData();
             data.classId = classId;
             
-            map.entities.push(data);
+            dataSet.push(data);
         }
     }
     
-    return map;
+    return dataSet;
 }

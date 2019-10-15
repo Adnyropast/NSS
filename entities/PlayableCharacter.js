@@ -90,8 +90,6 @@ class PlayableCharacter extends Character {
             } else if(this.actions.find(function(a) {return a instanceof BusyAction})) {
                 let direction = this.getCursorDirection();
                 
-                console.log(direction);
-                
                 if(Math.abs(direction[0]) >= Math.abs(direction[1])) {
                     if(direction[0] > 0) {
                         this.setAnimStyle("attack-right");

@@ -325,21 +325,25 @@ class FireParticle extends Particle {
         this.collidable = true;
         // this.forceFactor = 0.5;
         // this.setSelfBrake(1.0625);
-        this.setLifespan(32);
+        this.setLifespan(64);
         // this.setColorTransition([255, 0, 0, 127], [0, 0, 0, 127], 60);
-        this.setStyle(new ColorTransition([255, 255, 0, 127], [255, 0, 0, 127], 32));
-        this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
+        // this.setStyle(new ColorTransition([255, 255, 0, 127], [255, 0, 0, 127], this.lifespan));
+        this.setSizeTransition(new MultiColorTransition([Vector.multiplication(size, 1/2), size, [0, 0]], this.lifespan, powt(2)));
         
         this.addInteraction(new ReplaceRecipient());
         this.addInteraction(new DragRecipient(-Math.pow(2, -3)));
         
         this.setDrawable(makeFireParticle().setPositionM(this.getPositionM()));
         this.setSelfBrake(1.0625);
+        this.drawable.setStyle(new ColorTransition([255, 255, 127, 1], [255, 0, 0, 0.375], this.lifespan, function(t) {return Math.pow(t, 1)}));
+        this.drawable.setLifespan(-1);
+        this.drawable.initImaginarySize(rectangle_averagesize(this));
     }
     
     updateDrawable() {
-        this.drawable.multiplySize(1/1.015625);
+        // this.drawable.multiplySize(1/1.015625);
         this.drawable.setPositionM(this.getPositionM());
+        this.drawable.setImaginarySize(rectangle_averagesize(this));
         
         return this;
     }
@@ -432,6 +436,8 @@ EC["ladder"] = class Ladder extends Entity {
         this.setZIndex(+1);
         
         this.addInteraction(new LadderActor());
+        // this.addInteraction(new BrakeActor(1.25));
+        // this.addInteraction(new ThrustRecipient(0.5));
     }
 };
 
@@ -486,7 +492,27 @@ EC["mazeGenerator"] = class MazeGenerator extends Entity {
     }
     
     update() {
-        loadMaze(this.mazeSize, this.cellSize, this.wallSize, this.mode);
+        if(this.mode === "test") {
+            let maze = buildMazeLevel([10, 4], [2*16, 3*16], [8, 8], array_random(["topdown", "sideways", "sideways-water"]));
+            
+            // loadFromData(maze);
+            
+            let cba = maze.entities.find(function(entity) {
+                return entity.classId === "cameraBoundaryAround";
+            });
+            
+            cba.position = [+16, +16];
+            
+            for(let i = 0; i < maze.entities.length; ++i) {
+                addEntity(makeEntityFromData(maze.entities[i]));
+            }
+            
+            PLAYER.initPositionM(playerPositionM);
+            
+            removeEntity(this);
+        } else {
+            loadMaze(this.mazeSize, this.cellSize, this.wallSize, this.mode);
+        }
         
         return this;
     }
@@ -525,6 +551,12 @@ EC["skyDecoration"] = class SkyDecoration extends Entity {
         super(position, size);
         
         this.setZIndex(+Math.pow(2, 20));
+        
+        this.setPosition([0, 0]);
+        this.setSize([CANVAS.width, CANVAS.height]);
+        
+        this.drawable.setCameraMode("none");
+        
         // this.setStyle(makeGradientCanvas(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1]), 1, this.getHeight() / CTILE_WIDTH));
         // this.getDrawable().setCameraMode("advanced");
         
@@ -536,12 +568,9 @@ EC["skyDecoration"] = class SkyDecoration extends Entity {
         
         this.setStyle(c);
         
-        /*/
+        /**
         
         let m = 4;
-        
-        this.setPosition([0, 0]);
-        this.setSize([CANVAS.width, CANVAS.height]);
         
         this.drawable.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_SKYTILE, CANVAS.width/40*m), this.getWidth()*m, this.getHeight()*m));
         
@@ -552,16 +581,46 @@ EC["skyDecoration"] = class SkyDecoration extends Entity {
         
         let grd = ctx.createLinearGradient(canvas.width, 0, canvas.width, canvas.height);
         
-        grd.addColorStop(0, "rgba(0, 0, 255, 0.75)");
-        grd.addColorStop(1, "rgba(0, 255, 255, 0.75)");
+        grd.addColorStop(0, "rgba(0, 0, 255, 0.875)");
+        grd.addColorStop(1, "rgba(0, 255, 255, 0.875)");
         
         ctx.fillStyle = grd;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        this.drawable.setCameraMode("none");
+        /*  *
         
-        /*  */
+        this.clouds = new SetArray();
+        
+        for(let i = 0; i < 16; ++i) {
+            let cloud = Cloud.fromMiddle([Math.random() * this.getWidth() - 64, Math.random() * this.getHeight() - 64], [128, 64]);
+            
+            this.clouds.add(cloud);
+        }
+        
+        /**/
+        
+        this.drawable.setStyle(IMGBG["sky2"]);
     }
+    
+    /**
+    
+    onadd() {
+        super.onadd();
+        
+        this.clouds.forEach(addEntity);
+        
+        return this;
+    }
+    
+    onremove() {
+        super.onremove();
+        
+        this.clouds.forEach(removeEntity);
+        
+        return this;
+    }
+    
+    /**/
 };
 
 EC["invisibleWall"] = class InvisibleWall extends ActorCollidable {
@@ -616,8 +675,10 @@ EC["sunlightDecoration"] = class SunlightDecoration extends Entity {
         
         let grd = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
         
-        grd.addColorStop(0, "rgba(255, 255, 255, 0.375)");
-        grd.addColorStop(1, "rgba(255, 255, 127, 0)");
+        grd.addColorStop(0, rgba(255, 255, 255, 0.5));
+        grd.addColorStop(0.0625, rgba(255, 255, 255, 0.25));
+        grd.addColorStop(0.125, rgba(255, 255, 255, 0.375));
+        grd.addColorStop(1, rgba(255, 255, 127, 0));
         
         ctx.fillStyle = grd;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -632,7 +693,7 @@ EC["treeTrunk"] = class TreeTrunk extends EC["ground"] {
     constructor() {
         super(...arguments);
         
-        this.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_TREETRUNK, this.getWidth(), this.getWidth(), "repeat"), this.getWidth(), this.getHeight()));
+        this.drawable.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_TREETRUNK, this.getWidth(), this.getWidth(), "repeat"), this.getWidth(), this.getHeight()));
     }
 };
 
@@ -640,8 +701,8 @@ EC["treeBackground"] = class TreeBackground extends Entity {
     constructor() {
         super(...arguments);
         
-        this.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_TREEBACKGROUND, CTILE_WIDTH/2, 4.5/2 * CTILE_WIDTH, "repeat"), this.getWidth(), this.getHeight()));
-        this.setZIndex(+16);
+        this.drawable.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_TREEBACKGROUND, CTILE_WIDTH/2, 4.5/2 * CTILE_WIDTH, "repeat"), this.getWidth(), this.getHeight()));
+        this.drawable.setZIndex(+16);
     }
 };
 
@@ -649,7 +710,7 @@ EC["treePlatform"] = class TreePlatform extends EC["softPlatform"] {
     constructor(position, size = [64, 2]) {
         super(position, size);
         
-        this.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_TREETRUNK, this.getWidth(), this.getWidth(), "repeat"), this.getWidth(), this.getHeight()));
+        this.drawable.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_TREETRUNK, this.getWidth(), this.getWidth(), "repeat"), this.getWidth(), this.getHeight()));
     }
 };
 
@@ -715,7 +776,7 @@ class SpikeSmokeParticle extends Particle {
         this.setSizeTransition(new ColorTransition(Vector.multiplication(size, 1/2), Vector.multiplication(size, 1.25), 28));
         this.setSelfBrake(1.03125);
         
-        let spikesCount = irandom(3, 5);
+        let spikesCount = irandom(4, 6);
         let angleDiff = Math.PI/4;
         
         // this.resetSpikeDrawable(spikesCount, new ColorTransition([-angleDiff], [+angleDiff]), irandom(8, 10), irandom(16, 18), 6);
@@ -762,6 +823,7 @@ EC["breakableWood"] = class BreakableWood extends EC["treeTrunk"] {
         
         this.addInteraction(new TypeDamageable());
         // this.resetEnergy(20);
+        this.removeInteractorWithId("contactVanish");
     }
     
     ondefeat() {
@@ -799,5 +861,86 @@ EC["mazeGroundArea"] = class MazeGroundArea extends GroundArea {
         this.drawable.setZIndex(ALMOST_ZERO)//.setStyle(makeStyledCanvas(mazeStyle, groundArea.getWidth(), groundArea.getHeight()));
         
         this.drawable.setStyle(makeRepeatedTileFrom(IMG_GRASSTILE, this.getWidth(), this.getHeight()));
+    }
+};
+
+class TrailerEntity extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.trailDrawable = new TrailDrawable();
+        this.drawables.add(this.trailDrawable);
+        
+        this.bladeAngle = 0;
+        this.basePosition = [NaN, NaN];
+        
+        this.controllers.add(function() {
+            this.updateTrailProperties();
+            this.updateBasePosition();
+            this.updateBladeAngle();
+        });
+    }
+    
+    updateTrailProperties() {return this;}
+    updateBasePosition() {return this;}
+    updateBladeAngle() {return this;}
+    
+    updateDrawable() {
+        return super.updateDrawable();
+    }
+}
+
+class CloudDrawable extends PolygonDrawable {
+    constructor() {
+        super(makeRandomPolygon(32, 14, 16));
+        
+        this.stretchM([irandom(0, 48), 0]);
+        this.multiplySize(irandom(2, 4));
+        
+        let light = 255; irandom(239, 255);
+        let alpha = 1; irandom(191, 255) / 255;
+        
+        this.setStyle(rgba(light, light, light, alpha));
+        
+        this.setCameraMode("none");
+    }
+}
+
+class Cloud extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        for(let i = 0; i < 1; ++i) {
+            let particle = new CloudDrawable();
+            
+            particle.multiplySize(3);
+            particle.setStyle(rgba(255, 255, 255, irandom(0, 31) / 255));
+            particle.setZIndex(Math.pow(2, 19.9));
+            
+            particle.setPositionM(Vector.addition(this.getPositionM(), [irandom(-64, +64), irandom(-48, +48)]));
+            
+            this.drawables.add(particle);
+        }
+        
+        for(let i = 0; i < 1; ++i) {
+            let particle = new CloudDrawable();
+            
+            particle.setZIndex(Math.pow(2, 19));
+            
+            particle.setPositionM(Vector.addition(this.getPositionM(), [irandom(-64, +64), irandom(-48, +48)]));
+            
+            this.drawables.add(particle);
+        }
+        
+        for(let i = 0; i < 1; ++i) {
+            let particle = new CloudDrawable();
+            
+            particle.setStyle(rgba(239, 239, 239, 0.875));
+            particle.setZIndex(Math.pow(2, 18));
+            
+            particle.setPositionM(Vector.addition(this.getPositionM(), [irandom(-64, +64), irandom(-48, +48)]));
+            
+            this.drawables.add(particle);
+        }
     }
 }

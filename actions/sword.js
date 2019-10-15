@@ -66,12 +66,14 @@ class SwordSlashAction extends SlashAction {
         // this.trailDrawable.trailStyle = new ColorTransition([127*detProgress, 255, 255, 1], [0, 255*detProgress, 255, 0], 8);
         
         let ct = new ColorTransition([0, 255, 255, 1], [0, 0, 255, 0.25], 7, bezierLinear);
+        // ct = new ColorTransition([0, 0, 127, 1], [0, 0, 255, 0], 7, bezierLinear);
         this.trailDrawable.trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), 7, function timing(t) {return Math.pow(t, 1);});
         
         for(let i = 0; i < this.trailDrawable.otherTrails.length; ++i) {
             let lifespan = irandom(6, 8);
             
             ct = new ColorTransition([255, 255, 255, irandom(75, 100)/100], [255, 255, 0, 0], lifespan, bezierLinear);
+            // ct = new ColorTransition([191, 191, 255, irandom(75, 100)/100], [31, 0, 255, 0], lifespan, bezierLinear);
             
             this.trailDrawable.otherTrails[i].trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), lifespan, bezierLinear);
         }

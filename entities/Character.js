@@ -104,14 +104,16 @@ class Character extends Entity {
         this.addInteraction(new StunRecipient(1));
         
         this.stats["climb-speed"] = 0.25;
-        this.stats["jump-force"] = 1.875;
+        // this.stats["jump-force"] = 1.875;
         this.stats["jump-force"] = 1.5;
         this.stats["regeneration"] = 0.0625;
         
         this.controllers.add(healController);
         
         this.stats["walljump-angle"] = 0.39269908169872414;
-        this.stats["walljump-force"] = 1.5;
+        // this.stats["walljump-force"] = 1.5;
+        this.stats["walljump-force"] = 1.9375;
+        this.stats["midairJump-count"] = 0;
     }
     
     static fromData(data) {

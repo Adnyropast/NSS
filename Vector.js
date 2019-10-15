@@ -583,7 +583,17 @@ class Vector extends Array {
             vector = Vector.from(vector);
         }
         
-        return vector.getAngle() - this.getAngle();
+        let angle1 = this.getAngle();
+        let angle2 = vector.getAngle();
+        
+        // angle1 = ((angle1 % 2*Math.PI) + 2*Math.PI) % 2*Math.PI;
+        // angle2 = ((angle2 % 2*Math.PI) + 2*Math.PI) % 2*Math.PI;
+        
+        let angle = angle2 - angle1;
+        
+        // angle = ((angle % 2*Math.PI) + 2*Math.PI) % 2*Math.PI;
+        
+        return angle;
         
         var scalar = 0;
         var tnorm = 0, onorm = 0;
@@ -667,6 +677,26 @@ class Vector extends Array {
             cos * this.get(0) - sin * this.get(1),
             sin * this.get(0) + cos * this.get(1)
         );
+    }
+    
+    checkLeft(vector) {
+        let v = Vector.from(vector).rotate(Math.PI/2);
+        
+        if(this.scalar(v) < 0) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    checkRight(vector) {
+        let v = Vector.from(vector).rotate(Math.PI/2);
+        
+        if(this.scalar(v) > 0) {
+            return true;
+        }
+        
+        return false;
     }
 }
 
@@ -754,4 +784,65 @@ class VectorTransition {
     
     setStep(step) {this.step = step; return this;}
     getStep() {return this.step;}
+}
+
+function toDegree(angle) {
+    return angle * 180 / Math.PI;
+}
+
+function intersection(positionL1, directionL1, positionL2, directionL2) {
+    // Looking for point = (x, y)
+    // x = L1x + V1x * k = L2x + V2x * t
+    // y = L1y + V1y * k = L2y + V2y * t
+    // 
+    // L1x + V1x * k - L2x - V2x * t = 0
+    // L1y + V1y * k - L2y - V2y * t = 0
+    // 
+    // V2y * (L1x + V1x * k - L2x - V2x * t) - V2x * (L1y + V1y * k - L2y - V2y * t) = 0
+    // 
+    // V2y * (L1x + V1x * k - L2x) - V2y * V2x * t + V2x * V2y * t - V2x * (L1y + V1y * k - L2y) = 0
+    // 
+    // V2y * V1x * k - V2x * V1y * k = V2x * (L1y - L2y) - V2y * (L1x - L2x)
+    // k = ( V2x * (L1y - L2y) - V2y * (L1x - L2x) )   /   ( V2y * V1x - V2x * V1y )
+    
+    let k = directionL2[0] * (positionL1[1] - positionL2[1]) - directionL2[1] * (positionL1[0] - positionL2[0]);
+    k /= directionL2[1] * directionL1[0] - directionL2[0] * directionL1[1];
+    
+    let t = positionL1[0] + directionL1[0] * k - positionL2[0];
+    t /= directionL2[0];
+    
+    if(isNaN(t)) {
+        t = positionL1[1] + directionL1[1] * k - positionL2[1];
+        t /= directionL2[1];
+    }
+    
+    let pointL1 = [
+        positionL1[0] + directionL1[0] * k,
+        positionL1[1] + directionL1[1] * k
+    ];
+    
+    let pointL2 = [
+        positionL2[0] + directionL2[0] * t,
+        positionL2[1] + directionL2[1] * t
+    ];
+    
+    console.log(pointL1, pointL2);
+    console.log(k, t);
+    
+    return pointL1;
+}
+
+function linesKT(positionL1, directionL1, positionL2, directionL2) {
+    let k = directionL2[0] * (positionL1[1] - positionL2[1]) - directionL2[1] * (positionL1[0] - positionL2[0]);
+    k /= directionL2[1] * directionL1[0] - directionL2[0] * directionL1[1];
+    
+    let t = positionL1[0] + directionL1[0] * k - positionL2[0];
+    t /= directionL2[0];
+    
+    if(isNaN(t)) {
+        t = positionL1[1] + directionL1[1] * k - positionL2[1];
+        t /= directionL2[1];
+    }
+    
+    return {k:k, t:t};
 }
