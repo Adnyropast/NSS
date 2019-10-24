@@ -17,7 +17,7 @@ class Battler {
         this.drawable = new BattlerDrawable([0, 0]);
         
         this.energyBar = new EnergyBarDrawable([0, 0]);
-        this.energyBar.setProperWidth(rectangle_averagesize(this.drawable));
+        this.energyBar.setProperWidth(rectangle_averageSize(this.drawable));
         // this.energyBar.setCameraMode("none");
         this.energyBar.setCamera(BATTLECAMERA);
         

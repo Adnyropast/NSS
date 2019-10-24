@@ -248,18 +248,18 @@ class GoldSmokeParticle extends Particle {
         // this.setDrawable(PolygonDrawable.from(flameparticle).multiplySize(1/4));
         this.setDrawable(PolygonDrawable.from(makeRandomPolygon(24, 12, 16)).setLifespan(32).setPositionM(this.getPositionM()).multiplySize(8/16));
         
-        this.drawable.multiplySize(rectangle_averagesize(this)/16);
+        this.drawable.multiplySize(rectangle_averageSize(this)/16);
         
         this.setStyle(new ColorTransition([0, 255, 255, 127], [0, 255, 255, 0], 60));
         this.setStyle(new ColorTransition([0, irandom(191, 255), 255, 1], [0, 63, 255, 0], 32, function(t) {return Math.pow(t, 4);}));
         this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
-        this.drawable.initImaginarySize(rectangle_averagesize(this));
+        this.drawable.initImaginarySize(rectangle_averageSize(this));
     }
     
     updateDrawable() {
         this.drawable.setPositionM(this.getPositionM());
         // this.drawable.multiplySize(1/1.03125);
-        this.drawable.setImaginarySize(rectangle_averagesize(this));
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
         
         this.drawable.setImaginaryAngle(this.speed.getAngle());
         
@@ -274,8 +274,10 @@ class SmokeParticle extends Particle {
     constructor(position, size = [8, 8]) {
         super(position, size);
         
-        this.setDrawable(PolygonDrawable.from(makeRandomPolygon(24, 12, 16)).setLifespan(32).setPositionM(this.getPositionM()).multiplySize(8/16));
-        this.drawable.initImaginarySize(rectangle_averagesize(this));
+        let avgsz = rectangle_averageSize(this);
+        
+        this.setDrawable(PolygonDrawable.from(makeRandomPolygon(avgsz*2, 12, 16)).setLifespan(32).setPositionM(this.getPositionM()).multiplySize(8/16));
+        this.drawable.initImaginarySize(avgsz);
         
         this.collidable = true;
         // this.forceFactor = 0.5;
@@ -288,13 +290,14 @@ class SmokeParticle extends Particle {
         this.addInteraction(new DragRecipient(0.03125));
         // this.addInteraction(new BrakeRecipient(1.5));
         
-        this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
+        // this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
+        this.setSizeTransition(new MultiColorTransition([Vector.multiplication(size, 1/2), size, Vector.multiplication(size, 1/2), [0, 0]], 32));
         this.setSelfBrake(1.03125);
     }
     
     updateDrawable() {
         // this.drawable.multiplySize(1/1.0625);
-        this.drawable.setImaginarySize(rectangle_averagesize(this));
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
         this.drawable.setPositionM(this.getPositionM());
         
         return this;
@@ -337,13 +340,13 @@ class FireParticle extends Particle {
         this.setSelfBrake(1.0625);
         this.drawable.setStyle(new ColorTransition([255, 255, 127, 1], [255, 0, 0, 0.375], this.lifespan, function(t) {return Math.pow(t, 1)}));
         this.drawable.setLifespan(-1);
-        this.drawable.initImaginarySize(rectangle_averagesize(this));
+        this.drawable.initImaginarySize(rectangle_averageSize(this));
     }
     
     updateDrawable() {
         // this.drawable.multiplySize(1/1.015625);
         this.drawable.setPositionM(this.getPositionM());
-        this.drawable.setImaginarySize(rectangle_averagesize(this));
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
         
         return this;
     }
@@ -438,6 +441,7 @@ EC["ladder"] = class Ladder extends Entity {
         this.addInteraction(new LadderActor());
         // this.addInteraction(new BrakeActor(1.25));
         // this.addInteraction(new ThrustRecipient(0.5));
+        // this.collide_priority = -1;
     }
 };
 
@@ -547,15 +551,14 @@ class TransitionCover extends Entity {
 }
 
 EC["skyDecoration"] = class SkyDecoration extends Entity {
-    constructor(position, size) {
+    constructor(position = [0, 0], size = [640, 360]) {
         super(position, size);
         
         this.setZIndex(+Math.pow(2, 20));
         
-        this.setPosition([0, 0]);
-        this.setSize([CANVAS.width, CANVAS.height]);
-        
-        this.drawable.setCameraMode("none");
+        this.drawable.setCameraMode("reproportion");
+        this.getDrawable().baseWidth = size[0];
+        this.getDrawable().baseHeight = size[1];
         
         // this.setStyle(makeGradientCanvas(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1]), 1, this.getHeight() / CTILE_WIDTH));
         // this.getDrawable().setCameraMode("advanced");
@@ -600,6 +603,8 @@ EC["skyDecoration"] = class SkyDecoration extends Entity {
         /**/
         
         this.drawable.setStyle(IMGBG["sky2"]);
+        
+        /**/
     }
     
     /**
@@ -655,11 +660,13 @@ EC["sidewaysSetter"] = class SidewaysSetter extends Entity {
 }
 
 EC["sunlightDecoration"] = class SunlightDecoration extends Entity {
-    constructor(position = [0, 0], size = [CANVAS.width, CANVAS.height]) {
+    constructor(position = [0, 0], size = [640, 360]) {
         super(position, size);
         
         this.setZIndex(-16);
-        this.getDrawable().setCameraMode("none");
+        this.getDrawable().setCameraMode("reproportion");
+        this.getDrawable().baseWidth = size[0];
+        this.getDrawable().baseHeight = size[1];
         
         /*  *
         
@@ -784,7 +791,7 @@ class SpikeSmokeParticle extends Particle {
     }
     
     updateDrawable() {
-        this.drawable.setImaginarySize(rectangle_averagesize(this));
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
         this.drawable.setPositionM(this.getPositionM());
         this.drawable.setImaginaryAngle(this.speed.getAngle());
         
@@ -797,7 +804,7 @@ class SpikeSmokeParticle extends Particle {
         this.drawable.setStyle(ColorTransition.from(smokeColorTransition2));
         
         this.drawable.setPositionM(this.getPositionM());
-        this.drawable.initImaginarySize(rectangle_averagesize(this));
+        this.drawable.initImaginarySize(rectangle_averageSize(this));
         
         return this;
     }
@@ -828,7 +835,7 @@ EC["breakableWood"] = class BreakableWood extends EC["treeTrunk"] {
     
     ondefeat() {
         let positionM = this.getPositionM();
-        let avgsz = rectangle_averagesize(this);
+        let avgsz = rectangle_averageSize(this);
         let count = 8;
         
         for(let i = 0; i < count; ++i) {

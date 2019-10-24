@@ -44,7 +44,7 @@ class BloodShot extends Action {
         if(this.phase <= 1) {
             let direction = this.user.getCursorDirection();
             
-            var projectile = BloodProjectile.fromMiddle(direction.normalized(rectangle_averagesize(this.user) / 2).add(this.user.getPositionM()), [4, 4]);
+            var projectile = BloodProjectile.fromMiddle(direction.normalized(rectangle_averageSize(this.user) / 2).add(this.user.getPositionM()), [4, 4]);
             
             projectile.setSpeed(direction.normalize(4));
             projectile.addInteraction(new DragActor(projectile.speed.normalized(1)));
@@ -89,7 +89,7 @@ class BlowoutShots extends Action {
         if(this.phase % this.pace == 0) {
             let direction = new Vector(Math.cos(this.angle), Math.sin(this.angle));
             
-            var projectile = BloodProjectile.fromMiddle(direction.normalized(rectangle_averagesize(this.user) / 2).add(this.user.getPositionM()), [4, 4]);
+            var projectile = BloodProjectile.fromMiddle(direction.normalized(rectangle_averageSize(this.user) / 2).add(this.user.getPositionM()), [4, 4]);
             projectile.setSpeed(direction.normalize(4));
             projectile.shareBlacklist(this.user.getBlacklist());
             projectile.setLifespan(20);

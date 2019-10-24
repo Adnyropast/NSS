@@ -277,3 +277,34 @@ EC["cameraBoundaryAround"] = class CameraBoundaryAround extends EntityAround {
         this.entityClass = CameraBoundary;
     }
 };
+
+/**
+
+class FollowMe extends Action {
+    constructor() {
+        super();
+        this.setId("followMe");
+    }
+    
+    use() {
+        CAMERA.target = this.user;
+        
+        return this;
+    }
+    
+    preventsAddition(action) {
+        if(this.phase > 0 && action instanceof FollowMe) {
+            this.end();
+        }
+        
+        return super.preventsAddition(action);
+    }
+    
+    onend() {
+        CAMERA.target = null;
+        
+        return super.onend();
+    }
+}
+
+/**/

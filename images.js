@@ -519,3 +519,7 @@ IMGBG["sky0"] = loadImage("images/background/sky0.png");
 IMGBG["sky1"] = loadImage("images/background/sky1.png");
 IMGBG["sky2"] = loadImage("images/background/sky2.png");
 IMGBG["sky3"] = loadImage("images/background/sky3.png");
+
+const IMGITEM = {};
+
+IMGITEM["apple"] = loadImage("images/items/apple.png");

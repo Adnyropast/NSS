@@ -8,7 +8,7 @@ class PlasmaEffect extends Hitbox {
         this.addInteraction(new TypeDamager());
         this.setDrawable(PolygonDrawable.from(makeBurstPolygon2(new ColorTransition([2], [4], 16, Math.random), new ColorTransition([0], [20], 16, Math.random), 6)));
         this.drawable.rotate(Math.random());
-        let avgsz = rectangle_averagesize(this);
+        let avgsz = rectangle_averageSize(this);
         
         this.drawable.multiplySize(avgsz/16);
         this.drawable.initImaginarySize(avgsz);
@@ -24,7 +24,7 @@ class PlasmaEffect extends Hitbox {
     }
     
     updateDrawable() {
-        this.drawable.setImaginarySize(rectangle_averagesize(this));
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
         this.drawable.setPositionM(this.getPositionM());
         
         return this;

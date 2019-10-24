@@ -76,6 +76,9 @@ class RectangleDrawable extends Rectangle {
         this.camera = null;
         this.controllers = new SetArray();
         this.strokeStyle = INVISIBLE;
+        
+        this.baseWidth = 640;
+        this.baseHeight = 360;
     }
     
     getZIndex() {return this.zIndex;}
@@ -134,6 +137,17 @@ class RectangleDrawable extends Rectangle {
             y *= hprop;
             width *= wprop;
             height *= hprop;
+        }
+        
+        if(this.cameraMode === "reproportion") {
+            let hProp = 1, vProp = 1;
+            if(this.baseWidth) {hProp = CANVAS.width / this.baseWidth;}
+            if(this.baseHeight) {vProp = CANVAS.height / this.baseHeight;}
+            
+            x *= hProp;
+            y *= vProp;
+            width *= hProp;
+            height *= vProp;
         }
         
         if(x == -Infinity) {

@@ -83,7 +83,7 @@ SKILLS["flee"] = class FleeSkill extends Skill {
                 let positionTransition = new VectorTransition(positionM, direction.normalized(irandom(12, 14)).add(positionM), drawable.lifespan, function(t) {
                     return Math.pow(t, 1/6);
                 });
-                let avgsz = rectangle_averagesize(user);
+                let avgsz = rectangle_averageSize(user);
                 let sizeTransition = new VectorTransition([avgsz/2], [avgsz/1.25], drawable.lifespan, function(t) {
                     return Math.pow(t, 1/6);
                 });

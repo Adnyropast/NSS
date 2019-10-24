@@ -111,13 +111,28 @@ class Circle {
         return "{[" + this.getPosition() + "], " + this.getRadius() + "}";
     }
     
-    basicDraw(context, fillStyle, strokeStyle) {
+    basicDraw(context) {
         context.beginPath();
         context.arc(this.getX(), this.getY(), this.getRadius(), 0, Math.PI * 2);
-        context.fillStyle = fillStyle;
+        context.closePath();
         context.fill();
+        context.stroke();
         
         return this;
+    }
+    
+    collidesWithPoint(point) {
+        const minDim = Math.min(this.getDimension(), point.length);
+        
+        let dist = 0;
+        
+        for(let dim = 0; dim < minDim; ++dim) {
+            dist += Math.pow(point[dim] - this.center[dim], 2);
+        }
+        
+        dist = Math.sqrt(dist);
+        
+        return dist < this.radius;
     }
 }
 

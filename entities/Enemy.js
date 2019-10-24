@@ -6,7 +6,7 @@ class Enemy extends Character {
         super(position, size).setStyle("#7F007F");
         this.setTypeResistance("enemy", 0);
         
-        let avgsz = rectangle_averagesize(this);
+        let avgsz = rectangle_averageSize(this);
         
         this.cursor.setSizeM([avgsz * 5, avgsz * 5]);// .setStyle("#FF7FFF5F");
         this.cursor.drawable.setStyle("#7F007F3F");
@@ -29,6 +29,14 @@ class Enemy extends Character {
         this.controllers.add(enemyController);
         
         this.stats["regeneration"] = 0;
+        
+        this.items = [];
+        
+        let count = irandom(1, 2);
+        
+        for(let i = 0; i < count; ++i) {
+            this.items.push(new IC["apple"]());
+        }
     }
     
     onadd() {
@@ -43,10 +51,19 @@ class Enemy extends Character {
         for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 3/2) {
             var cos = Math.cos(angle), sin = Math.sin(angle);
             var particle = EnemyVanishParticle.fromMiddle(this.getPositionM(), this.size);
-            particle.setSpeed((new Vector(cos, sin)).normalize(rectangle_averagesize(this)/16+Math.random()));
+            particle.setSpeed((new Vector(cos, sin)).normalize(rectangle_averageSize(this)/16+Math.random()));
             // particle.drag(this.speed);
             
             addEntity(particle);
+        }
+        
+        for(let i = 0; i < this.items.length; ++i) {
+            let pickableItem = PickableItem.fromMiddle(this.getPositionM(), [8, 8]);
+            pickableItem.addItem(this.items[i]);
+            
+            pickableItem.setSpeed((new Vector(1, 0)).rotate(Math.random() * 2*Math.PI));
+            
+            addEntity(pickableItem);
         }
         
         return this;
@@ -66,7 +83,7 @@ class EnemyVanishParticle extends Particle {
         super(...arguments);
         
         this.setLifespan(64);
-        this.setDrawable(PolygonDrawable.from(makeRandomPolygon(24, 12, 16)).multiplySize(rectangle_averagesize(this)/16));
+        this.setDrawable(PolygonDrawable.from(makeRandomPolygon(24, 12, 16)).multiplySize(rectangle_averageSize(this)/16));
         this.setStyle(new ColorTransition([127, 0, 127, 1], [0, 255, 255, 1], 64));
         this.setSizeTransition(new ColorTransition(this.size, [0, 0], 32));
         
@@ -181,7 +198,7 @@ class EnemySnipe extends BusyAction {
         if(this.phase == 12) {
             let direction = this.user.getCursorDirection();
             
-            let hitbox = SniperProjectile.fromMiddle(direction.normalized(rectangle_averagesize(this.user)/2).plus(this.user.getPositionM()), [8, 8]);
+            let hitbox = SniperProjectile.fromMiddle(direction.normalized(rectangle_averageSize(this.user)/2).plus(this.user.getPositionM()), [8, 8]);
             
             hitbox.shareBlacklist(this.user.getBlacklist());
             hitbox.setSpeed(direction.normalized(4));

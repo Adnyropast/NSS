@@ -66,7 +66,7 @@ class HapleVanishParticle extends Particle {
         super(...arguments);
         
         this.setLifespan(32);
-        this.setDrawable(PolygonDrawable.from(makeStarPolygon()).multiplySize(rectangle_averagesize(this)/16));
+        this.setDrawable(PolygonDrawable.from(makeStarPolygon()).multiplySize(rectangle_averageSize(this)/16));
         this.drawable.setStyle(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1], 32));
         
         this.setSelfBrake(1.0625);

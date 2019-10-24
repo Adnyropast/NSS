@@ -52,7 +52,7 @@ class GoldFlurry extends GoldAbility {
             
             let direction = this.user.getCursorDirection();
             
-            var hitbox = GoldSolid.fromMiddle(direction.normalized(rectangle_averagesize(this.user)/2).add(this.user.getPositionM()), [8, 8]);
+            var hitbox = GoldSolid.fromMiddle(direction.normalized(rectangle_averageSize(this.user)/2).add(this.user.getPositionM()), [8, 8]);
             hitbox.shareBlacklist(this.user.getBlacklist());
             
             hitbox.setSpeed(direction.rotated(Math.sin(this.t) * 0.25).normalize(4));
@@ -100,13 +100,13 @@ class RocketPunchProjectile extends Projectile {
             this.setSizeM(sizeTransition.getNext());
         });
         
-        this.drawable.initImaginarySize(rectangle_averagesize(this));
+        this.drawable.initImaginarySize(rectangle_averageSize(this));
     }
     
     updateDrawable() {
         this.drawable.setPositionM(this.getPositionM());
         this.drawable.setImaginaryAngle(this.speed.getAngle());
-        this.drawable.setImaginarySize(rectangle_averagesize(this));
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
         
         return this;
     }
@@ -193,7 +193,7 @@ class RocketPunch extends GoldAbility {
         if(this.phase == 16) {
             let positionM = this.user.getPositionM();
             let direction = this.user.getCursorDirection();
-            let startPosition = direction.normalized(rectangle_averagesize(this.user)/2).add(positionM);
+            let startPosition = direction.normalized(rectangle_averageSize(this.user)/2).add(positionM);
             
             var projectile = RocketPunchProjectile.fromMiddle(startPosition, [8, 8]);
             
@@ -272,7 +272,7 @@ class GoldBurstHitbox extends Hitbox {
         }
         
         this.setDrawable(PolygonDrawable.from(makeBurstPolygon2(new ColorTransition([2], [4], 8*2, function() {return Math.random();}), new ColorTransition([16], [20], 8*2, timing), 6)).rotate(Math.random()));
-        this.drawable.initImaginarySize(rectangle_averagesize(this));
+        this.drawable.initImaginarySize(rectangle_averageSize(this));
         this.drawable.setStyle(new ColorTransition([0, 255, 255, 0.875], [0, 0, 255, 1], 16, function(t) {return Math.pow(t, 3);}));
         
         let sizeTransition = new ColorTransition(this.size, Vector.multiplication(this.size, 1.5), 16, function(t) {return Math.pow(t, 1/1.5);});
@@ -288,7 +288,7 @@ class GoldBurstHitbox extends Hitbox {
     }
     
     updateDrawable() {
-        this.drawable.setImaginarySize(rectangle_averagesize(this));
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
         this.drawable.setPositionM(this.getPositionM());
         
         return this;
@@ -302,7 +302,7 @@ class GoldenJab extends GoldAbility {
     }
     
     use() {
-        let averagesize = rectangle_averagesize(this.user);
+        let averagesize = rectangle_averageSize(this.user);
         
         let positionM = this.user.getCursorDirection().normalize(averagesize).add(this.user.getPositionM());
         

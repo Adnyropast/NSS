@@ -26,9 +26,14 @@ characters["haple1"] = makeHapleCharacter();
 characters["haple1"].stats["regeneration"] = 2;
 characters["haple2"] = makeHapleCharacter();
 characters["haple2"].energy = 1;
+characters["haple2"].stats["action-costFactor"] = 0;
 characters["haple2"].stats["realEnergy"] = 1;
 
 characters["ten0"] = makeCharacter("ten");
+
+for(let i = 3; i < 100; ++i) {
+    characters["haple"+i] = makeCharacter("haple");
+}
 
 function getSavedCharacter(id = currentCharacter) {
     try {

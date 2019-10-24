@@ -400,8 +400,10 @@ class Rectangle {
     static shared(rectangle) {
         let res = new this(rectangle.position, rectangle.size);
         res.setDimension(rectangle.getDimension());
-        res.sharePosition(rectangle.position);
-        res.shareSize(rectangle.size);
+        res.position = rectangle.position;
+        res.size = rectangle.size;
+        // res.sharePosition(rectangle.position);
+        // res.shareSize(rectangle.size);
         
         return res;
     }
@@ -411,15 +413,29 @@ class Rectangle {
      */
     
     sharePosition(position) {
+        this.setDimension(position.length);
         this.position = position;
         
         return this;
     }
     
     shareSize(size) {
+        this.setDimension(size.length);
         this.size = size;
         
         return this;
+    }
+    
+    /* 24/10/2019 */
+    
+    sharePositionWith(rectangle) {
+        return this.sharePosition(rectangle.position);
+    }
+    
+    /* 24/10/2019 */
+    
+    shareSizeWith(rectangle) {
+        return this.shareSize(rectangle.size);
     }
     
     /**
@@ -436,19 +452,23 @@ class Rectangle {
      */
     
     setPosition1(position1) {
-        if(Array.isArray(position1)) {
-            this.position.length = position1.length;
-            
-            for(var i = 0; i < position1.length; ++i) {
-                this.position[i] = position1[i];
-            }
+        if(arguments.length == 2) {
+            return this.setCoordinate1(arguments[0], arguments[1]);
         }
         
-        if(arguments.length == 2 && typeof arguments[0] == "number" && typeof arguments[1] == "number") {
-            var dimension = arguments[0], coordinate = arguments[1];
-            
-            this.position[dimension] = coordinate;
+        this.setDimension(position1.length);
+        
+        for(let dim = 0; dim < position1.length; ++dim) {
+            this.position[dim] = position1[dim];
         }
+        
+        return this;
+    }
+    
+    setCoordinate1(dimension, coordinate) {
+        // if(dimension > this.getDimension()) {this.setDimension(dimension);}
+        
+        this.position[dimension] = coordinate;
         
         return this;
     }
@@ -459,19 +479,23 @@ class Rectangle {
      */
     
     setPositionM(positionM) {
-        if(Array.isArray(positionM)) {
-            this.position.length = positionM.length;
-            
-            for(var i = 0; i < positionM.length; ++i) {
-                this.position[i] = positionM[i] - this.size[i] / 2;
-            }
+        if(arguments.length == 2) {
+            return this.setCoordinateM(arguments[0], arguments[1]);
         }
         
-        if(arguments.length == 2 && typeof arguments[0] == "number" && typeof arguments[1] == "number") {
-            var dimension = arguments[0], coordinate = arguments[1];
-            
-            this.position[dimension] = coordinate - this.size[dimension] / 2;
+        this.setDimension(positionM.length);
+        
+        for(let dim = 0; dim < positionM.length; ++dim) {
+            this.position[dim] = positionM[dim] - this.size[dim] / 2;
         }
+        
+        return this;
+    }
+    
+    setCoordinateM(dimension, coordinate) {
+        // if(dimension > this.getDimension()) {this.setDimension(dimension);}
+        
+        this.position[dimension] = coordinate - this.size[dimension] / 2;
         
         return this;
     }
@@ -482,31 +506,45 @@ class Rectangle {
      */
     
     setPosition2(position2) {
-        if(Array.isArray(position2)) {
-            this.position.length = position2.length;
-            
-            for(var i = 0; i < position2.length; ++i) {
-                this.position[i] = position2[i] - this.size[i];
-            }
+        if(arguments.length == 2) {
+            return this.setCoordinate2(arguments[0], arguments[1]);
         }
         
-        if(arguments.length == 2 && typeof arguments[0] == "number" && typeof arguments[1] == "number") {
-            var dimension = arguments[0], coordinate = arguments[1];
-            
-            this.position[dimension] = coordinate - this.size[dimension];
+        this.setDimension(position2.length);
+        
+        for(let dim = 0; dim < position2.length; ++dim) {
+            this.position[dim] = position2[dim] - this.size[dim];
         }
         
         return this;
     }
     
+    setCoordinate2(dimension, coordinate) {
+        // if(dimension > this.getDimension()) {this.setDimension(dimension);}
+        
+        this.position[dimension] = coordinate - this.size[dimension];
+        
+        return this;
+    }
+    
     setSize(size) {
-        if(Array.isArray(size)) {
-            this.size.length = size.length;
-            
-            for(var i = 0; i < size.length; ++i) {
-                this.size[i] = size[i];
-            }
+        if(arguments.length == 2) {
+            return this.setSide(arguments[0], arguments[1]);
         }
+        
+        this.setDimension(size.length);
+        
+        for(let dim = 0; dim < size.length; ++dim) {
+            this.size[dim] = size[dim];
+        }
+        
+        return this;
+    }
+    
+    setSide(dimension, width) {
+        // if(dimension > this.getDimension()) {this.setDimension(dimension);}
+        
+        this.size[dimension] = width;
         
         return this;
     }
@@ -515,16 +553,26 @@ class Rectangle {
     
     setSizeM(size) {
         if(arguments.length == 2) {
-            let dimension = arguments[0], width = arguments[1];
-            
-            this.position[dimension] = this.position[dimension] + this.size[dimension] / 2;
-            this.size[dimension] = width;
-            this.position[dimension] = this.position[dimension] - this.size[dimension] / 2;
-        } else if(Array.isArray(size)) {
-            for(var i = 0; i < size.length; ++i) {
-                this.setSizeM(i, size[i]);
-            }
+            return this.setSideM(arguments[0], arguments[1]);
         }
+        
+        this.setDimension(size.length);
+        
+        for(let dim = 0; dim < size.length; ++dim) {
+            this.setSideM(dim, size[dim]);
+        }
+        
+        return this;
+    }
+    
+    setSideM(dimension, width) {
+        // if(dimension > this.getDimension()) {this.setDimension(dimension);}
+        
+        this.position[dimension] = this.position[dimension] + (this.size[dimension] - width) / 2
+        
+        // this.position[dimension] = this.position[dimension] + this.size[dimension] / 2;
+        this.size[dimension] = width;
+        // this.position[dimension] = this.position[dimension] - this.size[dimension] / 2;
         
         return this;
     }
@@ -836,7 +884,7 @@ class Rectangle {
         var z1 = this.position[2]; var z2 = this.position[2] + this.size[2];
         
         var res = new Array(6);
-            
+        
         res[2] = new Polygon([
             [x1, y1, z1],
             [x1, y1, z2],

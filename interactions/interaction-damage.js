@@ -235,7 +235,7 @@ typeImpacts[FX_SHARP] = function onimpact(actor, recipient) {
         addEntity(particle);
     }
     
-    // 
+    /**
     
     c = 4;
     let startAngle = 0, endAngle = 0;
@@ -260,7 +260,7 @@ typeImpacts[FX_SHARP] = function onimpact(actor, recipient) {
     multiCrescent.rotate(Math.random() * 2*Math.PI/c);
     multiCrescent.setPositionM(recipient.getPositionM());
     
-    let recipient_avgsz = rectangle_averagesize(recipient);
+    let recipient_avgsz = rectangle_averageSize(recipient);
     multiCrescent.multiplySize(recipient_avgsz/64);
     multiCrescent.initImaginarySize(recipient_avgsz);
     
@@ -271,6 +271,25 @@ typeImpacts[FX_SHARP] = function onimpact(actor, recipient) {
     });
     
     addDrawable(multiCrescent);
+    
+    /**/
+    
+    let ovalDrawable = new PolygonDrawable(makePathPolygon(makeOvalPath(32, 32, 32)));
+    ovalDrawable.setLifespan(16);
+    ovalDrawable.setStyle(new ColorTransition([255, 255, 255, 1], [255, 255, 255, 0], ovalDrawable.lifespan));
+    ovalDrawable.rotate(Math.random() * 2*Math.PI);
+    ovalDrawable.setPositionM(recipient.getPositionM());
+    
+    let recipient_avgsz = rectangle_averageSize(recipient);
+    ovalDrawable.multiplySize(recipient_avgsz/192);
+    ovalDrawable.initImaginarySize(recipient_avgsz);
+    let sizeTransition = new VectorTransition([recipient_avgsz], [recipient_avgsz*4], 16);
+    
+    ovalDrawable.controllers.add(function() {
+        this.setImaginarySize(sizeTransition.getNext()[0]);
+    });
+    
+    addDrawable(ovalDrawable);
 };
 
 typeImpacts[FX_GOLD_] = function onimpact(actor, recipient) {
@@ -320,7 +339,7 @@ typeImpacts[FX_FIRE] = function onimpact(actor, recipient) {
     
     addEntity(particle);
     
-    let avgsz = rectangle_averagesize(recipient);
+    let avgsz = rectangle_averageSize(recipient);
     
     let radialGradient = RectangleDrawable.fromMiddle(recipient.getPositionM(), [avgsz, avgsz]);
     radialGradient.setStyle(makeRadialGradientCanvas("#FFFF00FF", "#FF000000"));
@@ -366,7 +385,7 @@ typeImpacts[FX_ELECTRIC] = function onimpact(actor, recipient) {
     burstDrawable.setLifespan(8);
     burstDrawable.setStyle(new ColorTransition([0, 255, 255, 1], [255, 0, 255, 0], burstDrawable.lifespan, function(t) {return Math.pow(t, 5);}));
     
-    let avgsz = rectangle_averagesize(recipient);
+    let avgsz = rectangle_averageSize(recipient);
     
     burstDrawable.multiplySize(avgsz/24);
     let imgsizeTransition = new ColorTransition([avgsz], [2*avgsz], 16, function(t) {return Math.pow(t, 1);});
@@ -395,7 +414,7 @@ typeImpacts["paint"] = function(actor, recipient) {
     let count = 12;
     let actorPositionM = actor.getPositionM();
     let recipientPositionM = recipient.getPositionM();
-    let avgsz = 16; rectangle_averagesize(actor);
+    let avgsz = 16; rectangle_averageSize(actor);
     let middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
     
     for(let i = 0; i < count; ++i) {

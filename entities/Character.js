@@ -72,7 +72,7 @@ class Character extends Entity {
         // this.uiEnergy = new TextDrawable();
         this.energyBar = new EnergyBarDrawable([0, 0], [36, 12]);
         
-        this.energyBar.setProperWidth(rectangle_averagesize(this));
+        this.energyBar.setProperWidth(rectangle_averageSize(this));
         
         this.addInteraction(new ReplaceRecipient());
         this.addInteraction(new BrakeRecipient());
@@ -114,6 +114,18 @@ class Character extends Entity {
         // this.stats["walljump-force"] = 1.5;
         this.stats["walljump-force"] = 1.9375;
         this.stats["midairJump-count"] = 0;
+        
+        this.equipments = {
+            "consumable" : null,
+            "head" : null,
+            "body" : null,
+            "sword" : null,
+            "shield" : null,
+            "spear" : null,
+            "hammer" : null,
+            "bow" : null,
+            "arrows" : null,
+        };
     }
     
     static fromData(data) {
@@ -187,7 +199,7 @@ class Character extends Entity {
         let directions = getDD(this.locate(obstacle));
         let vector = new Vector(0, 0);
         
-        let averagesize = rectangle_averagesize(this);
+        let averagesize = rectangle_averageSize(this);
         
         for(let i = 0; i < directions.length; ++i) {
             vector[directions[i].dimension] += directions[i].sign * averagesize/2;

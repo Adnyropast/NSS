@@ -12,7 +12,8 @@ function makeNewGame() {
     return {
         "playerPositionM" : [0, 0],
         "lastMap" : "hub",
-        "maps" : JSON.parse(JSON.stringify(maps))
+        "maps" : JSON.parse(JSON.stringify(maps)),
+        "inventoryPath" : ""
     };
 }
 
@@ -50,4 +51,8 @@ function entitiesToData(entities) {
     }
     
     return dataSet;
+}
+
+function getCurrentSave() {
+    return saves[currentSave];
 }

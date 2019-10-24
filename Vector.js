@@ -198,13 +198,17 @@ class Vector extends Array {
      */
     
     constructor() {
-        super();
-            
+        super(...arguments);
+        
+        /**
+        
         if(arguments.length == 1 && typeof arguments[0] == "number") {
             this.length = arguments[0];
         } else for(var i = 0; i < arguments.length; ++i) {
             this[i] = arguments[i];
         }
+        
+        /**/
     }
     
     /* 01/03/2019 */
@@ -430,6 +434,8 @@ class Vector extends Array {
         }
         
         return opposite;
+    } neg() {
+        return this.times(-1);
     }
     
     getNorm() {
@@ -440,6 +446,8 @@ class Vector extends Array {
         }
         
         return norm = Math.sqrt(norm);
+    } norm() {
+        return this.getNorm();
     }
     
     regulate(newNorm) {
@@ -478,6 +486,8 @@ class Vector extends Array {
         }
         
         return vector;
+    } reg(n) {
+        return this.regulate(...arguments);
     }
     
     scalar(vector) {
@@ -488,6 +498,8 @@ class Vector extends Array {
         }
         
         return product;
+    } prod() {
+        return this.scalar(...arguments);
     }
     
     dist(array) {
@@ -563,6 +575,8 @@ class Vector extends Array {
     }
     
     toString() {
+        return "[" + this.join(", ") + "]";
+        
         var res = "[";
         
         for(var i = 0; i < this.size(); i++) {

@@ -418,12 +418,36 @@ class ItemPicker extends Interactor {
         super();
         this.setId("itemPick");
         
-        this.items = [];
+        // this.items = [];
     }
     
     interact(interrecipient) {
-        this.items.push(interrecipient.item);
-        interrecipient.item = null;
+        let recipient = interrecipient.getRecipient();
+        
+        // this.items.push(interrecipient.item);
+        // interrecipient.item = null;
+        
+        let id = 0;
+        
+        for(let i = 0; i < inventories.items.length; ++i) {
+            let iid = Number(inventories.items[i].id);
+            
+            if(iid >= id) {
+                id = iid + 1;
+            }
+        }
+        
+        let items = interrecipient.getItems();
+        
+        for(let i = 0; i < items.length; ++i) {
+            items[i].setDate();
+            
+            let itemData = items[i].getData();
+            
+            itemData.id = String(id++);
+            
+            inventories.items.push(itemData);
+        }
         
         return this;
     }
@@ -441,6 +465,23 @@ class ItemPickable extends Interrecipient {
         removeEntity(this.getRecipient());
         
         return this;
+    }
+    
+    getItems() {
+        let recipient = this.getRecipient();
+        let items = [];
+        
+        if(IC[recipient.itemClassId]) {
+            items.push(new IC[recipient.itemClassId]());
+        }
+        
+        if(Array.isArray(recipient.items)) {
+            for(let i = 0; i < recipient.items.length; ++i) {
+                items.push(recipient.items[i]);
+            }
+        }
+        
+        return items;
     }
 }
 
@@ -624,9 +665,10 @@ class GravityActor extends Interactor {
         let gravityState = recipient.findState("gravity")
         
         if(typeof gravityState == "undefined") {
-            recipient.addStateObject({name:"gravity", direction:Vector.filled(recipient.getDimension(), 0).add(this.force), countdown:1});
+            recipient.addStateObject({name:"gravity", direction:Vector.filled(recipient.getDimension(), 0).add(this.force), countdown:2});
         } else {
             gravityState.direction.add(this.force);
+            gravityState.countdown = 2;
         }
         
         return this;
@@ -708,7 +750,7 @@ class ContactVanishRecipient extends Interrecipient {
             
             /**/
             
-            let averagesize = rectangle_averagesize(recipient);
+            let averagesize = rectangle_averageSize(recipient);
             let particle = SpikeSmokeParticle.fromMiddle(recipient.getPositionM(), [averagesize, averagesize]);
             particle.setSpeed(recipient.speed.normalized(-0.5));
             
@@ -826,19 +868,25 @@ class LadderActor extends Interactor {
     }
     
     interact(interrecipient) {
+        let actor = this.getActor();
         let recipient = interrecipient.getRecipient();
         
         let maintainState = recipient.findState("ladder-maintain");
         
-        if(typeof maintainState != "undefined") {
-            recipient.addState("ladder");
-            maintainState.countdown = 2;
-            recipient.findState("thrust").value = 0.25;
-            recipient.brake(1.25);
-        } else if(recipient.hasState("lookup")) {
-            recipient.addState("ladder");
-            recipient.addStateObject({"name" : "ladder-maintain", "countdown" : 2});
-            recipient.brake(Infinity);
+        let gravity = recipient.findState("gravity");
+        
+        if(gravity != undefined) {
+            if(typeof maintainState != "undefined") {
+                recipient.addState("ladder");
+                maintainState.countdown = 2;
+                // recipient.findState("thrust").value = 0.25;
+                recipient.replaceStateObject({name : "thrust", value : 0.25, countdown : 1});
+                recipient.brake(1.25);
+            } else if(recipient.hasState("lookup") && recipient.getY1() >= actor.getY1()) {
+                recipient.addState("ladder");
+                recipient.addStateObject({"name" : "ladder-maintain", "countdown" : 2});
+                recipient.brake(Infinity);
+            }
         }
         
         return this;

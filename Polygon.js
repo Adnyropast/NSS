@@ -234,8 +234,8 @@ class Polygon extends Array {
         
         context.closePath();
         
-        context.stroke();
         context.fill();
+        context.stroke();
         
         return this;
     }
@@ -606,6 +606,48 @@ class Polygon extends Array {
         
         return this.collidesWithPoint(center) && polygon.collidesWithPoint(center);
     }
+    
+    /* 16/10/2019 */
+    
+    getXM() {
+        let xM = 0;
+        
+        for(let i = 0; i < this.size(); ++i) {
+            xM += this.getPoint(i)[0];
+        }
+        
+        xM /= this.size();
+        
+        return xM;
+    }
+    
+    /* 16/10/2019 */
+    
+    getYM() {
+        let yM = 0;
+        
+        for(let i = 0; i < this.size(); ++i) {
+            yM += this.getPoint(i)[1];
+        }
+        
+        yM /= this.size();
+        
+        return yM;
+    }
+    
+    /* 16/10/2019 */
+    
+    getZM() {
+        let zM = 0;
+        
+        for(let i = 0; i < this.size(); ++i) {
+            zM += this.getPoint(i)[2];
+        }
+        
+        zM /= this.size();
+        
+        return zM;
+    }
 }
 
 /**/
@@ -812,6 +854,16 @@ class MultiPolygon extends Array {
         
         Object.defineProperty(this, "imaginaryAngle", {"writable" : true, "enumerable" : false, "value" : 0});
         Object.defineProperty(this, "imaginarySize", {"writable" : true, "enumerable" : false, "value" : 1});
+    }
+    
+    static from(multiPolygon) {
+        let res = new MultiPolygon();
+        
+        for(let i = 0; i < multiPolygon.length; ++i) {
+            res.push(multiPolygon[i]);
+        }
+        
+        return res;
     }
     
     polygonCount() {return this.length;}

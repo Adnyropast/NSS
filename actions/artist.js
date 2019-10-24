@@ -5,7 +5,7 @@ class PaintDroplet extends Entity {
     constructor() {
         super(...arguments);
         
-        let avgsz = rectangle_averagesize(this);
+        let avgsz = rectangle_averageSize(this);
         
         this.setDrawable(PolygonDrawable.from(roundparticle));
         this.drawable.setStyle(MultiColorTransition.from(CT_RAINBOW).setDuration(24));
@@ -31,7 +31,7 @@ class PaintDroplet extends Entity {
         this.drawable.setImaginaryAngle(0);
         if(this.lifeCounter < 14) {this.drawable.shrinkM([-1, 0]);}
         this.drawable.setImaginaryAngle(this.speed.getAngle());
-        this.drawable.setImaginarySize(rectangle_averagesize(this));
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
         this.drawable.setPositionM(this.getPositionM());
         
         return this;
@@ -77,7 +77,7 @@ class BrushSlash extends SlashAction {
         if(this.phase >= 4 && this.phase <= 8) {
             let count = 6 - Math.abs(5 - this.phase);
             let positionM = this.hitbox.getPositionM();
-            let avgsz = rectangle_averagesize(this.hitbox);
+            let avgsz = rectangle_averageSize(this.hitbox);
             
             for(let i = 0; i < count; ++i) {
                 let angle = ((i+Math.random())/count) * 2*Math.PI;
@@ -106,7 +106,7 @@ class PaintBombEntity extends Hitbox {
     constructor() {
         super(...arguments);
         
-        let avgsz = rectangle_averagesize(this);
+        let avgsz = rectangle_averageSize(this);
         
         this.setDrawable(PolygonDrawable.from(makeRegularPolygon(16, avgsz/2)));
         this.drawable.setStyle(MultiColorTransition.from(CT_RAINBOW).setDuration(32));
@@ -152,7 +152,7 @@ class PaintBomb extends BusyAction {
         if(this.phase == 3) {
             let direction = this.user.getCursorDirection();
             
-            let bomb = PaintBombEntity.fromMiddle(Vector.addition(this.user.getPositionM(), direction.normalized(rectangle_averagesize(this.user)/2)), [8, 8]);
+            let bomb = PaintBombEntity.fromMiddle(Vector.addition(this.user.getPositionM(), direction.normalized(rectangle_averageSize(this.user)/2)), [8, 8]);
             bomb.setSpeed(direction.normalized(4));
             bomb.shareBlacklist(this.user.getBlacklist());
             
@@ -180,7 +180,7 @@ class PaintCloud extends Hitbox {
         this.drawable.setStyle(ct);
         this.setLifespan(256);
         
-        this.drawable.initImaginarySize(rectangle_averagesize(this));
+        this.drawable.initImaginarySize(rectangle_averageSize(this));
         
         let sizeTransition = new MultiColorTransition([[1, 1], size, size, size, size, [0, 0]], this.lifespan);
         
@@ -195,7 +195,7 @@ class PaintCloud extends Hitbox {
     
     updateDrawable() {
         this.drawable.setPositionM(this.getPositionM());
-        this.drawable.setImaginarySize(rectangle_averagesize(this));
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
         
         return this;
     }
@@ -213,7 +213,7 @@ class PaintSpray extends BusyAction {
         if(this.phase % 8 == 0) {
             let direction = this.user.getCursorDirection();
             
-            let cloud = PaintCloud.fromMiddle(Vector.addition(this.user.getPositionM(), direction.normalized(rectangle_averagesize(this.user)/2)), [16, 16]);
+            let cloud = PaintCloud.fromMiddle(Vector.addition(this.user.getPositionM(), direction.normalized(rectangle_averageSize(this.user)/2)), [16, 16]);
             cloud.setSpeed(direction.normalized(1));
             cloud.shareBlacklist(this.user.getBlacklist());
             

@@ -282,7 +282,7 @@ class FinalCutter1 extends SlashAction {
         }
         
         for(let i = 0; i < this.trailDrawable.otherTrails.length; ++i) {
-            let lifespan = irandom(6, 8);
+            let lifespan = 10;
             
             let ct = new ColorTransition([255, 255, 255, irandom(75, 100)/100], [0, 255, 255, 0], lifespan, bezierLinear);
             
@@ -591,7 +591,7 @@ class FinalCutter5 extends FinalCutter4 {
         if(this.phase == 4) {
             let direction = new Vector(this.face0, 0);
             
-            let hitbox = CutterWave.fromMiddle(direction.normalize(rectangle_averagesize(this.user)/4).plus(this.user.getPositionM()), [16, 16]);
+            let hitbox = CutterWave.fromMiddle(direction.normalize(rectangle_averageSize(this.user)/4).plus(this.user.getPositionM()), [16, 16]);
             hitbox.shareBlacklist(this.user.getBlacklist());
             
             hitbox.setSpeed(direction.normalize(6));
@@ -642,3 +642,15 @@ class AutoCutter extends CutterAbility {
 AC["autoCutter"] = AutoCutter;
 
 AC["cutterDash"] = CutterDash;
+
+function makeOvalPath(pointsCount, radius1, radius2) {
+    let points = [];
+    
+    for(let i = 0; i < pointsCount; ++i) {
+        let angle = i/(pointsCount-1) * 2*Math.PI;
+        
+        points.push([radius1 * Math.cos(angle), radius2 * Math.sin(angle)]);
+    }
+    
+    return points;
+}

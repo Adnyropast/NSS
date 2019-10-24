@@ -630,7 +630,7 @@ class VisibleList {
     empty() {this.items.splice(0, Infinity); return this;}
 }
 
-function rectangle_averagesize() {
+function rectangle_averageSize() {
     let sum = 0;
     let count = 0;
     
@@ -658,3 +658,9 @@ function powt(pow) {
 }
 
 const FRIGHT = +1, FLEFT = -1;
+
+function sfsTiming(pow) {
+    return function timing(t) {
+        return (Math.pow((t - 0.5) / 0.5, pow) + 1) / 2;
+    }
+}

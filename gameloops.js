@@ -3,15 +3,31 @@ class GameLoop {
     constructor() {
         this.drawables = new SetArray();
         this.camera = null;
+        
+        this.counter = 0; -1;
+        this.counterLimit = Infinity;
+        this.controllers = new SetArray();
+        this.controllers.add(function() {
+            ++this.counter;
+            if(this.counter > this.counterLimit) {this.counter = this.counterLimit;}
+        });
     }
     
     update() {
+        for(let i = 0; i < this.controllers.length; ++i) {
+            this.controllers[i].bind(this)();
+        }
         
+        return this;
     }
+    
+    setCamera(camera) {this.camera = camera; return this;}
+    getCamera() {return this.camera;}
 }
 
 const GAMELOOP = new GameLoop();
 const WORLDLOOP = new GameLoop();
+WORLDLOOP.setCamera = function setCamera(camera) {CAMERA = camera; this.camera = camera; return this;}
 const BATTLELOOP = new GameLoop();
 const ESCAPELOOP = new GameLoop();
 
@@ -190,7 +206,7 @@ function setPlayer(entity) {
     gameControllers.add(mainPlayerController);
     entity.addInteraction(new MapWarpable);
     entity.battler.setPlayable(true);
-    entity.addAction(new FollowMe());
+    CAMERA.target = entity;
     
     entity.events["defeat"].push(function() {
         setGameTimeout(function() {
@@ -202,11 +218,13 @@ function setPlayer(entity) {
         }, 64);
     });
     
+    entity.addInteraction(new ItemPicker());
+    
     addEntity(entity);
 }
 
 function setCamera(camera) {
-    CAMERA = camera;
+    WORLDLOOP.setCamera(camera);
     addEntity(camera);
 }
 
@@ -343,7 +361,7 @@ function worldUpdate() {
     });
     
     let drawables = DRAWABLES.filter(function(drawable) {
-        if(drawable.cameraMode == "none") {return true;}
+        if(drawable.cameraMode === "none" || drawable.cameraMode === "reproportion") {return true;}
         
         if(typeof drawable.getPositionM == "undefined") {return true;}
         
@@ -486,6 +504,8 @@ function worldUpdate() {
     
     /**/
 }
+
+WORLDLOOP.controllers.add(worldUpdate);
 
 const BATTLERS = new SetArray();
 const SKILLS_QUEUE = new SetArray();
@@ -814,41 +834,32 @@ function escapeMenuStart() {
     }
 }
 
+let escPhase = "characters";
+
+let itemIndex = 0;
+
 function escapeMenu() {
     if(escapeCounter === 0) {
         escapeMenuStart();
     }
     
+    /**
+    
     if(keyList.value(K_DIRECTION) == 1) {
         DMENU_ESC.move(getKDirection());
     }
     
-    if(keyList.value(K_LEFT) == 1) {
-        ESC_LIST.decIndex();
-    } if(keyList.value(K_RIGHT) == 1) {
-        ESC_LIST.incIndex();
+    /**/
+    
+    if(escPhase === "characters") {
+        charactersMenuUpdate();
+    } else if(escPhase === "saves") {
+        
+    } else if(escPhase === "items") {
+        inventoryMenuUpdate();
     }
     
     if(keyList.value(K_ESC) == 1) {
-        switchPhase(backupPhase);
-    }
-    
-    if(keyList.value(K_CONFIRM) == 1) {
-        updateSavedCharacter();
-        
-        let positionM = PLAYER.getPositionM();
-        removeEntity(PLAYER);
-        
-        // setPlayerClassId(PIDC[DMENU_ESC.buttons.indexOf(DMENU_ESC.focus)]);
-        // setPlayer(getPlayerClass().fromMiddle(positionM));
-        
-        currentCharacter = DMENU_ESC.focus.characterName;
-        currentCharacter = ESC_LIST.getItem().characterName;
-        
-        let player = getSavedCharacter();
-        player.initPositionM(positionM);
-        setPlayer(player);
-        
         switchPhase(backupPhase);
     }
     
@@ -890,6 +901,83 @@ function escapeMenu() {
         context.fillRect(x, y, width, height);
         context.drawImage(visibles[i].icon, x, y, width, height);
     }
+    
+    let inventory = getInventoryFromPath(getCurrentSave().inventoryPath);
+    
+    const marginLR = 16, marginTB = 16;
+    const spaceBetween = 8;
+    const gridWidth = (640 - 2*marginLR);
+    const gridHeight = (120 - 2*marginTB);
+    
+    for(let i = 0; i < inventory.items.length; ++i) {
+        let width = (gridWidth - spaceBetween * (inventory.displayWidth-1)) / inventory.displayWidth, height = width;
+        let x = i % inventory.displayWidth;
+        x *= width + spaceBetween;
+        x += marginLR;
+        let y = Math.floor(i / inventory.displayWidth);
+        y *= height + spaceBetween;
+        y += 192 + marginTB;
+        
+        let hProp = CANVAS.width / 640;
+        let vProp = CANVAS.height / 360;
+        
+        x *= hProp;
+        y *= vProp;
+        width *= hProp;
+        height *= vProp;
+        
+        if(i === itemIndex) {
+            context.fillStyle = "yellow";
+        } else {
+            context.fillStyle = "white";
+        }
+        context.fillRect(x, y, width, height);
+        
+        let img = IMGITEM[inventory.items[i].classId];
+        
+        if(typeof img != "undefined") {
+            context.drawImage(img, x, y, width, height);
+        }
+    }
+}
+
+function charactersMenuUpdate() {
+    if(keyList.value(K_LEFT) == 1) {
+        ESC_LIST.decIndex();
+    } if(keyList.value(K_RIGHT) == 1) {
+        ESC_LIST.incIndex();
+    }
+    
+    if(keyList.value(K_CONFIRM) == 1) {
+        updateSavedCharacter();
+        
+        let positionM = PLAYER.getPositionM();
+        removeEntity(PLAYER);
+        
+        // setPlayerClassId(PIDC[DMENU_ESC.buttons.indexOf(DMENU_ESC.focus)]);
+        // setPlayer(getPlayerClass().fromMiddle(positionM));
+        
+        currentCharacter = DMENU_ESC.focus.characterName;
+        currentCharacter = ESC_LIST.getItem().characterName;
+        
+        let player = getSavedCharacter();
+        player.initPositionM(positionM);
+        setPlayer(player);
+        
+        switchPhase(backupPhase);
+    }
+}
+
+function inventoryMenuUpdate() {
+    let inventory = getInventoryFromPath(getCurrentSave().inventoryPath);
+    
+    if(keyList.value(K_LEFT) === 1) {
+        if(itemIndex > 0) {--itemIndex;}
+    } if(keyList.value(K_RIGHT) === 1) {
+        if(itemIndex < inventory.items.length - 1) {++itemIndex;}
+    } if(keyList.value(K_CONFIRM) === 1) {
+        console.log(inventory.items[itemIndex]);
+    }
 }
 
 const GLOBALDRAWABLES = new SetArray();
@@ -923,7 +1011,8 @@ let gameControllers = new SetArray();
 
 function gameUpdate() {
     if(gamePhase == "world") {
-        worldUpdate();
+        WORLDLOOP.update();
+        // worldUpdate();
         
         if(keyList.value(K_ESC) == 1) {
             backupPhase = gamePhase;
@@ -1024,64 +1113,6 @@ function gamePause() {
     clearInterval(gameInterval);
 } function gameResume() {
     switchLoop(gameLoop, gamePace);
-}
-
-function optimizeEntities(entities) {
-    let optimized = entities; SetArray.from(entities);
-    let changed = true;
-    
-    while(changed) {
-        changed = false;
-        let i = 0;
-        
-        while(!changed && i < optimized.length) {
-            let entity0 = optimized[i];
-            
-            let j = i + 1;
-            
-            while(!changed && j < optimized.length) {
-                let entity1 = optimized[j];
-                
-                if(entity0.constructor === entity1.constructor && entity0.getDimension() === entity1.getDimension()) {
-                    if(
-                    entity0.getX1() === entity1.getX1() && entity0.getX2() === entity1.getX2() && entity0.getY1() <= entity1.getY2() && entity1.getY1() <= entity0.getY2()
-                    || entity0.getY1() === entity1.getY1() && entity0.getY2() === entity1.getY2() && entity0.getX1() <= entity1.getX2() && entity1.getX1() <= entity0.getX2()
-                    ) {
-                        let dimension = entity0.getDimension();
-                        
-                        let position = new Vector(dimension);
-                        let size = new Vector(dimension);
-                        
-                        for(let dim = 0; dim < dimension; ++dim) {
-                            position[dim] = Math.min(entity0.getPosition1(dim), entity1.getPosition1(dim));
-                            size[dim] = Math.max(entity0.getPosition2(dim), entity1.getPosition2(dim)) - position[dim];
-                        }
-                        
-                        let newEntity = new (entity0.constructor)(position, size);
-                        
-                        /**
-                        optimized.push(newEntity);
-                        optimized.splice(i, 2);
-                        // optimized.add(newEntity);
-                        // optimized.remove(entity0);
-                        // optimized.remove(entity1);
-                        /**/
-                        addEntity(newEntity);
-                        removeEntity(entity0);
-                        removeEntity(entity1);
-                        /**/
-                        changed = true;
-                    }
-                }
-                
-                ++j;
-            }
-            
-            ++i;
-        }
-    }
-    
-    return optimized;
 }
 
 function gameResumeFor(duration = 1) {

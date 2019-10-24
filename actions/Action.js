@@ -81,6 +81,10 @@ class Action {
     }
     
     getUseCost() {
+        if(this.user != null) {
+            return this.useCost * this.user.stats["action-costFactor"];
+        }
+        
         return this.useCost;
     }
     

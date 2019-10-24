@@ -56,7 +56,7 @@ class Jump extends Action {
             /**
             
             let positionM = this.user.getPositionM();
-            let averagesize = rectangle_averagesize(this.user);
+            let averagesize = rectangle_averageSize(this.user);
             
             for(let i = 0; i < 3; ++i) {
                 let angle = (i - 1) * Math.PI / 8;
@@ -95,7 +95,7 @@ class Jump extends Action {
             }
             /**/
             
-            let averagesize = rectangle_averagesize(this.user);
+            let averagesize = rectangle_averageSize(this.user);
             let positionM = Vector.addition(this.user.getPositionM(), this.direction.normalized(-averagesize/2));
             
             let direction1 = this.direction.rotated(-Math.PI/2).normalize();
@@ -327,7 +327,7 @@ class WallJump extends Action {
         if(this.phase === 0) {
             this.user.removeState("wall");
             
-            let averagesize = rectangle_averagesize(this.user);
+            let averagesize = rectangle_averageSize(this.user);
             let positionM = Vector.addition(this.user.getPositionM(), this.direction.normalized(-averagesize/2));
             
             let direction1 = this.direction.rotated(-3*Math.PI/4).normalize();

@@ -47,7 +47,7 @@ class SwordSlashAction extends SlashAction {
         drawables[3].setStyle("#F7F7F7");
         
         this.swordDrawable.multiplySize(1/1.5);
-        this.swordDrawable.initImaginarySize(rectangle_averagesize(this.hitbox));
+        this.swordDrawable.initImaginarySize(rectangle_averageSize(this.hitbox));
         
         this.swordDrawable.zIndex = -10;
         
@@ -64,18 +64,18 @@ class SwordSlashAction extends SlashAction {
     
     updateTrailDrawableStyle(detProgress) {
         // this.trailDrawable.trailStyle = new ColorTransition([127*detProgress, 255, 255, 1], [0, 255*detProgress, 255, 0], 8);
-        
-        let ct = new ColorTransition([0, 255, 255, 1], [0, 0, 255, 0.25], 7, bezierLinear);
-        // ct = new ColorTransition([0, 0, 127, 1], [0, 0, 255, 0], 7, bezierLinear);
-        this.trailDrawable.trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), 7, function timing(t) {return Math.pow(t, 1);});
+        // this.trailDrawable.trailStyle = (new ColorTransition([0, 255, 255, 1], [0, 0, 255, 0.25], 7, bezierLinear)).setStep(1-detProgress);
+        // this.trailDrawable.trailStyle = (new ColorTransition([0, 0, 127, 1], [0, 0, 255, 0], 7, bezierLinear)).setStep(1-detProgress);
+        // this.trailDrawable.trailStyle = (new ColorTransition([255, 63, 63, 1], [255, 0, 0, 0], 7, bezierLinear)).setStep(1-detProgress);
+        this.trailDrawable.trailStyle = (new MultiColorTransition([[127, 255, 255, 1], [0, 255, 255, 1], [0, 223, 255, 0.875], [0, 191, 255, 0.75], [0, 63, 255, 0.5], [0, 0, 255, 0]], 7, bezierLinear)).setStep(1-detProgress);
         
         for(let i = 0; i < this.trailDrawable.otherTrails.length; ++i) {
-            let lifespan = irandom(6, 8);
+            let lifespan = 11;
             
-            ct = new ColorTransition([255, 255, 255, irandom(75, 100)/100], [255, 255, 0, 0], lifespan, bezierLinear);
-            // ct = new ColorTransition([191, 191, 255, irandom(75, 100)/100], [31, 0, 255, 0], lifespan, bezierLinear);
-            
-            this.trailDrawable.otherTrails[i].trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), lifespan, bezierLinear);
+            this.trailDrawable.otherTrails[i].trailStyle = (new ColorTransition([255, 255, 255, irandom(75, 100)/100], [255, 255, 0, 0], lifespan, bezierLinear)).setStep(1-detProgress);
+            // this.trailDrawable.otherTrails[i].trailStyle = (new ColorTransition([191, 191, 255, irandom(75, 100)/100], [31, 0, 255, 0], lifespan, bezierLinear)).setStep(1-detProgress);
+            // this.trailDrawable.otherTrails[i].trailStyle = (new ColorTransition([255, 95, 95, irandom(75, 100)/100], [255, 0, 0, 0], lifespan, bezierLinear)).setStep(1-detProgress);
+            // this.trailDrawable.otherTrails[i].trailStyle = (new MultiColorTransition([[255, 255, 255, 1], [127, 255, 255, 1], [0, 255, 255, 0.75], [0, 127, 255, 0.5], [0, 0, 255, 0]], lifespan, bezierLinear)).setStep(1-detProgress);
         }
         
         return this;
@@ -103,7 +103,7 @@ class SwordSlashAction extends SlashAction {
         let angle = this.bladeAngleTransition.at(progression)[0];
         
         this.swordDrawable.setImaginaryAngle(angle);
-        this.swordDrawable.setImaginarySize(rectangle_averagesize(this.hitbox));
+        this.swordDrawable.setImaginarySize(rectangle_averageSize(this.hitbox));
         
         return this;
     }
