@@ -1,6 +1,4 @@
 
-const PIDC = ["adnyropast", "haple", "ten"];
-
 class PlayableCharacter extends Character {
     constructor(position, size = [16, 16]) {
         super(position, size);
@@ -44,7 +42,7 @@ class PlayableCharacter extends Character {
         particle.setSizeTransition(new ColorTransition(this.size, [0, 0], 32));
         addEntity(particle);
         
-        return this;
+        return super.ondefeat();
     }
     
     onremove() {
@@ -233,10 +231,10 @@ class PlayableCharacter extends Character {
             this.setAnimStyle("run-left");
         }
         
-        if((this.drawable.style.iindex % 2) == 1 && this.drawable.style.icount == 0) {
+        if((this.drawable.style.iindex % 2) == 0 && this.drawable.style.icount == 0) {
             let offsetX = -Math.sign(this.speed[0]) * this.getWidth()/2;
             
-            let averagesize = rectangle_averageSize(this);
+            let avgsz = rectangle_averageSize(this);
             
             /**
             
@@ -250,29 +248,30 @@ class PlayableCharacter extends Character {
             
             /**/
             
-            let avgsz2 = averagesize/2;
+            let avgsz2 = avgsz/2;
+            let smokeSize = [avgsz2, avgsz2];
             
-            var particle = SmokeParticle.fromMiddle(this.getPositionM(), [avgsz2, avgsz2]);
+            var particle = SmokeParticle.fromMiddle(this.getPositionM(), smokeSize);
             particle.setSpeed(this.speed.normalized(1.5).rotated(Math.PI));
             addEntity(particle);
-            var particle = SmokeParticle.fromMiddle(this.getPositionM(), [avgsz2, avgsz2]);
+            var particle = SmokeParticle.fromMiddle(this.getPositionM(), smokeSize);
             particle.setSpeed(this.speed.normalized(1.25).rotated(Math.PI - 0.5));
             addEntity(particle);
-            var particle = SmokeParticle.fromMiddle(this.getPositionM(), [avgsz2, avgsz2]);
+            var particle = SmokeParticle.fromMiddle(this.getPositionM(), smokeSize);
             particle.setSpeed(this.speed.normalized(1.25).rotated(Math.PI + 0.5));
             addEntity(particle);
-            var particle = SmokeParticle.fromMiddle(this.getPositionM(), [avgsz2, avgsz2]);
-            particle.setSpeed(this.speed.normalized(1.375).rotated(Math.PI - 0.75));
+            var particle = SmokeParticle.fromMiddle(this.getPositionM(), smokeSize);
+            particle.setSpeed(this.speed.normalized(1.375).rotated(Math.PI - 0.625));
             addEntity(particle);
-            var particle = SmokeParticle.fromMiddle(this.getPositionM(), [avgsz2, avgsz2]);
-            particle.setSpeed(this.speed.normalized(1.375).rotated(Math.PI + 0.75));
+            var particle = SmokeParticle.fromMiddle(this.getPositionM(), smokeSize);
+            particle.setSpeed(this.speed.normalized(1.375).rotated(Math.PI + 0.625));
             addEntity(particle);
             
             /**/
             
-            var particle = SpikeSmokeParticle.fromMiddle([this.getXM() + offsetX, this.getY2()], [averagesize, averagesize]);
+            var particle = SpikeSmokeParticle.fromMiddle([this.getXM() + offsetX, this.getY2()], [avgsz, avgsz]);
             
-            particle.setSpeed(this.speed.rotated(Math.PI).normalize());
+            particle.setSpeed(this.speed.rotated(Math.PI).normalize(2));
             
             addEntity(particle);
             

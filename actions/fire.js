@@ -11,7 +11,7 @@ class FireEffect extends Hitbox {
         this.setLifespan(24);
         
         this.addInteraction(new DragRecipient(-0.25 * Math.random()));
-        this.addInteraction(new TypeDamager());
+        this.addInteraction((new TypeDamager()).setRehit(-1));
         
         this.setSelfBrake(1.0625);
         this.addInteraction(new ReplaceRecipient());

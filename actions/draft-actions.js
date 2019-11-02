@@ -407,7 +407,7 @@ class SlashAction extends BusyAction {
         return this;
     }
     
-    use() {
+    slashUpdate() {
         let userPositionM = this.user.getPositionM();
         
         if(this.phase == 0) {
@@ -469,5 +469,9 @@ class SlashAction extends BusyAction {
         }
         
         return this;
+    }
+    
+    use() {
+        return this.slashUpdate();
     }
 }

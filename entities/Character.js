@@ -199,10 +199,10 @@ class Character extends Entity {
         let directions = getDD(this.locate(obstacle));
         let vector = new Vector(0, 0);
         
-        let averagesize = rectangle_averageSize(this);
+        let avgsz = rectangle_averageSize(this);
         
         for(let i = 0; i < directions.length; ++i) {
-            vector[directions[i].dimension] += directions[i].sign * averagesize/2;
+            vector[directions[i].dimension] += directions[i].sign * avgsz/2;
         }
         
         let positionM = Vector.addition(this.getPositionM(), vector);
@@ -212,9 +212,34 @@ class Character extends Entity {
         particle.setSpeed(this.speed.normalized(-0.5));
         
         // particle.resetSpikeDrawable(irandom(6, 9), new ColorTransition([-Math.PI/2], [+Math.PI/2]), irandom(8, 10), irandom(16, 18), 6);
-        particle.resetSpikeDrawable(irandom(6, 9), new ColorTransition([-Math.PI/2], [+Math.PI/2]), function() {return irandom(8, 10);}, function() {return irandom(14, 18);}, 6);
+        particle.resetSpikeDrawable(irandom(7, 9), new ColorTransition([-Math.PI/2], [+Math.PI/2]), function() {return irandom(8, 10);}, function() {return irandom(14, 18);}, 6);
         
         addEntity(particle);
+        
+        let count = irandom(2, 3);
+        let direction = this.speed.rotated(Math.PI/2).normalize(avgsz/2);
+        
+        for(let i = 0; i < count; ++i) {
+            let d = direction.rotated(random(-0.5, +0.5));
+            
+            let smokeParticle = SmokeParticle.fromMiddle(Vector.addition(positionM, d));
+            
+            smokeParticle.setSpeed(d.normalized(random(0.75, 1.75)));
+            
+            addEntity(smokeParticle);
+        }
+        
+        direction = this.speed.rotated(-Math.PI/2).normalize(avgsz/2);
+        
+        for(let i = 0; i < count; ++i) {
+            let d = direction.rotated(random(-0.5, +0.5));
+            
+            let smokeParticle = SmokeParticle.fromMiddle(Vector.addition(positionM, d));
+            
+            smokeParticle.setSpeed(d.normalized(random(0.75, 1.75)));
+            
+            addEntity(smokeParticle);
+        }
         
         return this;
     }

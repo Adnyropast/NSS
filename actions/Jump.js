@@ -17,6 +17,9 @@ class Jump extends Action {
     use() {
         /**/
         if(this.phase == 0) {
+            let averagesize = rectangle_averageSize(this.user);
+            let positionM = this.user.getPositionM();
+            
             /**
             if(this.grounded) {
                 for(let i = -0.5; i < 1; i += 0.25) {
@@ -38,27 +41,11 @@ class Jump extends Action {
                 }
             }
             
-            /**
+            /**/
             
-            var positionM = this.user.getPositionM();
+            let count = irandom(2, 3);
             
-            // for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 3) {
-            for(let angle = -Math.PI/8; angle < 2*Math.PI - Math.PI/8; angle += Math.PI/4) {
-                var cos = Math.cos(angle), sin = Math.sin(angle);
-                var particle = SmokeParticle.fromMiddle(positionM);
-                particle.setSpeed([2*cos, 2*sin]);
-                addEntity(particle);
-            }
-            
-            var particle = SmokeParticle.fromMiddle(positionM, [16, 16]);
-            addEntity(particle);
-            
-            /**
-            
-            let positionM = this.user.getPositionM();
-            let averagesize = rectangle_averageSize(this.user);
-            
-            for(let i = 0; i < 3; ++i) {
+            for(let i = 0; i < count; ++i) {
                 let angle = (i - 1) * Math.PI / 8;
                 
                 let direction = this.direction.rotated(Math.PI + angle);
@@ -67,10 +54,10 @@ class Jump extends Action {
                 particle.setSpeed(direction.normalized(Math.random()+0.5));
                 // particle.removeInterrecipientWithId("replace");
                 
-                addEntity(particle);
+                // addEntity(particle);
             }
             
-            for(let i = 0; i < 3; ++i) {
+            for(let i = 0; i < count; ++i) {
                 let angle = (i - 1) * Math.PI / 8;
                 
                 let direction = this.direction.rotated(-Math.PI/2 + angle);
@@ -82,7 +69,7 @@ class Jump extends Action {
                 addEntity(particle);
             }
             
-            for(let i = 0; i < 3; ++i) {
+            for(let i = 0; i < count; ++i) {
                 let angle = (i - 1) * Math.PI / 8;
                 
                 let direction = this.direction.rotated(+Math.PI/2 + angle);
@@ -93,16 +80,16 @@ class Jump extends Action {
                 
                 addEntity(particle);
             }
+            
             /**/
             
-            let averagesize = rectangle_averageSize(this.user);
-            let positionM = Vector.addition(this.user.getPositionM(), this.direction.normalized(-averagesize/2));
+            let feetPositionM = Vector.addition(this.user.getPositionM(), this.direction.normalized(-averagesize/2));
             
             let direction1 = this.direction.rotated(-Math.PI/2).normalize();
             
-            let particle1 = SpikeSmokeParticle.fromMiddle(Vector.addition(positionM, direction1.normalized(0)), [averagesize, averagesize]);
+            let particle1 = SpikeSmokeParticle.fromMiddle(Vector.addition(feetPositionM, direction1.normalized(0)), [averagesize, averagesize]);
             
-            particle1.setSpeed(direction1);
+            particle1.setSpeed(direction1.normalized(2));
             // particle1.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), 8, 16, 6);
             particle1.resetSpikeDrawable(irandom(4, 6), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
             
@@ -110,9 +97,9 @@ class Jump extends Action {
             
             let direction2 = this.direction.rotated(+Math.PI/2).normalize();
             
-            let particle2 = SpikeSmokeParticle.fromMiddle(Vector.addition(positionM, direction2.normalized(0)), [averagesize, averagesize]);
+            let particle2 = SpikeSmokeParticle.fromMiddle(Vector.addition(feetPositionM, direction2.normalized(0)), [averagesize, averagesize]);
             
-            particle2.setSpeed(direction2);
+            particle2.setSpeed(direction2.normalized(2));
             // particle2.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), 8, 16, 6);
             particle2.resetSpikeDrawable(irandom(4, 6), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
             
@@ -173,6 +160,22 @@ class MidairJump extends Jump {
     use() {
         if(this.phase == 0) {
             this.user.setSpeed(1, -4);
+            
+            let avgsz = rectangle_averageSize(this.user);
+            
+            let waveAvgsz = avgsz/12;
+            
+            let ovalWave = OvalWaveParticle.fromMiddle(Vector.addition(this.user.getPositionM(), [0, avgsz/2]), [waveAvgsz, waveAvgsz]);
+            
+            ovalWave.setDrawable((new PolygonDrawable(makePathPolygon(makeOvalPath(16, 16, 16)))).rotate(Math.PI).multiplySize(waveAvgsz/16));
+            
+            ovalWave.drawable.setStyle(new ColorTransition([255, 255, 255, 1], [255, 255, 255, 0.5], 24, powt(4)));
+            ovalWave.setSpeed(this.user.speed.times(-0.0625));
+            
+            ovalWave.direction = [0, 12];
+            ovalWave.controllers.add(function() {this.direction[1] /= 2;});
+            
+            addEntity(ovalWave);
         }
         
         if(this.phase > 30) {
@@ -327,14 +330,14 @@ class WallJump extends Action {
         if(this.phase === 0) {
             this.user.removeState("wall");
             
-            let averagesize = rectangle_averageSize(this.user);
-            let positionM = Vector.addition(this.user.getPositionM(), this.direction.normalized(-averagesize/2));
+            let avgsz = rectangle_averageSize(this.user);
+            let positionM = Vector.addition(this.user.getPositionM(), this.direction.normalized(-avgsz/2));
             
             let direction1 = this.direction.rotated(-3*Math.PI/4).normalize();
             
-            let particle1 = SpikeSmokeParticle.fromMiddle(Vector.addition(positionM, direction1.normalized(0)), [averagesize, averagesize]);
+            let particle1 = SpikeSmokeParticle.fromMiddle(Vector.addition(positionM, direction1.normalized(0)), [avgsz, avgsz]);
             
-            particle1.setSpeed(direction1);
+            particle1.setSpeed(direction1.normalized(2));
             // particle1.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), 8, 16, 6);
             particle1.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
             
@@ -342,13 +345,35 @@ class WallJump extends Action {
             
             let direction2 = this.direction.rotated(+3*Math.PI/4).normalize();
             
-            let particle2 = SpikeSmokeParticle.fromMiddle(Vector.addition(positionM, direction2.normalized(0)), [averagesize, averagesize]);
+            let particle2 = SpikeSmokeParticle.fromMiddle(Vector.addition(positionM, direction2.normalized(0)), [avgsz, avgsz]);
             
-            particle2.setSpeed(direction2);
+            particle2.setSpeed(direction2.normalized(2));
             // particle2.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), 8, 16, 6);
             particle2.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
             
             addEntity(particle2);
+            
+            let smokeCount = irandom(2, 3);
+            
+            for(let i = 0; i < smokeCount; ++i) {
+                let d = direction1.rotated(random(-0.5, +0.5));
+                
+                let smokeParticle = SmokeParticle.fromMiddle(Vector.addition(positionM, d.normalize(avgsz/2)));
+                
+                smokeParticle.setSpeed(d.normalize(random(0.75, 1.75)));
+                
+                addEntity(smokeParticle);
+            }
+            
+            for(let i = 0; i < smokeCount; ++i) {
+                let d = direction2.rotated(random(-0.5, +0.5));
+                
+                let smokeParticle = SmokeParticle.fromMiddle(Vector.addition(positionM, d.normalize(avgsz/2)));
+                
+                smokeParticle.setSpeed(d.normalize(random(0.75, 1.75)));
+                
+                addEntity(smokeParticle);
+            }
         }
         
         this.user.addState("jumping");

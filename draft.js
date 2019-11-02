@@ -664,3 +664,7 @@ function sfsTiming(pow) {
         return (Math.pow((t - 0.5) / 0.5, pow) + 1) / 2;
     }
 }
+
+function random(min, max) {
+    return min + Math.random() * (max - min);
+}

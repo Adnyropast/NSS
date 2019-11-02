@@ -427,27 +427,10 @@ class ItemPicker extends Interactor {
         // this.items.push(interrecipient.item);
         // interrecipient.item = null;
         
-        let id = 0;
-        
-        for(let i = 0; i < inventories.items.length; ++i) {
-            let iid = Number(inventories.items[i].id);
-            
-            if(iid >= id) {
-                id = iid + 1;
-            }
-        }
-        
+        let inventory = save_getCurrentInventory();
         let items = interrecipient.getItems();
         
-        for(let i = 0; i < items.length; ++i) {
-            items[i].setDate();
-            
-            let itemData = items[i].getData();
-            
-            itemData.id = String(id++);
-            
-            inventories.items.push(itemData);
-        }
+        inventory.addItems(items);
         
         return this;
     }
@@ -504,8 +487,8 @@ class MapWarper extends Interactor {
         if(!maptransitioning) {
             // loadMap(this.mapname);
             maptransitioning = true;
-            playerPositionM.set(this.warpPositionM);
-            updateSavedCharacter();
+            getCurrentSave().playerPositionM = this.warpPositionM;
+            updateCurrentCharacter();
             removeEntity(interrecipient.getRecipient());
             addEntity(new TransitionCover(this.mapname));
         }

@@ -220,15 +220,7 @@ class Particle extends Decoration {
         this.setZIndex(-1);
         this.setLifespan(1);
         
-        this.addActset("transitionSize");
         this.setSizeTransition(new ColorTransition(this.size, this.size));
-    }
-    
-    setSizeTransition(sizeTransition) {
-        this.removeActionsWithId("transitionSize");
-        this.addAction(new TransitionSize(sizeTransition));
-        
-        return this;
     }
 }
 
@@ -250,9 +242,15 @@ class GoldSmokeParticle extends Particle {
         
         this.drawable.multiplySize(rectangle_averageSize(this)/16);
         
-        this.setStyle(new ColorTransition([0, 255, 255, 127], [0, 255, 255, 0], 60));
-        this.setStyle(new ColorTransition([0, irandom(191, 255), 255, 1], [0, 63, 255, 0], 32, function(t) {return Math.pow(t, 4);}));
-        this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
+        if(!Math.floor(Math.random() * 2)) {
+            this.drawable.setStyle(new ColorTransition([0, 255, 255, 127], [0, 255, 255, 0], 60));
+        } else {
+            this.drawable.setStyle(new ColorTransition([0, irandom(191, 255), 255, 1], [0, 63, 255, 0], 32, function(t) {return Math.pow(t, 4);}));
+        }
+        
+        this.drawable.setZIndex(-Math.random() * 4 + 3);
+        
+        this.setSizeTransition(new MultiColorTransition([Vector.multiplication(size, 1/1.125), size, [0, 0]], 32));
         this.drawable.initImaginarySize(rectangle_averageSize(this));
     }
     
@@ -268,7 +266,7 @@ class GoldSmokeParticle extends Particle {
     }
 }
 
-const smokeColorTransition = new ColorTransition([255, 255, 255, 255 / 255], [223, 223, 223, 191 / 255], 32);
+const smokeColorTransition = new ColorTransition([255, 255, 255, 255 / 255], [223, 223, 223, 191 / 255], 32, powt(2));
 
 class SmokeParticle extends Particle {
     constructor(position, size = [8, 8]) {
@@ -293,6 +291,8 @@ class SmokeParticle extends Particle {
         // this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
         this.setSizeTransition(new MultiColorTransition([Vector.multiplication(size, 1/2), size, Vector.multiplication(size, 1/2), [0, 0]], 32));
         this.setSelfBrake(1.03125);
+        
+        this.drawable.setZIndex(random(-1, +1));
     }
     
     updateDrawable() {
@@ -511,7 +511,7 @@ EC["mazeGenerator"] = class MazeGenerator extends Entity {
                 addEntity(makeEntityFromData(maze.entities[i]));
             }
             
-            PLAYER.initPositionM(playerPositionM);
+            PLAYER.initPositionM(getCurrentSave().playerPositionM);
             
             removeEntity(this);
         } else {
@@ -725,14 +725,17 @@ class DiamondParticle extends Entity {
     constructor() {
         super(...arguments);
         
-        this.setDrawable(PolygonDrawable.from(diamondparticle).setStyle(new ColorTransition(CV_WHITE, [255, 255, 0, 1], 12)));
+        this.setLifespan(24);
+        this.setDrawable(PolygonDrawable.from(diamondparticle).setStyle(new ColorTransition(CV_WHITE, [255, 255, 0, 1], this.lifespan, powt(1/2))));
         this.drawable.rotate(Math.PI/2).setPositionM(this.getPositionM());
-        this.setLifespan(12);
+        this.drawable.multiplySize(rectangle_averageSize(this))
+        this.setSelfBrake(1.0625);
     }
     
     updateDrawable() {
         this.drawable.setPositionM(this.getPositionM());
         this.drawable.multiplySize(1/1.125);
+        this.drawable.setImaginaryAngle(this.speed.getAngle());
         
         return this;
     }
@@ -742,14 +745,31 @@ class OvalParticle extends Entity {
     constructor() {
         super(...arguments);
         
-        this.setDrawable(PolygonDrawable.from(roundparticle).setStyle(new ColorTransition([0, 0, 255, 1], [0, 0, 63, 1], 12)));
+        this.setDrawable(PolygonDrawable.from(roundparticle));
         this.drawable.setPositionM(this.getPositionM());
+        this.drawable.initImaginarySize(rectangle_averageSize(this));
         this.setLifespan(12);
+        
+        this.controllers.add(function() {
+            if(this.sizeTransition) {
+                this.setSizeM(this.sizeTransition.getNext());
+            }
+        });
     }
     
     updateDrawable() {
         this.drawable.setPositionM(this.getPositionM());
-        this.drawable.multiplySize(1/1.125);
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
+        
+        return this;
+    }
+    
+    setSizeTransition() {
+        if(arguments[0] instanceof VectorTransition) {
+            this.sizeTransition = arguments[0];
+        } else {
+            this.sizeTransition = new VectorTransition(...arguments);
+        }
         
         return this;
     }
@@ -773,14 +793,14 @@ class MazeWall extends EC["ground"] {
 
 EC["mazeWall"] = MazeWall;
 
-const smokeColorTransition2 = new ColorTransition([255, 255, 255, 255 / 255], [223, 223, 223, 0 / 255], 28, function(t) {return Math.pow(t, 5)});
+const smokeColorTransition2 = new ColorTransition([255, 255, 255, 255 / 255], [223, 223, 223, 0 / 255], 16, function(t) {return Math.pow(t, 5)});
 
 class SpikeSmokeParticle extends Particle {
     constructor(position, size) {
         super(...arguments);
         
-        this.setLifespan(28);
-        this.setSizeTransition(new ColorTransition(Vector.multiplication(size, 1/2), Vector.multiplication(size, 1.25), 28));
+        this.setLifespan(16);
+        this.setSizeTransition(new ColorTransition(Vector.multiplication(size, 1/2), Vector.multiplication(size, 1.25), this.lifespan));
         this.setSelfBrake(1.03125);
         
         let spikesCount = irandom(4, 6);
@@ -865,7 +885,7 @@ EC["mazeGroundArea"] = class MazeGroundArea extends GroundArea {
         super(...arguments);
         
         
-        this.drawable.setZIndex(ALMOST_ZERO)//.setStyle(makeStyledCanvas(mazeStyle, groundArea.getWidth(), groundArea.getHeight()));
+        this.drawable.setZIndex(16)//.setStyle(makeStyledCanvas(mazeStyle, groundArea.getWidth(), groundArea.getHeight()));
         
         this.drawable.setStyle(makeRepeatedTileFrom(IMG_GRASSTILE, this.getWidth(), this.getHeight()));
     }
@@ -951,3 +971,58 @@ class Cloud extends Entity {
         }
     }
 }
+
+EC["moonlightDecoration"] = class MoonlightDecoration extends Entity {
+    constructor(position = [0, 0], size = [640, 360]) {
+        super(position, size);
+        
+        this.setZIndex(-1024);
+        this.getDrawable().setCameraMode("reproportion");
+        this.getDrawable().baseWidth = size[0];
+        this.getDrawable().baseHeight = size[1];
+        
+        let canvas = document.createElement("canvas");
+        canvas.width = 16, canvas.height = 16;
+        
+        let ctx = canvas.getContext("2d");
+        
+        let grd = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        
+        grd.addColorStop(0, rgba(0, 0, 0, 0.5));
+        grd.addColorStop(1, rgba(0, 0, 15, 0));
+        
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        this.drawable.setStyle(canvas);
+    }
+};
+
+EC["nightSkyDecoration"] = class NightSkyDecoration extends EC["skyDecoration"] {
+    // constructor(position = [0, 0], size = [640, 360]) {
+        // super(position, size);
+    constructor() {
+        super(...arguments);
+        
+        /**/
+        
+        let m = 4;
+        
+        this.drawable.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_SKYTILE, CANVAS.width/40*m), this.getWidth()*m, this.getHeight()*m));
+        
+        // this.drawable.style.getContext("2d").drawImage(makeGradientCanvas(new ColorTransition([0, 0, 255, 0.75], [0, 255, 255, 0.75]), 1, this.getHeight()), 0, 0, this.drawable.style.width, this.drawable.style.height);
+        
+        let canvas = this.drawable.style;
+        let ctx = canvas.getContext("2d");
+        
+        let grd = ctx.createLinearGradient(canvas.width, 0, canvas.width, canvas.height);
+        
+        grd.addColorStop(0, "rgba(0, 0, 0, 0.875)");
+        grd.addColorStop(1, "rgba(0, 0, 63, 0.875)");
+        
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        /**/
+    }
+};

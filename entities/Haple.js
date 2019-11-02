@@ -15,6 +15,22 @@ EC["haple"] = class Haple extends PlayableCharacter {
         
         this.setDrawable(RectangleDrawable.from(this));
         this.drawable.setSize([16, 16]);
+        
+        this.setStats({
+            "walk-speed" : 0.5,
+            "walk-speed-tired" : 0.25,
+            "air-speed" : 0.5,
+            "swim-speed" : 0.5,
+            
+            "climb-speed" : 0.25,
+            "jump-force" : 1.5,
+            "regeneration" : 0.0625,
+            
+            "walljump-angle" : 0.2617993877991494,
+            "walljump-force" : 1.9375,
+            
+            "midairJump-count" : 1
+        });
     }
     
     static fromData_() {
@@ -57,7 +73,7 @@ EC["haple"] = class Haple extends PlayableCharacter {
             addEntity(particle);
         }
         
-        return this;
+        return super.ondefeat();
     }
 };
 

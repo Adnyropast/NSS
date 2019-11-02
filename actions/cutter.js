@@ -316,10 +316,8 @@ class FinalCutter1 extends SlashAction {
             this.bladeWidthTransition = new ColorTransition([0], [16], 1, finalCutter1BladeTransition);
             
             this.hitbox.addInteraction(new DragActor([this.face[0] * 0.125, 0]));
-        } else if(this.face[1] != 0) {
-            this.type = "vertical";
         } else {
-            this.type = "central";
+            return null;
         }
         
         return this;
@@ -411,10 +409,8 @@ class FinalCutter2 extends FinalCutter1 {
             this.bladeAngleTransition = new ColorTransition([this.startBladeAngle], [this.endBladeAngle]);
             
             this.bladeWidthTransition = new ColorTransition([0], [16], 1, ovalTransition);
-        } else if(this.face[1] != 0) {
-            this.type = "vertical";
         } else {
-            this.type = "central";
+            return null;
         }
         
         return this;
@@ -431,7 +427,7 @@ class FinalCutter3 extends FinalCutter2 {
         this.hitbox.setLifespan(this.slashDuration + 1);
         
         this.followup = null;
-        this.nextAction = FinalCutter4;
+        this.nextAction = null;
     }
     
     transitionsSetup() {
@@ -457,10 +453,34 @@ class FinalCutter3 extends FinalCutter2 {
             
             let gravityDirection = this.user.findState("gravity");
             
-            if(typeof gravityDirection == "undefined") {gravityDirection = [0, 0]}
-            else {gravityDirection = gravityDirection.direction}
+            if(typeof gravityDirection == "undefined") {gravityDirection = new Vector(0, 0);}
+            else {gravityDirection = gravityDirection.direction;}
             
-            this.hitbox.addInteraction(new DragActor([0, -1.5*gravityDirection[1]]));
+            this.hitbox.events["hit"] = function(recipient) {
+                recipient.drag(gravityDirection.normalized(-10));
+            };
+            // this.hitbox.addInteraction(new DragActor());
+        } else {
+            return null;
+        }
+        
+        return this;
+    }
+    
+    use() {
+        super.use();
+        
+        if(this.phase > 0) {
+            this.nextAction = FinalCutter4;
+        }
+        
+        if(this.phase === 2) {
+            let gravityDirection = this.user.findState("gravity");
+            
+            if(typeof gravityDirection == "undefined") {gravityDirection = new Vector(0, 0);}
+            else {gravityDirection = gravityDirection.direction;}
+            
+            this.user.speed.set(1, Vector.from(gravityDirection).normalized(-6)[1]);
         }
         
         return this;
@@ -496,9 +516,15 @@ class FinalCutter4 extends FinalCutter3 {
             this.bladeAngleTransition = new ColorTransition([startBladeAngle], [endBladeAngle], 1);
             
             this.bladeWidthTransition = new ColorTransition([16], [16]);
+        } else {
+            return null;
         }
         
         return this;
+    }
+    
+    use() {
+        return this.slashUpdate();
     }
 }
 
@@ -573,11 +599,20 @@ class FinalCutter5 extends FinalCutter4 {
             let startBladeAngle = startBaseAngle +face[0] * Math.PI/4;
             let endBladeAngle = endBaseAngle;
             
-            this.bladeAngleTransition = new ColorTransition([startBladeAngle], [endBladeAngle], 1);
+            this.bladeAngleTransition = new ColorTransition([startBladeAngle], [endBladeAngle], 1, powt(1.625));
             
             this.bladeWidthTransition = new ColorTransition([16], [16]);
             
-            this.hitbox.addInteraction(new DragActor([face[0] * 2, 0]));
+            let gravityDirection = this.user.findState("gravity");
+            
+            if(gravityDirection !== undefined) {gravityDirection = gravityDirection.direction;}
+            else {gravityDirection = new Vector(0, 0);}
+            
+            this.hitbox.addInteraction(new DragActor(gravityDirection.normalized(6)));
+            
+            this.user.speed.add(gravityDirection.normalized(6));
+        } else {
+            return null;
         }
         
         this.face0 = face[0];
@@ -589,14 +624,29 @@ class FinalCutter5 extends FinalCutter4 {
         super.use();
         
         if(this.phase == 4) {
-            let direction = new Vector(this.face0, 0);
+            if(this.sbat === undefined) {
+                this.sbat = this.bladeAngleTransition;
+            }
             
-            let hitbox = CutterWave.fromMiddle(direction.normalize(rectangle_averageSize(this.user)/4).plus(this.user.getPositionM()), [16, 16]);
-            hitbox.shareBlacklist(this.user.getBlacklist());
-            
-            hitbox.setSpeed(direction.normalize(6));
-            
-            addEntity(hitbox);
+            if(this.user.findState("grounded") === undefined) {
+                this.bladeAngleTransition = new VectorTransition([Math.acos(this.face0)], [Math.acos(this.face0)]);
+                this.phase = 3;
+                // repaceLoop(1000);
+            } else {
+                this.bladeAngleTransition = this.sbat;
+                // repaceLoop(16);
+                let direction = new Vector(this.face0, 0);
+                
+                let hitbox = CutterWave.fromMiddle(direction.normalize(rectangle_averageSize(this.user)/4).plus(this.user.getPositionM()), [16, 16]);
+                hitbox.shareBlacklist(this.user.getBlacklist());
+                
+                hitbox.setSpeed(direction.normalize(6));
+                hitbox.events["hit"].push(function(recipient) {
+                    recipient.drag(direction.normalized(6));
+                });
+                
+                addEntity(hitbox);
+            }
         }
         
         return this;
@@ -622,7 +672,7 @@ class AutoCutter extends CutterAbility {
             let user = this.user;
             
             // if(this.detectionBox.collidedWith.find(function(entity) {return user.opponents.includes(entity);})) {
-            if(this.detectionBox.collidedWith.find(function(entity) {return entity !== user && entity.findInterrecipientWithId("damage");})) {
+            if(this.detectionBox.collidedWith.find(function(entity) {return entity !== user && entity.findInterrecipientWithId("damage");}) && this.user.getCursorDirection()[0] != 0) {
                 this.user.addAction(new FinalCutter1());
             } else {
                 this.user.addAction(new CutterBoomerang());

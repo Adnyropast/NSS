@@ -213,12 +213,16 @@ function setPlayer(entity) {
             transitionIn();
         }, 48);
         setGameTimeout(function() {
-            loadMap(saves[currentSave].lastMap);
+            loadMap(getCurrentSave().lastMap);
             transitionOut();
         }, 64);
     });
     
     entity.addInteraction(new ItemPicker());
+    
+    entity.events["hurt"].push(function() {
+        ++hitsCount;
+    });
     
     addEntity(entity);
 }
@@ -797,66 +801,70 @@ function battleUpdate() {
 
 let escapeCounter = 0;
 
-const DMENU_ESC = new DirectionalMenu();
-const ESC_LIST = new VisibleList(9);
-
-function escapeMenuStart() {
-    DMENU_ESC.buttons.splice(0, Infinity);
-    
-    let c = 0;
-    
-    for(let i in characters) {
-        let button = [64 + 144*c, 64];
-        button.character = characters[i];
-        button.characterName = i;
-        button.icon = IMGCHAR[characters[i].classId].icon;
-        
-        DMENU_ESC.addButton(button);
-        
-        ++c;
-    }
-    
-    DMENU_ESC.focus = DMENU_ESC.buttons[0];
-    
-    ESC_LIST.empty();
-    
-    c = 0;
-    
-    for(let i in characters) {
-        let button = [64 + 144*c, 64];
-        button.character = characters[i];
-        button.characterName = i;
-        button.icon = IMGCHAR[characters[i].classId].icon;
-        
-        ESC_LIST.addItem(button);
-        
-        ++c;
-    }
-}
-
-let escPhase = "characters";
-
 let itemIndex = 0;
+let itemY = 0;
+let displayHeight = 9;
 
 function escapeMenu() {
-    if(escapeCounter === 0) {
-        escapeMenuStart();
+    let inventory = save_getCurrentInventory();
+    
+    if(keyList.value(K_LEFT) === 1) {
+        if(itemIndex > 0) {--itemIndex;}
+    } if(keyList.value(K_RIGHT) === 1) {
+        if(itemIndex < inventory.items.length - 1) {++itemIndex;}
+    } if(keyList.value(K_CONFIRM) === 1) {
+        inventory.items[itemIndex].commands[0]();
+    } if(keyList.value(222) === 1) {
+        save_cdParentInventory();
+    } if(keyList.value(K_UP) === 1) {
+        if(itemIndex >= inventory.displayWidth) {itemIndex -= inventory.displayWidth;}
+    } if(keyList.value(K_DOWN) === 1) {
+        if(itemIndex < inventory.items.length - inventory.displayWidth) {itemIndex += inventory.displayWidth;}
     }
     
-    /**
+    if(itemIndex < 0) {itemIndex = 0;}
     
-    if(keyList.value(K_DIRECTION) == 1) {
-        DMENU_ESC.move(getKDirection());
+    if(itemIndex >= inventory.items.length) {itemIndex = inventory.items.length - 1;}
+    
+    if(itemIndex / inventory.displayWidth < itemY) {
+        itemY = Math.floor(itemIndex / inventory.displayWidth);
+    } else if(itemIndex / inventory.displayWidth >= itemY + displayHeight) {
+        itemY = Math.floor(itemIndex / inventory.displayWidth) - displayHeight + 1;
     }
     
-    /**/
-    
-    if(escPhase === "characters") {
-        charactersMenuUpdate();
-    } else if(escPhase === "saves") {
+    if(keyList.value(97) === 1) {
+        let b64 = window.btoa(unescape(encodeURIComponent(JSON.stringify(INVENTORY.getData()))));
         
-    } else if(escPhase === "items") {
-        inventoryMenuUpdate();
+        let a = document.createElement("a");
+        a.href = "data:text/json;base64," + b64;
+        a.download = "inventory.json";
+        
+        a.click();
+    } if(keyList.value(98) === 1) {
+        let input = document.createElement("input");
+        input.type = "file";
+        
+        input.onchange = function onchange() {
+            if(this.files.length > 0) {
+                let reader = new FileReader();
+                
+                reader.onload = function onload() {
+                    let b64 = this.result.match(/base64,([\d\D]*)/)[1];
+                    
+                    try {
+                        let data = JSON.parse(decodeURIComponent(escape(atob(b64))));
+                        
+                        INVENTORY = IC["inventory"].fromData(data);
+                    } catch(error) {
+                        
+                    }
+                };
+                
+                reader.readAsDataURL(this.files[0]);
+            }
+        };
+        
+        input.click();
     }
     
     if(keyList.value(K_ESC) == 1) {
@@ -868,44 +876,10 @@ function escapeMenu() {
     context.fillStyle = "#00003F";
     context.fillRect(0, 0, CANVAS.width, CANVAS.height);
     
-    /**
-    
-    for(let i = 0; i < DMENU_ESC.buttons.length; ++i) {
-        let button = DMENU_ESC.buttons[i];
-        
-        if(button === DMENU_ESC.focus) {context.fillStyle = "#FFFF00";}
-        else {context.fillStyle = "#00FFFF";}
-        
-        let x = button[0] - 64;
-        let y = button[1] - 64;
-        let width = 128;
-        let height = 128;
-        
-        context.fillRect(x, y, width, height);
-        context.drawImage(button.icon, x, y, width, height);
-    }
-    
     /**/
     
-    let visibles = ESC_LIST.getVisible();
-    
-    for(let i = 0; i < visibles.length; ++i) {
-        if(visibles[i] === ESC_LIST.getItem()) {context.fillStyle = "#FFFF00";}
-        else {context.fillStyle = "#00FFFF";}
-        
-        let x = i * 144;
-        let y = 0;
-        let width = 128;
-        let height = 128;
-        
-        context.fillRect(x, y, width, height);
-        context.drawImage(visibles[i].icon, x, y, width, height);
-    }
-    
-    let inventory = getInventoryFromPath(getCurrentSave().inventoryPath);
-    
-    const marginLR = 16, marginTB = 16;
-    const spaceBetween = 8;
+    const marginLR = 8, marginTB = 5;
+    const spaceBetween = 4;
     const gridWidth = (640 - 2*marginLR);
     const gridHeight = (120 - 2*marginTB);
     
@@ -914,9 +888,9 @@ function escapeMenu() {
         let x = i % inventory.displayWidth;
         x *= width + spaceBetween;
         x += marginLR;
-        let y = Math.floor(i / inventory.displayWidth);
+        let y = Math.floor(i / inventory.displayWidth) - itemY;
         y *= height + spaceBetween;
-        y += 192 + marginTB;
+        y += 0 + marginTB;
         
         let hProp = CANVAS.width / 640;
         let vProp = CANVAS.height / 360;
@@ -926,57 +900,15 @@ function escapeMenu() {
         width *= hProp;
         height *= vProp;
         
-        if(i === itemIndex) {
-            context.fillStyle = "yellow";
-        } else {
-            context.fillStyle = "white";
-        }
+        if(i === itemIndex) {context.fillStyle = "yellow";}
+        else {context.fillStyle = "cyan";}
         context.fillRect(x, y, width, height);
         
-        let img = IMGITEM[inventory.items[i].classId];
+        let img = inventory.items[i].getImage();
         
         if(typeof img != "undefined") {
             context.drawImage(img, x, y, width, height);
         }
-    }
-}
-
-function charactersMenuUpdate() {
-    if(keyList.value(K_LEFT) == 1) {
-        ESC_LIST.decIndex();
-    } if(keyList.value(K_RIGHT) == 1) {
-        ESC_LIST.incIndex();
-    }
-    
-    if(keyList.value(K_CONFIRM) == 1) {
-        updateSavedCharacter();
-        
-        let positionM = PLAYER.getPositionM();
-        removeEntity(PLAYER);
-        
-        // setPlayerClassId(PIDC[DMENU_ESC.buttons.indexOf(DMENU_ESC.focus)]);
-        // setPlayer(getPlayerClass().fromMiddle(positionM));
-        
-        currentCharacter = DMENU_ESC.focus.characterName;
-        currentCharacter = ESC_LIST.getItem().characterName;
-        
-        let player = getSavedCharacter();
-        player.initPositionM(positionM);
-        setPlayer(player);
-        
-        switchPhase(backupPhase);
-    }
-}
-
-function inventoryMenuUpdate() {
-    let inventory = getInventoryFromPath(getCurrentSave().inventoryPath);
-    
-    if(keyList.value(K_LEFT) === 1) {
-        if(itemIndex > 0) {--itemIndex;}
-    } if(keyList.value(K_RIGHT) === 1) {
-        if(itemIndex < inventory.items.length - 1) {++itemIndex;}
-    } if(keyList.value(K_CONFIRM) === 1) {
-        console.log(inventory.items[itemIndex]);
     }
 }
 
@@ -1093,7 +1025,7 @@ function loadCheck() {
             }
         }
         
-        loadMap(saves[currentSave].lastMap);
+        loadMap(getCurrentSave().lastMap);
         transitionIn(), transitionOut();
         
         switchLoop(gameUpdate, WORLD_PACE);

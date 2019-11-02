@@ -2,20 +2,21 @@
 class Item {
     constructor(name) {
         this.id = -1;
-        this.name = name;
-        this.effects = [];
+        // this.name = name;
+        // this.effects = [];
         
-        this.durability = 1;
+        // this.durability = 1;
         
         this.description = "";
         this.date = null;
-        this.commands = [];
+        this.commands = [function() {}];
         this.stats = {};
     }
     
     static fromData(data) {
         let item = new this();
         
+        item.id = data.id;
         item.date = new Date(data.date);
         
         return item;
@@ -41,17 +42,28 @@ class Item {
     getData() {
         let date = this.date instanceof Date ? this.date.toJSON() : this.date;
         
-        return {classId : item_getClassId(this), date : date};
+        return {classId : item_getClassId(this), date : date, id : this.id};
     }
     
     toJSON() {return this.getData();}
     
     setDate(date = new Date()) {this.date = date;}
+    
+    getImage() {
+        return IMGITEM[item_getClassId(this)];
+    }
 }
 
 class ConsumableItem extends Item {
     constructor(name) {
         super(name);
+        
+        let consumable = this;
+        
+        this.commands[0] = function consume() {
+            consumable.consumeBy(PLAYER);
+            save_getCurrentInventory().items.remove(consumable);
+        };
     }
 }
 
@@ -150,9 +162,16 @@ IC["inventory"] = class InventoryItem extends Item {
     constructor() {
         super();
         
-        this.items = [];
+        this.items = new SetArray();
         this.displayWidth = 16;
         // this.displayHeight = 9;
+        
+        let inventory = this;
+        
+        this.commands[0] = function cd() {
+            getCurrentSave().inventoryPath += inventory.id + "/";
+            itemIndex = 0;
+        };
     }
     
     static fromData(data) {
@@ -160,7 +179,12 @@ IC["inventory"] = class InventoryItem extends Item {
         
         inventory.displayWidth = data.displayWidth;
         // inventory.displayHeight = data.displayHeight;
-        inventory.items = data.items;
+        
+        for(let i = 0; i < data.items.length; ++i) {
+            let itemData = data.items[i];
+            
+            inventory.items.push(IC[itemData.classId].fromData(itemData));
+        }
         
         return inventory;
     }
@@ -176,9 +200,54 @@ IC["inventory"] = class InventoryItem extends Item {
         
         data.displayWidth = this.displayWidth;
         // data.displayHeight = this.displayHeight;
-        data.items = this.items;
+        
+        data.items = [];
+        
+        for(let i = 0; i < this.items.length; ++i) {
+            data.items.push(this.items[i].getData());
+        }
         
         return data;
+    }
+    
+    getNextId() {
+        let id = 0;
+        
+        for(let i = 0; i < this.items.length; ++i) {
+            let iid = Number(this.items[i].id);
+            
+            if(iid >= id) {
+                id = iid + 1;
+            }
+        }
+        
+        return id;
+    }
+    
+    addItems(items) {
+        let id = this.getNextId();
+        
+        for(let i = 0; i < items.length; ++i) {
+            let item = items[i];
+            
+            this.addItem(item, id);
+            
+            ++id;
+        }
+        
+        return this;
+    }
+    
+    addItem(item, id = this.getNextId()) {
+        item.setDate();
+        item.id = String(id);
+        
+        let itemData = item.getData();
+        itemData.id = String(id);
+        
+        this.items.push(item);
+        
+        return this;
     }
 };
 
@@ -193,3 +262,97 @@ function item_getClassId(item) {
     
     return "nf";
 }
+
+IC["characterIdentifier"] = class CharacterIdentifier extends Item {
+    constructor() {
+        super();
+        
+        // this.character = null;
+        this.characterData = null;
+        
+        let characterIdentifier = this;
+        
+        this.commands[0] = function() {
+            updateCurrentCharacter();
+            
+            let positionM = PLAYER.getPositionM();
+            let faceSave = PLAYER.faceSave;
+            
+            removeEntity(PLAYER);
+            
+            let characterData = characterIdentifier.characterData;
+            let character = EC[characterData.classId].fromData(characterData);
+            
+            getCurrentSave().playerIdPath = getCurrentSave().inventoryPath + characterIdentifier.id + "/";
+            setPlayer(character);
+            
+            PLAYER.initPositionM(positionM);
+            PLAYER.setFace(faceSave);
+        };
+    }
+    
+    static fromData(data) {
+        let characterIdentifier = super.fromData(data);
+        
+        // characterIdentifier.character = EC[data.character.classId].fromData(data.character);
+        characterIdentifier.characterData = data.character;
+        
+        return characterIdentifier;
+    }
+    
+    getData() {
+        let data = super.getData();
+        
+        data.character = this.characterData;
+        
+        return data;
+    }
+    
+    getImage() {
+        return IMGCHAR[this.characterData.classId]["icon"];
+    }
+};
+
+IC["saveIdentifier"] = class SaveIdentifier extends Item {
+    constructor() {
+        super();
+        
+        this.playerPositionM = [0, 0];
+        this.lastMap = "";
+        this.maps = null;
+        this.inventoryPath = "";
+        this.playerIdPath = "";
+        
+        let saveIdentifier = this;
+        
+        this.commands[0] = function() {
+            currentSavePath = getCurrentSave().inventoryPath + saveIdentifier.id + "/";
+            itemIndex = 0;
+            loadMap(getCurrentSave().lastMap);
+        };
+    }
+    
+    static fromData(data) {
+        let saveIdentifier = super.fromData(data);
+        
+        saveIdentifier.playerPositionM = data.playerPositionM;
+        saveIdentifier.lastMap = data.lastMap;
+        saveIdentifier.maps = data.maps;
+        saveIdentifier.inventoryPath = data.inventoryPath;
+        saveIdentifier.playerIdPath = data.playerIdPath;
+        
+        return saveIdentifier;
+    }
+    
+    getData() {
+        let data = super.getData();
+        
+        data.playerPositionM = this.playerPositionM;
+        data.lastMap = this.lastMap;
+        data.maps = this.maps;
+        data.inventoryPath = this.inventoryPath;
+        data.playerIdPath = this.playerIdPath;
+        
+        return data;
+    }
+};

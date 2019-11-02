@@ -315,6 +315,8 @@ function getMousePosition(dimension) {
 
 // 
 
+AC["fc3"] = FinalCutter3;
+
 let ctrljson = {
     "keyonce" : [
         {"keyCode" : 46, "actionId" : "ldelete"},
@@ -343,7 +345,7 @@ let ctrljson = {
         {"keyCode" : [73], "actionId" : "autoCutter"},
         {"keyCode" : [80, 82], "actionId" : "rocketPunch"},
         {"keyCode" : [66], "actionId" : "brushSlash"},
-        {"keyCode" : [84], "actionId" : "paintSpray"}
+        {"keyCode" : [84], "actionId" : "fc3"}
     ],
     "keytoggle" : [
         // {"keyCode" : [67], "actionId" : "followMe"},

@@ -668,7 +668,7 @@ let flameparticle = new Polygon([[16, 0], [14.782072520180588, 6.122934917841436
 
 let diamondparticle = new Polygon([[0, -16], [2, 0], [0, 16], [-2, 0]]);
 
-let roundparticle = makeRandomPolygon(12, 16, 16);
+let roundparticle = makeRegularPolygon(12, 16);
 
 function makeFirePolygon() {
     let polygon = makeRandomPolygon(16, 4, 16);
@@ -1074,4 +1074,115 @@ function makeRegularPolygon(count = 3, distance = 16) {
     }
     
     return polygon;
+}
+
+function makePathPolygon(path, width=2, type) {
+    let polygon = [];
+    let reverse = [];
+    
+    polygon.push(path[0]);
+    
+    for(let i = 1; i < path.length - 1; ++i) {
+        let point = path[i];
+        let vector = Vector.subtraction(point, path[i-1]);
+        
+        if(type === "progressive") {
+            let w = width;
+            let middle = Math.floor(path.length/2);
+            w = powt(1/1)(1 - Math.abs(i - middle) / middle) * width;
+            
+            let normal = (new Vector(-vector[1], vector[0]));
+            
+            let innerWidth = w / 2;
+            
+            polygon.push(Vector.addition(point, normal.normalize(innerWidth)));
+            reverse.push(Vector.subtraction(point, normal.normalize(w-innerWidth)));
+        } else {
+            let normal = (new Vector(-vector[1], vector[0])).normalize(width/2);
+            
+            polygon.push(Vector.addition(point, normal));
+            reverse.push(Vector.subtraction(point, normal));
+        }
+    }
+    
+    polygon.push(path[path.length - 1]);
+    polygon.push.apply(polygon, reverse.reverse());
+    
+    return polygon;
+}
+
+function makeArcPath(pointsCount, radius, startAngle, endAngle) {
+    let path = [];
+    
+    for(let i = 0; i < pointsCount; ++i) {
+        let angle = startAngle + (i/(pointsCount-1)) * (endAngle - startAngle);
+        
+        path.push([radius * Math.cos(angle), radius * Math.sin(angle)]);
+    }
+    
+    return path;
+}
+
+function makeRandomPointsSet(count, minX, maxX, minY, maxY) {
+    let points = [];
+    
+    for(let i = 0; i < count; ++i) {
+        points.push([minX + Math.random() * (maxX - minX), minY + Math.random() * (maxY - minY)]);
+    }
+    
+    return points;
+}
+
+function makeRockTexture(count=16, minX=-16, maxX=16, minY=-16, maxY=16) {
+    let points = makeRandomPointsSet(count, minX, maxX, minY, maxY);
+    let polygons = new MultiPolygon();
+    
+    for(let i = 0; i < points.length; ++i) {
+        let focusPoint = points[i];
+        
+        points.sort(function(a, b) {
+            let distA = Vector.distance(a, focusPoint);
+            let distB = Vector.distance(b, focusPoint);
+            
+            return distA - distB;
+        });
+        
+        for(let j = 0; j < points.length/2; ++j) {
+            if(i != j) {
+                polygons.push((new PolygonDrawable([focusPoint, points[j]])));
+            }
+        }
+    }
+    
+    mpd = MultiPolygonDrawable.from(polygons);
+    mpd.cameraMode = "basic";
+    
+    for(let i = 0; i < mpd.size(); ++i) {
+        let v = irandom(0, 255);
+        mpd[i].setStrokeStyle(rgba(v, v, v));
+    }
+    
+    return mpd;
+}
+
+function rockOnCanvas() {
+    let canvas = document.createElement("canvas");
+    canvas.width = 320; canvas.height = 320;
+    let ctx = canvas.getContext("2d");
+    
+    ctx.fillStyle = "#BFBFBF";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.translate(canvas.width/2, canvas.height/2);
+    
+    let rockTexture = makeRockTexture(16, -160, 160, -160, 160);
+    
+    for(let i = 0; i < rockTexture.size(); ++i) {
+        ctx.strokeStyle = "#7F7F7F";
+        rockTexture.getPolygon(i).basicDraw(ctx);
+    }
+    
+    ctx.translate(-canvas.width/2, -canvas.height/2);
+    
+    return canvas;
 }

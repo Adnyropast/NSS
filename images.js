@@ -520,6 +520,54 @@ IMGBG["sky1"] = loadImage("images/background/sky1.png");
 IMGBG["sky2"] = loadImage("images/background/sky2.png");
 IMGBG["sky3"] = loadImage("images/background/sky3.png");
 
-const IMGITEM = {};
+const IMGITEM = {
+    apple : loadImage("images/items/apple.png"),
+    saveIdentifier : loadImage("images/items/saveIdentifier.png")
+};
 
-IMGITEM["apple"] = loadImage("images/items/apple.png");
+function colorVector_brighten(colorVector, value) {
+    colorVector = Array.from(colorVector);
+    
+    for(let i = 0; i < 3; ++i) {
+        colorVector[i] += value;
+        
+        if(colorVector[i] > 255) {colorVector[i] = 255;}
+        if(colorVector[i] < 0) {colorVector[i] = 0;}
+    }
+    
+    return colorVector;
+}
+
+function array_swap(array, i, j) {
+    let x = array[i];
+    array[i] = array[j];
+    array[j] = x;
+    return array;
+}
+
+function makeRandomSaturatedColor() {
+    let color = [
+        irandom(191, 255),
+        irandom(0, 255),
+        irandom(0, 63)
+    ];
+    
+    array_swap(color, 0, irandom(0, 2));
+    array_swap(color, 1, irandom(0, 2));
+    array_swap(color, 2, irandom(0, 2));
+    
+    color[3] = 1;
+    
+    return color;
+}
+
+function colorVector_alterAlpha(color, value) {
+    color = Array.from(color);
+    
+    color[3] += value;
+    
+    if(color[3] < 0) {color[3] = 0;}
+    if(color[3] > 1) {color[3] = 1;}
+    
+    return color;
+}

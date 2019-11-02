@@ -33,6 +33,9 @@ class TypeDamager extends Interactor {
                 }
             }
             
+            actor.onhit(recipient);
+            recipient.onhurt(actor);
+            
             this.hit.add(interrecipient);
             
             let hit = this.hit;
@@ -160,15 +163,6 @@ class TypeDamageable extends Interrecipient {
         return 0;
     }
     
-    oninteraction(interactor) {
-        let actor = interactor.getActor();
-        let recipient = this.getRecipient();
-        
-        if(recipient == PLAYER) {++hitsCount;}
-        
-        return this;
-    }
-    
     setRecipient(recipient) {
         super.setRecipient(recipient);
         
@@ -214,23 +208,55 @@ class StunRecipient extends Interrecipient {
 
 const typeImpacts = {};
 
+class OvalWaveParticle extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        let avgsz = rectangle_averageSize(this);
+        
+        this.setDrawable(new PolygonDrawable(makePathPolygon(makeOvalPath(32, 64, 64))));
+        this.setLifespan(24);
+        this.drawable.setStyle(new ColorTransition([255, 255, 255, 1], [255, 255, 255, 0], this.lifespan));
+        this.drawable.rotate(Math.random() * 2*Math.PI);
+        this.drawable.multiplySize(avgsz/64);
+        this.drawable.initImaginarySize(avgsz);
+        
+        this.setSizeTransition(new VectorTransition(Array.from(this.size), Vector.multiplication(this.size, 4), this.lifespan, powt(1/2)));
+        this.setSelfBrake(1.0625);
+    }
+    
+    updateDrawable() {
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
+        this.drawable.setPositionM(this.getPositionM());
+        
+        if(Vector.normOf(this.direction) > 0) {
+            this.drawable.setImaginaryAngle(0);
+            this.drawable.stretchM(this.direction);
+            this.drawable.setImaginaryAngle(this.speed.getAngle());
+        }
+        
+        return this;
+    }
+}
+
 typeImpacts[FX_SHARP] = function onimpact(actor, recipient) {
     const bothAvgsz = (actor.getWidth() + actor.getHeight() + recipient.getWidth() + recipient.getHeight()) / 4;
     const actorPositionM = actor.getPositionM();
     const recipientPositionM = recipient.getPositionM();
     const middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
     
+    const recipientAvgsz = rectangle_averageSize(recipient);
+    
     addDrawable(new CutDrawable(middlePosition, [Math.random() * 2- 1, Math.random() * 2 - 1]).multiplySize(bothAvgsz/16));
     
-    let c = irandom(4, 8);
+    let c = 6;// irandom(4, 8);
     
     for(let i = 0; i < c; ++i) {
         let angle = i * 2*Math.PI/c;
         
-        let particle = DiamondParticle.fromMiddle(middlePosition, [0, 0]);
+        let particle = DiamondParticle.fromMiddle(middlePosition, [bothAvgsz/16, bothAvgsz/16]);
         
         particle.setSpeed((new Vector(irandom(bothAvgsz/12, bothAvgsz/8), 0)).rotate(angle + Math.random()));
-        particle.getDrawable().rotate(particle.speed.getAngle()).multiplySize(bothAvgsz/16);
         
         addEntity(particle);
     }
@@ -260,36 +286,22 @@ typeImpacts[FX_SHARP] = function onimpact(actor, recipient) {
     multiCrescent.rotate(Math.random() * 2*Math.PI/c);
     multiCrescent.setPositionM(recipient.getPositionM());
     
-    let recipient_avgsz = rectangle_averageSize(recipient);
-    multiCrescent.multiplySize(recipient_avgsz/64);
-    multiCrescent.initImaginarySize(recipient_avgsz);
+    multiCrescent.multiplySize(recipientAvgsz/64);
+    multiCrescent.initImaginarySize(recipientAvgsz);
     
-    let sizeTransition = new VectorTransition([recipient_avgsz], [recipient_avgsz*4], 16);
+    let cST = new VectorTransition([recipientAvgsz], [recipientAvgsz*4], 16);
     
     multiCrescent.controllers.add(function() {
-        this.setImaginarySize(sizeTransition.getNext()[0]);
+        this.setImaginarySize(cST.getNext()[0]);
     });
     
     addDrawable(multiCrescent);
     
     /**/
     
-    let ovalDrawable = new PolygonDrawable(makePathPolygon(makeOvalPath(32, 32, 32)));
-    ovalDrawable.setLifespan(16);
-    ovalDrawable.setStyle(new ColorTransition([255, 255, 255, 1], [255, 255, 255, 0], ovalDrawable.lifespan));
-    ovalDrawable.rotate(Math.random() * 2*Math.PI);
-    ovalDrawable.setPositionM(recipient.getPositionM());
+    let roundWave = OvalWaveParticle.fromMiddle(middlePosition, [recipientAvgsz/4, recipientAvgsz/4]);
     
-    let recipient_avgsz = rectangle_averageSize(recipient);
-    ovalDrawable.multiplySize(recipient_avgsz/192);
-    ovalDrawable.initImaginarySize(recipient_avgsz);
-    let sizeTransition = new VectorTransition([recipient_avgsz], [recipient_avgsz*4], 16);
-    
-    ovalDrawable.controllers.add(function() {
-        this.setImaginarySize(sizeTransition.getNext()[0]);
-    });
-    
-    addDrawable(ovalDrawable);
+    addEntity(roundWave);
 };
 
 typeImpacts[FX_GOLD_] = function onimpact(actor, recipient) {
@@ -298,17 +310,17 @@ typeImpacts[FX_GOLD_] = function onimpact(actor, recipient) {
     const recipientPositionM = recipient.getPositionM();
     const middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
     
-    let count = 8;
+    let count = irandom(7, 9);
     
     for(let i = 0; i < count; ++i) {
-        var particle = GoldSmokeParticle.fromMiddle(Vector.addition(actor.getPositionM(), recipient.getPositionM()).divide(2), [bothAvgsz/1.5, bothAvgsz/1.5]);
+        var particle = GoldSmokeParticle.fromMiddle(middlePosition, [bothAvgsz/1.5, bothAvgsz/1.5]);
         
         let direction = getDD(actor.locate(recipient))[0];
         let vector = actor.speed.normalized();
         vector[direction.dimension] += direction.sign;
         particle.setSpeed(vector.rotate(irandom(-1, 1)/8).normalize(Math.random() * (bothAvgsz / 8)));
         
-        addEntity(particle);
+        // addEntity(particle);
     }
     
     for(let i = 0; i < count; ++i) {
@@ -318,10 +330,24 @@ typeImpacts[FX_GOLD_] = function onimpact(actor, recipient) {
         
         let direction = Vector.fromAngle(angle);
         
-        particle.setSpeed(direction.normalized(irandom(bothAvgsz/16, bothAvgsz/8)).rotate(Math.random()));
+        particle.setSpeed(direction.normalized(irandom(bothAvgsz/12, bothAvgsz/8)).rotate(0));
         
         addEntity(particle);
     }
+    
+    let crownCT = new ColorTransition([0, 255, 255, 1], [191, 255, 255, 0.5], 12);
+    let colorTransition = new ColorTransition([0, 255, 255, 1], [0, 91, 255, 0.875], 8, powt(1/2));
+    
+    crownImpact(actor, recipient, crownCT.copy());
+    crownImpact(actor, recipient, crownCT.copy());
+    burstImpact(actor, recipient, colorTransition.copy());
+    
+    setGameTimeout(function() {
+        crownImpact(actor, recipient, crownCT.copy());
+        crownImpact(actor, recipient, crownCT.copy());
+        burstImpact(actor, recipient, colorTransition.copy());
+        burstImpact(actor, recipient, colorTransition.copy());
+    }, 6);
 };
 
 typeImpacts[FX_FIRE] = function onimpact(actor, recipient) {
@@ -463,3 +489,117 @@ typeImpacts[FX_HEART_] = function(actor, recipient) {
         addEntity(particle);
     }
 };
+
+class BluntCrownParticle extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.drawable = PolygonDrawable.from(makeSpikePolygon(4, new VectorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(12, 24)}, function() {return irandom(32, 48)}, 16));
+        
+        // crownParticle.multiplySize(1/16);
+        
+        this.setLifespan(10);
+        
+        this.drawable.setZIndex(-Math.random()*16+15);
+        
+        this.setSizeTransition(new MultiColorTransition([Vector.multiplication(this.size, 1/2), Vector.from(this.size), Vector.multiplication(this.size, 1/2)], this.lifespan));
+        
+        this.setSelfBrake(1.125);
+    }
+    
+    updateDrawable() {
+        const drawable = this.getDrawable();
+        
+        let angle = drawable.imaginaryAngle;
+        
+        drawable.setImaginaryAngle(0);
+        
+        drawable.stretchM([0, 0.5]);
+        drawable.setImaginarySize(rectangle_averageSize(this));
+        drawable.setPositionM(this.getPositionM());
+        
+        drawable.setImaginaryAngle(this.speed.getAngle());
+        
+        return this;
+    }
+}
+
+class BluntOvalParticle extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.setLifespan(16);
+        
+        let avgsz = rectangle_averageSize(this);
+        
+        this.drawables[0] = PolygonDrawable.from(roundparticle);
+        this.drawables[0]
+        .multiplySize(avgsz/16)
+        .stretchM([16, 0])
+        .initImaginarySize(avgsz);
+        
+        this.setSelfBrake(1.0625);
+    }
+    
+    updateDrawable() {
+        let drawable = this.drawables[0];
+        let angle = this.getDrawable().imaginaryAngle;
+        
+        if(this.lifeCounter < 16) {
+            drawable.setImaginaryAngle(0);
+            drawable.shrinkM([-1, 0]);
+        }
+        
+        drawable.setImaginaryAngle(this.speed.getAngle());
+        
+        drawable.setPositionM(this.getPositionM());
+        drawable.setImaginarySize(rectangle_averageSize(this));
+        
+        return this;
+    }
+}
+
+typeImpacts[FX_BLUNT] = function onimpact(actor, recipient) {
+    crownImpact(...arguments);
+    burstImpact(...arguments);
+};
+
+function crownImpact(actor, recipient, style = "white") {
+    let actorPositionM = actor.getPositionM();
+    let recipientPositionM = recipient.getPositionM();
+    let middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
+    const recipientAvgsz = rectangle_averageSize(recipient);
+    
+    let direction = Vector.subtraction(recipientPositionM, actorPositionM).rotate(Math.random() * 2*Math.PI);
+    
+    let size = Math.max(1, recipientAvgsz/32);
+    let crownParticle = BluntCrownParticle.fromMiddle(middlePosition, [size, size]);
+    
+    crownParticle.drawable.setStyle(style);
+    
+    crownParticle.setSpeed(direction.normalized(Math.max(6, recipientAvgsz/5)));
+    
+    addEntity(crownParticle);
+}
+
+function burstImpact(actor, recipient, style = "white") {
+    let actorPositionM = actor.getPositionM();
+    let recipientPositionM = recipient.getPositionM();
+    let middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
+    const recipientAvgsz = rectangle_averageSize(recipient);
+    
+    let size = Math.max(1, recipientAvgsz/32);
+    
+    let count = 2;
+    
+    for(let i = 0; i < count; ++i) {
+        let angle = ((i + Math.random()*2 - 1)/count) * 2*Math.PI;
+        let direction = Vector.fromAngle(angle);
+        
+        let particle = BluntOvalParticle.fromMiddle(Vector.addition(middlePosition, direction.normalized(recipientAvgsz/3)), [size, size]);
+        particle.drawables[0].setStyle(style);
+        particle.setSpeed(direction.normalized(4));
+        
+        addEntity(particle);
+    }
+}

@@ -1,28 +1,16 @@
 
-let saves = [];
-
-saves["name1"] = makeNewGame();
-// saves["name1"].lastMap = "test-background";
-
-saves["save2"] = makeNewGame();
-
-let currentSave = "name1";
-
 function makeNewGame() {
     return {
         "playerPositionM" : [0, 0],
         "lastMap" : "hub",
         "maps" : JSON.parse(JSON.stringify(maps)),
-        "inventoryPath" : ""
+        "inventoryPath" : "/",
+        "playerIdPath" : "/4/"
     };
 }
 
-function saveLastMap(mapname) {
-    saves[currentSave].lastMap = mapname;
-}
-
 function saveMapState() {
-    saves[currentSave].maps[saves[currentSave].lastMap] = getCurrentMapState();
+    getCurrentSave().maps[getCurrentSave().lastMap] = getCurrentMapState();
 }
 
 function getCurrentMapState() {
@@ -54,5 +42,32 @@ function entitiesToData(entities) {
 }
 
 function getCurrentSave() {
-    return saves[currentSave];
+    return getInventoryFromPath(currentSavePath);
 }
+
+function save_cdParentInventory(saveIdentifier = getCurrentSave()) {
+    let inventories = saveIdentifier.inventoryPath.split("/");
+    
+    let previousInventoryId;
+    
+    while((previousInventoryId = inventories.pop()) === "");
+    
+    saveIdentifier.inventoryPath = inventories.join("/") + "/";
+    
+    let currentInventory = save_getCurrentInventory(saveIdentifier);
+    
+    for(let i = 0; i < currentInventory.items.length; ++i) {
+        if(currentInventory.items[i].id === previousInventoryId) {
+            itemIndex = i;
+        }
+    }
+    
+    return saveIdentifier;
+}
+
+function save_getCurrentInventory(saveIdentifier = getCurrentSave()) {
+    return getInventoryFromPath(saveIdentifier.inventoryPath);
+}
+
+let currentSavePath = "/8/";
+let currentSaveIdentifier = null;

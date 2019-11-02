@@ -23,6 +23,44 @@ class SlashEffect extends Hitbox {
     }
 }
 
+const CT_DEFAULTBLADE = [
+    (new ColorTransition([0, 255, 255, 1], [0, 0, 255, 0.25], 7, bezierLinear)), 
+    (new ColorTransition([255, 255, 255, irandom(75, 100)/100], [255, 255, 0, 0], 11, bezierLinear))
+];
+
+const CT_SHADOWBLADE = [
+    (new ColorTransition([0, 0, 127, 1], [0, 0, 255, 0], 7, bezierLinear)), 
+    (new ColorTransition([191, 191, 255, irandom(75, 100)/100], [31, 0, 255, 0], 11, bezierLinear))
+];
+
+const CT_REDBLADE = [
+    (new ColorTransition([255, 63, 63, 1], [255, 0, 0, 0], 7, bezierLinear)),
+    (new ColorTransition([255, 95, 95, irandom(75, 100)/100], [255, 0, 0, 0], 11, bezierLinear))
+];
+
+const CT_CYANBLADE = [
+    (new MultiColorTransition([[127, 255, 255, 1], [0, 255, 255, 1], [0, 223, 255, 0.875], [0, 191, 255, 0.75], [0, 63, 255, 0.5], [0, 0, 255, 0]], 7, bezierLinear)),
+    (new MultiColorTransition([[255, 255, 255, 1], [127, 255, 255, 1], [0, 255, 255, 0.75], [0, 127, 255, 0.5], [0, 0, 255, 0]], 11, bezierLinear))
+];
+
+let bladeCT = CT_DEFAULTBLADE;
+
+function makeRandomBladeCT() {
+    let rct = makeRandomSaturatedColor();
+    let rct_edge = colorVector_brighten(rct, irandom(-127, +127));
+    
+    if(!Math.floor(Math.random() * 2)) {
+        rct_edge = colorVector_brighten(makeRandomSaturatedColor(), irandom(-127, +127));
+    }
+    
+    bladeCT = [
+        new ColorTransition(rct, colorVector_alterAlpha(rct, -1), 7),
+        new ColorTransition(rct_edge, colorVector_alterAlpha(rct_edge, -1), 11)
+    ];
+    
+    return bladeCT;
+}
+
 class SwordSlashAction extends SlashAction {
     constructor() {
         super();
@@ -41,10 +79,10 @@ class SwordSlashAction extends SlashAction {
         drawables[2].setStyle("#003F7F");
         drawables[3].setStyle("#005F9F");
         
-        drawables[0].setStyle("#FFFFFF");
-        drawables[1].setStyle("#EFEFEF");
-        drawables[2].setStyle("#7F7F7F");
-        drawables[3].setStyle("#F7F7F7");
+        // drawables[0].setStyle("#FFFFFF");
+        // drawables[1].setStyle("#EFEFEF");
+        // drawables[2].setStyle("#7F7F7F");
+        // drawables[3].setStyle("#F7F7F7");
         
         this.swordDrawable.multiplySize(1/1.5);
         this.swordDrawable.initImaginarySize(rectangle_averageSize(this.hitbox));
@@ -60,22 +98,24 @@ class SwordSlashAction extends SlashAction {
             otherTrail.edgeWidth = 4-i*4; irandom(-8, +2);
             this.trailDrawable.otherTrails.add(otherTrail);
         }
+        
+        this.bladeCT = makeRandomBladeCT();
+        
+        let cv = this.bladeCT[0].vector1;
+        
+        drawables[0].setStyle(rgba.apply(rgba, colorVector_brighten(cv, 64)));
+        drawables[1].setStyle(rgba.apply(rgba, colorVector_brighten(cv, -16)));
+        drawables[2].setStyle(rgba.apply(rgba, colorVector_brighten(cv, -128)));
+        drawables[3].setStyle(rgba.apply(rgba, colorVector_brighten(cv, -8)));
     }
     
     updateTrailDrawableStyle(detProgress) {
         // this.trailDrawable.trailStyle = new ColorTransition([127*detProgress, 255, 255, 1], [0, 255*detProgress, 255, 0], 8);
-        // this.trailDrawable.trailStyle = (new ColorTransition([0, 255, 255, 1], [0, 0, 255, 0.25], 7, bezierLinear)).setStep(1-detProgress);
-        // this.trailDrawable.trailStyle = (new ColorTransition([0, 0, 127, 1], [0, 0, 255, 0], 7, bezierLinear)).setStep(1-detProgress);
-        // this.trailDrawable.trailStyle = (new ColorTransition([255, 63, 63, 1], [255, 0, 0, 0], 7, bezierLinear)).setStep(1-detProgress);
-        this.trailDrawable.trailStyle = (new MultiColorTransition([[127, 255, 255, 1], [0, 255, 255, 1], [0, 223, 255, 0.875], [0, 191, 255, 0.75], [0, 63, 255, 0.5], [0, 0, 255, 0]], 7, bezierLinear)).setStep(1-detProgress);
+        
+        this.trailDrawable.trailStyle = this.bladeCT[0].setStep(1-detProgress);
         
         for(let i = 0; i < this.trailDrawable.otherTrails.length; ++i) {
-            let lifespan = 11;
-            
-            this.trailDrawable.otherTrails[i].trailStyle = (new ColorTransition([255, 255, 255, irandom(75, 100)/100], [255, 255, 0, 0], lifespan, bezierLinear)).setStep(1-detProgress);
-            // this.trailDrawable.otherTrails[i].trailStyle = (new ColorTransition([191, 191, 255, irandom(75, 100)/100], [31, 0, 255, 0], lifespan, bezierLinear)).setStep(1-detProgress);
-            // this.trailDrawable.otherTrails[i].trailStyle = (new ColorTransition([255, 95, 95, irandom(75, 100)/100], [255, 0, 0, 0], lifespan, bezierLinear)).setStep(1-detProgress);
-            // this.trailDrawable.otherTrails[i].trailStyle = (new MultiColorTransition([[255, 255, 255, 1], [127, 255, 255, 1], [0, 255, 255, 0.75], [0, 127, 255, 0.5], [0, 0, 255, 0]], lifespan, bezierLinear)).setStep(1-detProgress);
+            this.trailDrawable.otherTrails[i].trailStyle = this.bladeCT[1].setStep(1-detProgress);
         }
         
         return this;

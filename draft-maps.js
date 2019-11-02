@@ -25,8 +25,8 @@ function loadFromData(data) {
         lists.camera = Camera.fromData(object_clone(data.camera));
     }
     
-    lists.player0 = getSavedCharacter();
-    lists.player0.initPositionM(playerPositionM);
+    lists.player0 = getCurrentCharacter();
+    lists.player0.initPositionM(getCurrentSave().playerPositionM);
     
     for(var i = 0; i < data.entities.length; ++i) {
         let entityData = data.entities[i];
@@ -64,7 +64,7 @@ function loadFromLists(lists) {
 }
 
 function loadMap(mapname) {
-    let save = saves[currentSave];
+    let save = getCurrentSave();
     let maps = save.maps;
     
     if(maps.hasOwnProperty(mapname)) {
@@ -203,8 +203,8 @@ maps["hub"] = {
         
         {"classId" : "sidewaysSetter", "position" : [-640, -360], "size" : [1280, 720]},
         
-        {"classId" : "skyDecoration"/*, "position" : [-240, -135], "size" : [480, 270]*/},
-        {"classId" : "sunlightDecoration", "position" : [0, 0]}
+        {"classId" : "nightSkyDecoration"/*, "position" : [-240, -135], "size" : [480, 270]*/},
+        {"classId" : "moonlightDecoration", "position" : [0, 0]}
     ]
 };
 
@@ -1013,7 +1013,7 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
                 map.camera.size = camera.size;
                 
                 // lists.player0 = (getPlayerClass().fromMiddle([cX + wallSize[0] + cellSize[0] / 2, cY + wallSize[1] + cellSize[1] / 2]));
-                playerPositionM = [cX + wallSize[0] + cellSize[0] / 2, cY + wallSize[1] + cellSize[1] / 2];
+                getCurrentSave().playerPositionM = [cX + wallSize[0] + cellSize[0] / 2, cY + wallSize[1] + cellSize[1] / 2];
                 
                 if(mode == "sideways") {
                     let ground = (Ground.fromMiddle([cX + fullCellSize[0] / 2, cY + fullCellSize[1] - wallSize[1]], [32, 8]));

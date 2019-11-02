@@ -32,7 +32,7 @@ class Enemy extends Character {
         
         this.items = [];
         
-        let count = irandom(1, 2);
+        let count = irandom(1, 4);
         
         for(let i = 0; i < count; ++i) {
             this.items.push(new IC["apple"]());
@@ -66,7 +66,7 @@ class Enemy extends Character {
             addEntity(pickableItem);
         }
         
-        return this;
+        return super.ondefeat();
     }
     
     onremove() {
@@ -154,7 +154,7 @@ EC["dummy"] = class Dummy extends Character {
         this.resetEnergy(1024);
         
         this.setStyle("#7F3F00");
-        this.addInteraction(new DragRecipient(0));
+        this.addInteraction(new DragRecipient(1));
         // this.addActset("regeneration");
         // this.addAction(new Regeneration(0.125));
         this.stats["regeneration"] = 0.125;

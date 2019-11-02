@@ -110,7 +110,9 @@ class Entity extends Rectangle {
         this.stats = {};
         
         this.events = {
-            "defeat" : []
+            "defeat" : [],
+            "hit" : [],
+            "hurt" : []
         };
         
         this.drawables = new SetArray();
@@ -124,6 +126,15 @@ class Entity extends Rectangle {
         this.items = new SetArray();
         
         this.stats["action-costFactor"] = 1;
+    }
+    
+    static fromData(data) {
+        let entity = super.fromData(data);
+        
+        if(data.stats) {entity.setStats(data.stats);}
+        if(data.energy) {entity.setEnergy(data.energy);}
+        
+        return entity;
     }
     
     setSpeed(speed) {
@@ -680,7 +691,6 @@ class Entity extends Rectangle {
         
         if(this.energy <= 0) {
             this.ondefeat();
-            this.triggerEvents("defeat");
             removeEntity(this);
         }
         
@@ -1072,7 +1082,7 @@ class Entity extends Rectangle {
     }
     
     ondefeat() {
-        return this;
+        return this.triggerEvents("defeat");
     }
     
     getCursorDirection() {
@@ -1091,7 +1101,9 @@ class Entity extends Rectangle {
         return null;
     }
     
-    onland(obstacle) {return this;}
+    onland(obstacle) {
+        return this.triggerEvents("land", [obstacle]);
+    }
     
     replaceStateObject(object) {
         this.removeState(object.name);
@@ -1126,11 +1138,14 @@ class Entity extends Rectangle {
         return this;
     }
     
-    triggerEvents(name) {
-        if(Array.isArray(this.events[name])) {
-            for(let i = 0; i < this.events[name].length; ++i) {
-                this.events[name][i]();
+    triggerEvents(eventName, params = []) {
+        if(Array.isArray(this.events[eventName])) {
+            for(let i = 0; i < this.events[eventName].length; ++i) {
+                let eventFunction = this.events[eventName][i].bind(this);
+                eventFunction.apply(eventFunction, params);
             }
+        } else if(typeof this.events[eventName] === "function") {
+            this.events[eventName].bind(this).apply(this.events[eventName], params);
         }
         
         return this;
@@ -1138,6 +1153,32 @@ class Entity extends Rectangle {
     
     getData() {
         return {position : this.position, size : this.size};
+    }
+    
+    onhit(recipient) {
+        return this.triggerEvents("hit", [recipient]);
+    }
+    
+    onhurt(actor) {
+        if(!this.stats["count-hurt"]) {
+            this.stats["count-hurt"] = 1;
+        } else {
+            ++this.stats["count-hurt"];
+        }
+        
+        return this.triggerEvents("hurt", [actor]);
+    }
+    
+    setSizeTransition(sizeTransition) {
+        if(!this.sizeTransition) {
+            this.controllers.add(function() {
+                this.setSizeM(this.sizeTransition.getNext());
+            });
+        }
+        
+        this.sizeTransition = sizeTransition;
+        
+        return this;
     }
 }
 

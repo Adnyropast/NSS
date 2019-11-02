@@ -190,24 +190,3 @@ function makeSpiralPath(startAngle, endAngle, minDistance, maxDistance, count = 
     
     return points;
 }
-
-function makePathPolygon(path) {
-    let polygon = [];
-    let reverse = [];
-    
-    polygon.push(path[0]);
-    
-    for(let i = 1; i < path.length - 1; ++i) {
-        let point = path[i];
-        let vector = Vector.subtraction(point, path[i-1]);
-        let normal = (new Vector(-vector[1], vector[0])).normalize();
-        
-        polygon.push(Vector.addition(point, normal));
-        reverse.push(Vector.subtraction(point, normal));
-    }
-    
-    polygon.push(path[path.length - 1]);
-    polygon.push.apply(polygon, reverse.reverse());
-    
-    return polygon;
-}
