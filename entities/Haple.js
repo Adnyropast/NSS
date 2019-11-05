@@ -18,11 +18,13 @@ EC["haple"] = class Haple extends PlayableCharacter {
         
         this.setStats({
             "walk-speed" : 0.5,
-            "walk-speed-tired" : 0.25,
+            "walk-speed-tired" : 0.375,
             "air-speed" : 0.5,
+            "air-speed-tired" : 0.5-Math.pow(2, -7),
             "swim-speed" : 0.5,
+            "swim-speed-tired" : 0.375,
             
-            "climb-speed" : 0.25,
+            "climb-speed" : 1,
             "jump-force" : 1.5,
             "regeneration" : 0.0625,
             
@@ -31,14 +33,21 @@ EC["haple"] = class Haple extends PlayableCharacter {
             
             "midairJump-count" : 1
         });
-    }
-    
-    static fromData_() {
-        let haple = super.fromData(...arguments);
         
-        console.log(haple.cursor.position, haple.cursor.size);
-        
-        return haple;
+        this.events["defeat"]["vanish"] = function() {
+            let count = 8;
+            let positionM = this.getPositionM();
+            
+            for(let i = 0; i < count; ++i) {
+                let angle = i / count * 2*Math.PI;
+                
+                let particle = HapleVanishParticle.fromMiddle(positionM, Vector.multiplication(this.size, 2));
+                
+                particle.setSpeed((new Vector(Math.cos(angle), Math.sin(angle))).normalize(Math.random()+3));
+                
+                addEntity(particle);
+            }
+        };
     }
     
     updateDrawable() {
@@ -47,33 +56,6 @@ EC["haple"] = class Haple extends PlayableCharacter {
         this.drawableOffset[0] = 0;
         
         return super.updateDrawable();
-    }
-    
-    onstatewall(wallState) {
-        if(wallState.side < 0) {
-            this.drawableOffset[0] = -4;
-        } else if(wallState.side > 0) {
-            this.drawableOffset[0] = +4;
-        }
-        
-        return super.onstatewall(wallState);
-    }
-    
-    ondefeat() {
-        let count = 8;
-        let positionM = this.getPositionM();
-        
-        for(let i = 0; i < count; ++i) {
-            let angle = i / count * 2*Math.PI;
-            
-            let particle = HapleVanishParticle.fromMiddle(positionM, Vector.multiplication(this.size, 2));
-            
-            particle.setSpeed((new Vector(Math.cos(angle), Math.sin(angle))).normalize(Math.random()+3));
-            
-            addEntity(particle);
-        }
-        
-        return super.ondefeat();
     }
 };
 

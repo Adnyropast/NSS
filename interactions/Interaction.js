@@ -69,6 +69,10 @@ class Interactor {
         
         return collision;
     }
+    
+    confirmInteraction(interrecipient) {
+        return true;
+    }
 }
 
 class Interrecipient {
@@ -311,7 +315,7 @@ class ThrustActor extends Interactor {
         let actor = this.getActor();
         var recipient = interrecipient.getRecipient();
         
-        let value = interrecipient.negotiateThrust(this.thrustValue);
+        let value = interrecipient.negotiateThrust(this.getThrustValue());
         let negotiated = interrecipient.negotiate(this);
         
         value = negotiated.thrustValue;
@@ -343,7 +347,10 @@ class ThrustActor extends Interactor {
         return this;
     }
     
-    getThrustValue() {return this.thrustValue;}
+    getThrustValue() {
+        return this.getActor().getThrust();
+        return this.thrustValue;
+    }
 }
 
 class ThrustRecipient extends Interrecipient {
@@ -379,7 +386,7 @@ class GroundActor extends Interactor {
         recipient.addState("grounded");
         
         if(recipient.locate(this.getActor()) & 8) {
-            recipient.addState("actuallyGrounded");
+            recipient.replaceStateObject({name:"actuallyGrounded", countdown:2});
             recipient.replaceStateObject({name:"midairJump", count:recipient.stats["midairJump-count"]});
         }
         
@@ -396,7 +403,7 @@ class GroundAreaActor extends Interactor {
     interact(interrecipient) {
         var recipient = interrecipient.getRecipient();
         
-        recipient.addState("grounded").addState("actuallyGrounded");
+        recipient.replaceStateObject({name:"actuallyGrounded", countdown:2});
         
         return this;
     }
@@ -672,7 +679,7 @@ class WaterActor extends Interactor {
     }
     
     interact(interrecipient) {
-        interrecipient.getRecipient().addState("water");
+        interrecipient.getRecipient().replaceStateObject({name : "water", countdown : 2});
         
         return this;
     }
@@ -774,10 +781,10 @@ class WaterThrustRecipient extends Interrecipient {
     }
 }
 
-class SoftReplaceActor extends Interactor {
+class SoftReplaceActor extends ReplaceActor {
     constructor() {
-        super();
-        this.setId("softReplace");
+        super(4);
+        // this.setId("softReplace");
         
         this.brakeValue = BRK_OBST;
         this.thrustValue = THRUSTFACTOR_OBSTACLE;
@@ -787,20 +794,18 @@ class SoftReplaceActor extends Interactor {
         let actor = this.getActor();
         let recipient = interrecipient.getRecipient();
         
-        if(!recipient.hasState("crouch") && recipient.speed[1] > 0 && (actor.locate(recipient) & 4)) {
-            recipient.brake(this.brakeValue);
-            actor.replace(recipient, 4);
-            recipient.speed[1] = 0;
-        }
+        recipient.brake(this.brakeValue);
+        actor.replace(recipient, 4);
+        recipient.speed[1] = 0;
         
         return this;
     }
-}
-
-class SoftReplaceRecipient extends Interrecipient {
-    constructor() {
-        super();
-        this.setId("softReplace");
+    
+    confirmInteraction(interrecipient) {
+        const actor = this.getActor();
+        const recipient = interrecipient.getRecipient();
+        
+        return !recipient.hasState("crouch") && recipient.speed[1] > 0 && (actor.locate(recipient) & 4);
     }
 }
 
@@ -854,25 +859,21 @@ class LadderActor extends Interactor {
         let actor = this.getActor();
         let recipient = interrecipient.getRecipient();
         
-        let maintainState = recipient.findState("ladder-maintain");
-        
-        let gravity = recipient.findState("gravity");
-        
-        if(gravity != undefined) {
-            if(typeof maintainState != "undefined") {
-                recipient.addState("ladder");
-                maintainState.countdown = 2;
-                // recipient.findState("thrust").value = 0.25;
-                recipient.replaceStateObject({name : "thrust", value : 0.25, countdown : 1});
-                recipient.brake(1.25);
-            } else if(recipient.hasState("lookup") && recipient.getY1() >= actor.getY1()) {
-                recipient.addState("ladder");
-                recipient.addStateObject({"name" : "ladder-maintain", "countdown" : 2});
-                recipient.brake(Infinity);
-            }
-        }
+        recipient.replaceStateObject({name : "ladder", countdown : 2});
+        recipient.brake(1.25);
         
         return this;
+    }
+    
+    confirmInteraction(interrecipient) {
+        const actor = this.getActor();
+        const recipient = interrecipient.getRecipient();
+        
+        if(!recipient.getGravityDirection().isZero()) {
+            return recipient.hasState("ladder") || (recipient.hasState("lookup") && recipient.getY1() >= actor.getY1() && !recipient.findState("noLadder"));
+        }
+        
+        return false;
     }
 }
 

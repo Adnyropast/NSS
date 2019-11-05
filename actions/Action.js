@@ -154,6 +154,8 @@ class Action {
     }
 }
 
+const busyBannedActions = new SetArray();
+
 class BusyAction extends Action {
     onadd() {
         this.user.removeActionsWithId(ACT_MOVEMENT);
@@ -172,6 +174,14 @@ class BusyAction extends Action {
     }
     
     preventsAddition(action) {
-        return !(action instanceof StunState) && (action instanceof BusyAction || super.preventsAddition(action) || action.id === ACT_JUMP || action.id === ACT_MOVEMENT);
+        for(let i = 0; i < busyBannedActions.length; ++i) {
+            if(action instanceof busyBannedActions[i]) {
+                return true;
+            }
+        }
+        
+        return !(action instanceof StunState) && super.preventsAddition(action);
     }
 }
+
+busyBannedActions.add(BusyAction);

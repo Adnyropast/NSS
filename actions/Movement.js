@@ -40,13 +40,6 @@ class Movement extends Action {
             vector = Vector.subtraction(this.user.route, this.user.getPositionM());
         }
         
-        let full = true;
-        
-        if(this.getUseCost() >= this.user.getEnergy()) {
-            // return this.end("not enough energy");
-            full = false;
-        }
-        
         if(vector != null) {
             var power = this.power;
             
@@ -54,26 +47,41 @@ class Movement extends Action {
                 power = thrust;
             }
             
-            if(!full) {power /= 2;}
-            
             vector.normalize(power);
             
-            let gravityDirection = this.user.findState("gravity");
+            let gravityDirection = this.user.getGravityDirection();
             
-            if(typeof gravityDirection == "undefined" || this.user.hasState("ladder")) {gravityDirection = [0, 0];}
-            else {gravityDirection = gravityDirection.direction;}
+            if(this.user.hasState("ladder")) {gravityDirection = new Vector(0, 0);}
+            
+            /**/
             
             for(var dim = 0; dim < gravityDirection.length; ++dim) {
                 if(gravityDirection[dim] != 0 && vector[dim] != 0) {
                     if(Math.sign(gravityDirection[dim]) == Math.sign(vector[dim])) {
-                        this.user.addAction(this.crouch);
+                        if(Math.abs(vector.angleBetween(gravityDirection)) < Math.PI/4) {
+                            this.user.addAction(this.crouch);
+                        }
+                        
                         vector[dim] = 0;
                     } else {
-                        this.user.addAction(this.lookup);
+                        if(Math.abs(vector.angleBetween(gravityDirection.times(-1))) < Math.PI/4) {
+                            this.user.addAction(this.lookup);
+                        }
+                        
                         vector[dim] = 0;
                     }
                 }
             }
+            
+            /**
+            
+            if(Math.abs(vector.angleBetween(gravityDirection)) < Math.PI/4) {
+                this.user.addAction(this.crouch);
+            } else if(Math.abs(vector.angleBetween(gravityDirection.times(-1))) < Math.PI/4) {
+                this.user.addAction(this.lookup);
+            }
+            
+            /**/
             
             let grounded = this.user.hasState("actuallyGrounded");
             let wallState = this.user.findState("wall");
@@ -88,7 +96,8 @@ class Movement extends Action {
                     this.user.addState("moving");
                 }
                 
-                if(full) {
+                if(this.getUseCost() < this.user.getEnergy()) {
+                    // return this.end("not enough energy");
                     this.user.hurt(this.getUseCost());
                 }
             }
@@ -116,6 +125,8 @@ class Movement extends Action {
     }
 }
 
+busyBannedActions.add(Movement);
+
 class DirectionMovement extends Movement {
     constructor() {
         super();
@@ -140,6 +151,8 @@ class Still extends Action {
     
     use() {
         this.user.setFace(this.user.getCursorDirection()[0]);
+        
+        this.end();
         
         return this;
     }

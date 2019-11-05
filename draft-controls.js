@@ -1,50 +1,10 @@
 
-/**/
-const K_ESC = [27];
-const K_CONFIRM = [13];
+let eventControllers = new SetArray();
 
-var K_LEFT = [37, 65, 81];
-var K_UP = [38, 87, 90];
-var K_RIGHT = [39, 68];
-var K_DOWN = [40, 83];
-
-var K_CLEFT = [72];
-var K_CUP = [85];
-var K_CDOWN = [74];
-var K_CRIGHT = [75];
-/**/
-var K_DIRECTION = K_LEFT.concat(K_UP).concat(K_RIGHT).concat(K_DOWN);
-var K_JUMP = [32];
-var K_FOCUS = [223];
-var K_PRESSFOCUS = [191];
-
-var K_CDIRECTION = K_CLEFT.concat(K_CUP).concat(K_CDOWN).concat(K_CRIGHT);
-
-var K_FLURRY = [70];
-/**/
-
-function actionAdder(action) {
-    return function(entity) {
-        entity.addAction(action);
-    };
-}
-
-function actionNewAdder(actionClass) {
-    return function(entity) {
-        entity.addAction(new actionClass());
-    }
-}
-
-function actionConstructorRemover(actionClass) {
-    return function(entity) {
-        entity.removeActionsWithConstructor(actionClass);
-    };
-}
-
-function addClickAction(which, actionClass) {
+function addClickAction(which, actionClass, player) {
     if(Array.isArray(which)) {
         for(let i = 0; i < which.length; ++i) {
-            addClickAction(which[i], actionClass);
+            addClickAction(which[i], actionClass, player);
         }
     } else {
         if(!controls.click.hasOwnProperty(which)) {
@@ -53,8 +13,21 @@ function addClickAction(which, actionClass) {
             controls.mouseup[which] = [];
         }
         
-        controls.click[which].push(actionNewAdder(actionClass));
-        controls.mouseup[which].push(actionConstructorRemover(actionClass));
+        let action = null;
+        
+        controls.click[which].push(function() {
+            let entity = player.entity;
+            
+            action = new actionClass();
+            
+            entity.addAction(action);
+        });
+        
+        controls.mouseup[which].push(function() {
+            let entity = player.entity;
+            
+            entity.removeAction(action);
+        });
     }
 }
 
@@ -62,10 +35,10 @@ function removeClickAction() {
     
 }
 
-function addKeyAction(keyCode, actionClass) {
+function addKeyAction(keyCode, actionClass, player) {
     if(Array.isArray(keyCode)) {
         for(let i = 0; i < keyCode.length; ++i) {
-            addKeyAction(keyCode[i], actionClass);
+            addKeyAction(keyCode[i], actionClass, player);
         }
     } else {
         if(!controls.keys.hasOwnProperty(keyCode)) {
@@ -74,15 +47,28 @@ function addKeyAction(keyCode, actionClass) {
             controls.keyup[keyCode] = [];
         }
         
-        controls.keys[keyCode].push(actionNewAdder(actionClass));
-        controls.keyup[keyCode].push(actionConstructorRemover(actionClass));
+        let action = null;
+        
+        controls.keys[keyCode].push(function() {
+            let entity = player.entity;
+            
+            action = new actionClass();
+            
+            entity.addAction(action);
+        });
+        
+        controls.keyup[keyCode].push(function() {
+            let entity = player.entity;
+            
+            entity.removeAction(action);
+        });
     }
 }
 
-function addKeyActionRepeat(keyCode, actionClass) {
+function addKeyActionRepeat(keyCode, actionClass, player) {
     if(Array.isArray(keyCode)) {
         for(let i = 0; i < keyCode.length; ++i) {
-            addKeyActionRepeat(keyCode[i], actionClass);
+            addKeyActionRepeat(keyCode[i], actionClass, player);
         }
     } else {
         if(!controls.keys.hasOwnProperty(keyCode)) {
@@ -91,24 +77,39 @@ function addKeyActionRepeat(keyCode, actionClass) {
             controls.keyup[keyCode] = [];
         }
         
-        let adder = function adder() {
-            actionNewAdder(actionClass)(this);
+        let action = null;
+        let f = function() {
+            let entity = player.entity;
+            
+            let newAction = new actionClass();
+            
+            if(entity != null) if(entity.addAction(newAction)) {
+                action = newAction;
+            }
         };
         
-        controls.keys[keyCode].push(function(entity) {
-            entity.controllers.add(adder);
+        controls.keys[keyCode].push(function() {
+            let entity = player.entity;
+            
+            f;
+            
+            eventControllers.add(f);
         });
-        controls.keyup[keyCode].push(function(entity) {
-            entity.controllers.remove(adder);
-            actionConstructorRemover(actionClass)(entity);
+        
+        controls.keyup[keyCode].push(function() {
+            let entity = player.entity;
+            
+            eventControllers.remove(f);
+            
+            if(entity != null) entity.removeAction(action);
         });
     }
 }
 
-function addClickActionRepeat(which, actionClass) {
+function addClickActionRepeat(which, actionClass, player) {
     if(Array.isArray(which)) {
         for(let i = 0; i < which.length; ++i) {
-            addClickActionRepeat(which[i], actionClass);
+            addClickActionRepeat(which[i], actionClass, player);
         }
     } else {
         if(!controls.click.hasOwnProperty(which)) {
@@ -117,24 +118,38 @@ function addClickActionRepeat(which, actionClass) {
             controls.mouseup[which] = [];
         }
         
-        let adder = function adder() {
-            actionNewAdder(actionClass)(this);
+        let action;
+        let f = function() {
+            let entity = player.entity;
+            
+            let newAction = new actionClass();
+            
+            if(entity != null) if(entity.addAction(newAction)) {
+                action = newAction;
+            }
         };
         
-        controls.click[which].push(function(entity) {
-            entity.controllers.add(adder);
+        controls.click[which].push(function() {
+            let entity = player.entity;
+            
+            f;
+            
+            eventControllers.add(f);
         });
-        controls.mouseup[which].push(function(entity) {
-            entity.controllers.remove(adder);
-            actionConstructorRemover(actionClass)(entity);
+        controls.mouseup[which].push(function() {
+            let entity = player.entity;
+            
+            eventControllers.remove(f);
+            
+            if(entity != null) entity.removeAction(action);
         });
     }
 }
 
-function addKeyActionToggle(keyCode, actionClass) {
+function addKeyActionToggle(keyCode, actionClass, player) {
     if(Array.isArray(keyCode)) {
         for(let i = 0; i < keyCode.length; ++i) {
-            addKeyActionToggle(keyCode[i], actionClass);
+            addKeyActionToggle(keyCode[i], actionClass, player);
         }
     } else {
         if(!controls.keys.hasOwnProperty(keyCode)) {
@@ -143,26 +158,39 @@ function addKeyActionToggle(keyCode, actionClass) {
             controls.keyup[keyCode] = [];
         }
         
-        let adder = function adder() {
-            actionNewAdder(actionClass)(this);
+        let action;
+        let f = function() {
+            let entity = player.entity;
+            
+            let newAction = new actionClass();
+        
+            if(entity != null) if(entity.addAction(newAction)) {
+                action = newAction;
+            }
         };
         
-        controls.keys[keyCode].push(function(entity) {
-            if(entity.controllers.includes(adder)) {
-                entity.controllers.remove(adder);
-                actionConstructorRemover(actionClass)(entity);
+        controls.keys[keyCode].push(function() {
+            let entity = player.entity;
+            
+            if(eventControllers.includes(f)) {
+                eventControllers.remove(f);
+                
+                if(entity != null) {
+                    entity.removeAction(action);
+                }
             } else {
-                entity.controllers.add(adder);
+                f;
+                
+                eventControllers.add(f);
             }
         });
-        // controls.keyup[keyCode].push();
     }
 }
 
-function addClickActionToggle(which, actionClass) {
+function addClickActionToggle(which, actionClass, player) {
     if(Array.isArray(which)) {
         for(let i = 0; i < which.length; ++i) {
-            addClickActionToggle(which[i], actionClass);
+            addClickActionToggle(which[i], actionClass, player);
         }
     } else {
         if(!controls.click.hasOwnProperty(which)) {
@@ -171,117 +199,156 @@ function addClickActionToggle(which, actionClass) {
             controls.mouseup[which] = [];
         }
         
-        let adder = function adder() {
-            actionNewAdder(actionClass)(this);
+        let action;
+        let f = function() {
+            let entity = player.entity;
+            
+            newAction = new actionClass();
+            
+            if(entity != null) if(entity.addAction(newAction)) {
+                action = newAction;
+            }
         };
         
-        controls.click[which].push(function(entity) {
-            if(entity.controllers.includes(adder)) {
-                entity.controllers.remove(adder);
-                actionConstructorRemover(actionClass)(entity);
+        controls.click[which].push(function() {
+            let entity = player.entity;
+            
+            if(eventControllers.includes(f)) {
+                eventControllers.remove(f);
+                
+                if(entity != null) {
+                    entity.removeAction(action);
+                }
             } else {
-                entity.controllers.add(adder);
+                f;
+                
+                eventControllers.add(f);
             }
         });
-        // controls.mouseup[which].push();
+    }
+}
+
+function addButtonAction(button, actionClass, player) {
+    if(Array.isArray(button)) {
+        for(let i = 0; i < button.length; ++i) {
+            addButtonAction(button[i], actionClass, player);
+        }
+    } else {
+        if(!controls.buttons.hasOwnProperty(button)) {
+            controls.buttons[button] = [];
+        } if(!controls.buttonup.hasOwnProperty(button)) {
+            controls.buttonup[button] = [];
+        }
+        
+        let action = null;
+        
+        controls.buttons[button].push(function() {
+            let entity = player.entity;
+            
+            action = new actionClass();
+            
+            entity.addAction(action);
+        });
+        
+        controls.buttonup[button].push(function() {
+            let entity = player.entity;
+            
+            entity.removeAction(action);
+        });
+    }
+}
+
+function addButtonActionRepeat(button, actionClass, player) {
+    if(Array.isArray(button)) {
+        for(let i = 0; i < button.length; ++i) {
+            addButtonActionRepeat(button[i], actionClass, player);
+        }
+    } else {
+        if(!controls.buttons.hasOwnProperty(button)) {
+            controls.buttons[button] = [];
+        } if(!controls.buttonup.hasOwnProperty(button)) {
+            controls.buttonup[button] = [];
+        }
+        
+        let action = null;
+        let f = function() {
+            let entity = player.entity;
+            
+            let newAction = new actionClass();
+            
+            if(entity != null) if(entity.addAction(newAction)) {
+                action = newAction;
+            }
+        };
+        
+        controls.buttons[button].push(function() {
+            let entity = player.entity;
+            
+            f;
+            
+            eventControllers.add(f);
+        });
+        
+        controls.buttonup[button].push(function() {
+            let entity = player.entity;
+            
+            eventControllers.remove(f);
+            
+            if(entity != null) entity.removeAction(action);
+        });
+    }
+}
+
+function addButtonActionToggle(button, actionClass, player) {
+    if(Array.isArray(button)) {
+        for(let i = 0; i < button.length; ++i) {
+            addButtonActionToggle(button[i], actionClass, player);
+        }
+    } else {
+        if(!controls.buttons.hasOwnProperty(button)) {
+            controls.buttons[button] = [];
+        } if(!controls.buttonup.hasOwnProperty(button)) {
+            controls.buttonup[button] = [];
+        }
+        
+        let action;
+        let f = function() {
+            let entity = player.entity;
+            
+            let newAction = new actionClass();
+        
+            if(entity != null) if(entity.addAction(newAction)) {
+                action = newAction;
+            }
+        };
+        
+        controls.buttons[button].push(function() {
+            let entity = player.entity;
+            
+            if(eventControllers.includes(f)) {
+                eventControllers.remove(f);
+                
+                if(entity != null) {
+                    entity.removeAction(action);
+                }
+            } else {
+                f;
+                
+                eventControllers.add(f);
+            }
+        });
     }
 }
 
 var controls = {
-    click : {
-        1 : [
-            function(entity) {
-                // console.log("left click");
-            }
-        ],
-        2 : [function(entity) {
-            // console.log("middle click");
-        }],
-        3 : [function(entity) {
-            // console.log("right click");
-        }]
-    },
-    mouseup : {
-        1 : [function(entity) {
-            
-        }],
-        2 : [function(entity) {
-            
-        }],
-        3 : [function(entity) {
-            
-        }]
-    },
-    keys : {
-        226 : [
-            function(entity) {
-                
-            }
-        ]
-    },
-    keyup : {
-        
-    },
-    mousemove : [function(entity) {
-        // console.log("mouse move");
-    }]
+    click : {},
+    mouseup : {},
+    keys : {},
+    keyup : {},
+    mousemove : [],
+    buttons : {},
+    buttonup : {}
 };
-
-var actionevents = [
-    /**
-    {"id" : "holdFocus", "keys" : [223], "presskeys" : [], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new HoldFocus());
-    }, "oneventup" : function oneventup(player) {
-        player.removeActionsWithConstructor(HoldFocus);
-    }},
-    {"id" : "pressFocus", "keys" : [], "presskeys" : [191], "mouse" : [], "oneventdown" : function oneventdown(player) {
-        player.addAction(new PressFocus());
-    }, "oneventup" : function oneventup(player) {
-        
-    }},
-    **/
-];
-
-function findActionevent(id) {
-    return actionevents.find(function(actionevent) {
-        return actionevent.id == id;
-    });
-}
-
-function updateActionevents(data) {
-    for(var j = 0; j < data.length; ++j) {
-        for(var i = 0; i < actionevents.length; ++i) {
-            var actionevent = actionevents[i];
-            
-            if(actionevent.id == data[j].id) {
-                if(Array.isArray(data.keys)) {
-                    actionevent.keys.splice(0, actionevent.keys.length);
-                    actionevent.keys.push.apply(actionevent, data[j].keys);
-                } if(Array.isArray(data.presskeys)) {
-                    actionevent.presskeys.splice(0, actionevent.presskeys.length);
-                    actionevent.presskeys.push.apply(actionevent, data[j].presskeys);
-                } if(Array.isArray(data.mouse)) {
-                    actionevent.mouse.splice(0, actionevent.mouse.length);
-                    actionevent.mouse.push.apply(actionevent, data[j].mouse);
-                }
-            }
-        }
-        
-        if(data[j].id == "left") {
-            K_LEFT.splice(0, K_LEFT.length);
-            K_LEFT.push(K_LEFT, data[j].keys);
-        } else if(data[j].id == "up") {
-            K_UP.splice(0, K_UP.length);
-            K_UP.push(K_UP, data[j].keys);
-        } else if(data[j].id == "right") {
-            K_RIGHT.splice(0, K_RIGHT.length);
-            K_RIGHT.push(K_RIGHT, data[j].keys);
-        } else if(data[j].id == "down") {
-            K_DOWN.splice(0, K_DOWN.length);
-            K_DOWN.push(K_DOWN, data[j].keys);
-        }
-    }
-}
 
 function getKDirection(kleft = K_LEFT, kup = K_UP, kright = K_RIGHT, kdown = K_DOWN) {
     var direction = Vector.filled(2, 0);
@@ -349,70 +416,206 @@ let ctrljson = {
     ],
     "keytoggle" : [
         // {"keyCode" : [67], "actionId" : "followMe"},
+        // {"keyCode" : [82], "actionId" : "rocketPunch"},
+        // {"keyCode" : [86], "actionId" : "flamethrower"},
     ],
     "mouseonce" : [
         // {"which" : 1, "actionId" : "lplace"},
         // {"which" : 1, "actionId" : "lcreate"},
         // {"which" : 2, "actionId" : "lselect"},
+        // {"which" : 1, "actionId" : "rocketPunch"},
     ],
     "mouserepeat" : [
         {"which" : 1, "actionId" : "autoLcreate"},
         // {"which" : 1, "actionId" : "autoSword"}
         // {"which" : 1, "actionId" : "plasmaLightning"}
-        {"which" : 3, "actionId" : "autoLdelete"}
+        {"which" : 3, "actionId" : "autoLdelete"},
+        // {"which" : 1, "actionId" : "rocketPunch"}
     ],
     "mousetoggle" : [
-        // {"which" : 1, "actionId" : ""}
+        // {"which" : 1, "actionId" : "rocketPunch"},
+        // {"which" : 3, "actionId" : "flamethrower"},
+    ],
+    "buttononce" : [
+        {"button" : 3, "actionId" : "goldenJab"},
+    ],
+    "buttonrepeat" : [
+        {"button" : 5, "actionId" : "autoJump"},
+        {"button" : 2, "actionId" : "autoSword"},
+        {"button" : 0, "actionId" : "autoCutter"},
+        {"button" : 1, "actionId" : "rocketPunch"},
+    ],
+    "buttontoggle" : [
+        {"button" : -1, "actionId" : "flamethrower"},
     ]
 };
 
-function updateEventAction(json) {
+function updateEventAction(json, player = PLAYERS[0]) {
     clearEventAction();
     
     for(let i = 0; i < json.keyonce.length; ++i) {
         let assoc = json.keyonce[i];
         
-        addKeyAction(assoc.keyCode, getActionClass(assoc.actionId));
+        addKeyAction(assoc.keyCode, getActionClass(assoc.actionId), player);
     }
     
     for(let i = 0; i < json.keyrepeat.length; ++i) {
         let assoc = json.keyrepeat[i];
         
-        addKeyActionRepeat(assoc.keyCode, getActionClass(assoc.actionId));
+        addKeyActionRepeat(assoc.keyCode, getActionClass(assoc.actionId), player);
     }
     
     for(let i = 0; i < json.keytoggle.length; ++i) {
         let assoc = json.keytoggle[i];
         
-        addKeyActionToggle(assoc.keyCode, getActionClass(assoc.actionId));
+        addKeyActionToggle(assoc.keyCode, getActionClass(assoc.actionId), player);
     }
     
     for(let i = 0; i < json.mouseonce.length; ++i) {
         let assoc = json.mouseonce[i];
         
-        addClickAction(assoc.which, getActionClass(assoc.actionId));
+        addClickAction(assoc.which, getActionClass(assoc.actionId), player);
     }
     
     for(let i = 0; i < json.mouserepeat.length; ++i) {
         let assoc = json.mouserepeat[i];
         
-        addClickActionRepeat(assoc.which, getActionClass(assoc.actionId));
+        addClickActionRepeat(assoc.which, getActionClass(assoc.actionId), player);
     }
     
     for(let i = 0; i < json.mousetoggle.length; ++i) {
         let assoc = json.mousetoggle[i];
         
-        addClickActionToggle(assoc.which, getActionClass(assoc.actionId));
+        addClickActionToggle(assoc.which, getActionClass(assoc.actionId), player);
     }
+    
+    for(let i = 0; i < json.buttononce.length; ++i) {
+        let assoc = json.buttononce[i];
+        
+        addButtonAction(assoc.button, getActionClass(assoc.actionId), player);
+    }
+    
+    for(let i = 0; i < json.buttonrepeat.length; ++i) {
+        let assoc = json.buttonrepeat[i];
+        
+        addButtonActionRepeat(assoc.button, getActionClass(assoc.actionId), player);
+    }
+    
+    for(let i = 0; i < json.buttontoggle.length; ++i) {
+        let assoc = json.buttontoggle[i];
+        
+        addButtonActionToggle(assoc.button, getActionClass(assoc.actionId), player);
+    }
+    
+    controls.mousemove.push(function() {
+        player.entity.addAction(new MouseFocus());
+    });
+    controls.click[1].push(function() {
+        player.entity.addAction(new MouseFocus())
+    });
 }
 
 function clearEventAction() {
+    eventControllers.clear();
+    
     controls.click = {};
     controls.mouseup = {};
     controls.keys = {};
     controls.keyup = {};
-    
-    actionevents = [];
+    controls.mousemove = [];
+    controls.buttons = {};
+    controls.buttonup = {};
 }
 
 updateEventAction(ctrljson);
+
+function gameEventController() {
+    if(mouse.moveValue == 1) {
+        let list = controls.mousemove;
+        
+        for(let i in list) {
+            list[i]();
+        }
+    }
+    
+    for(let which in controls.click) {
+        if(mouse.value(which) === 1) {
+            let list = controls.click[which];
+            
+            for(let i in list) {
+                list[i]();
+            }
+        } else if(controls.mouseup[which] && (mouse.justReleased(which) || blurEvrec.blurred())) {
+            let list = controls.mouseup[which];
+            
+            for(let i in list) {
+                list[i]();
+            }
+        }
+    }
+    
+    for(let keyCode in controls.keys) {
+        if(keyList.value(keyCode) === 1) {
+            let list = controls.keys[keyCode];
+            
+            for(let i in list) {
+                list[i]();
+            }
+        } else if(controls.keyup[keyCode] && (keyList.justReleased(keyCode) || blurEvrec.blurred())) {
+            let list = controls.keyup[keyCode];
+            
+            for(let i in list) {
+                list[i]();
+            }
+        }
+    }
+    
+    for(let i = 0; i < eventControllers.length; ++i) {
+        eventControllers[i]();
+    }
+    
+    let gamepad = getGamepad(0);
+    
+    if(gamepad instanceof Gamepad) {
+        let entity = PLAYERS[0].entity;
+        
+        if(true) {
+            let vector = getDPADDirection();
+            vector.add(getJoyStickDirection());
+            
+            if(vector.isZero()) {
+                for(let i = 0; i < movementActions.length; ++i) {
+                    entity.removeAction(movementActions[i]);
+                }
+                
+                movementActions.length = 0;
+            } else {
+                entity.route = Vector.addition(entity.getPositionM(), vector.normalized(BIG));
+                
+                entity.addAction(new MoveFocus());
+                
+                let movementAction = (new Movement()).setUseCost(movementCost);
+                movementActions.push(movementAction);
+                entity.addAction(movementAction);
+            }
+        }
+        
+        for(let i = 0; i < gamepad.buttons.length; ++i) {
+            if(gamepadRec.value(i) === 1) {
+                let list = controls.buttons[i];
+                
+                for(let j in list) {
+                    list[j]();
+                }
+            } else if(gamepadRec.justReleased(i)) {
+                let list = controls.buttonup[i];
+                
+                for(let j in list) {
+                    list[j]();
+                }
+            }
+        }
+    }
+}
+
+let movementActions = [];

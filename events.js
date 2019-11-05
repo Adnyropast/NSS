@@ -1,4 +1,28 @@
 
+/**/
+const K_ESC = [27];
+const K_CONFIRM = [13];
+
+var K_LEFT = [37, 65, 81];
+var K_UP = [38, 87, 90];
+var K_RIGHT = [39, 68];
+var K_DOWN = [40, 83];
+
+var K_CLEFT = [72];
+var K_CUP = [85];
+var K_CDOWN = [74];
+var K_CRIGHT = [75];
+/**/
+var K_DIRECTION = K_LEFT.concat(K_UP).concat(K_RIGHT).concat(K_DOWN);
+var K_JUMP = [32];
+var K_FOCUS = [223];
+var K_PRESSFOCUS = [191];
+
+var K_CDIRECTION = K_CLEFT.concat(K_CUP).concat(K_CDOWN).concat(K_CRIGHT);
+
+var K_FLURRY = [70];
+/**/
+
 class KeyboardEventsRecorder {
     constructor() {
         Object.defineProperty(this, "array", {"value" : [], "enumerable" : false, "writable" : true});
@@ -184,6 +208,10 @@ class KeyboardEventsRecorder {
  * 26/04/2019 : Mouse class
  * 
  */
+
+const CLICKLEFT = 1;
+const CLICKMIDDLE = 2;
+const CLICKRIGHT = 3;
 
 class MouseEventsRecorder {
     constructor() {
@@ -409,6 +437,12 @@ class BlurEventRecorder {
         
         return this;
     }
+    
+    blur() {
+        this.blurValue = 1;
+        
+        return this;
+    }
 }
 
 var keyList = new KeyboardEventsRecorder(window);
@@ -423,6 +457,7 @@ function eventsRecordersUpdate() {
     keyList.increment();
     mouse.increment();
     blurEvrec.update();
+    gamepadRec.update();
 }
 
 function eventPreventDefault(event) {event.preventDefault();}
@@ -431,3 +466,142 @@ function disableRightClick() {window.addEventListener("contextmenu", eventPreven
 function enableRightClick() {window.removeEventListener("contextmenu", eventPreventDefault);}
 
 disableRightClick();
+
+const BUTTON_START = 9;
+const BUTTON_SELECT = 8;
+const BUTTON_HOME = 12;
+const BUTTON_CAPTURE = 13;
+const BUTTON_A = 2;
+const BUTTON_B = 1;
+const BUTTON_X = 3;
+const BUTTON_Y = 0;
+const BUTTON_L = 4;
+const BUTTON_R = 5;
+const BUTTON_ZL = 6;
+const BUTTON_ZR = 7;
+const BUTTON_L3 = 10;
+const BUTTON_R3 = 11;
+
+const DPAD_UT = 3.2857141494750977;
+const DPAD_UP = -1;
+const DPAD_UPRIGHT = -0.7142857313156128;
+const DPAD_RIGHT = -0.4285714030265808;
+const DPAD_DOWNRIGHT = -0.1428571343421936;
+const DPAD_DOWN = 0.14285719394683838;
+const DPAD_DOWNLEFT = 0.4285714626312256;
+const DPAD_LEFT = 0.7142857313156128;
+const DPAD_UPLEFT = 1;
+
+class GamepadEventsRecorder {
+    constructor(gamepadIndex) {
+        Object.defineProperty(this, "buttons", {value : {}, enumerable : false, writable : false});
+        Object.defineProperty(this, "limit", {value : 255, enumerable : false, writable : true});
+        
+        this.gamepadIndex = gamepadIndex;
+    }
+    
+    value(button) {
+        return this.buttons[button];
+    }
+    
+    justReleased(button) {
+        return this.buttons[button] === 0;
+    }
+    
+    update() {
+        let gamepad = this.getGamepad();
+        
+        if(gamepad instanceof Gamepad) {
+            for(let i = 0; i < gamepad.buttons.length; ++i) {
+                let button = gamepad.buttons[i];
+                
+                if(button.pressed) {
+                    // console.log(i);
+                    
+                    if(this.buttons[i]) {
+                        ++this.buttons[i];
+                    } else {
+                        this.buttons[i] = 1;
+                    }
+                } else {
+                    if(this.buttons[i] && this.buttons[i] > 0) {
+                        this.buttons[i] = 0;
+                    } else if(this.buttons[i] === 0) {
+                        delete this.buttons[i];
+                    }
+                }
+            }
+        }
+        
+        return this;
+    }
+    
+    getGamepad() {
+        return navigator.getGamepads()[this.gamepadIndex];
+    }
+}
+
+let gamepadRec = new GamepadEventsRecorder(0);
+
+function getDPADDirection(dpadValue) {
+    if(dpadValue === undefined) {
+        let gamepad = getGamepad(0);
+        
+        if(gamepad instanceof Gamepad) {
+            dpadValue = gamepad.axes[9];
+        }
+    } else if(arguments[0] instanceof Gamepad) {
+        dpadValue = arguments[0].axes[9];
+    }
+    
+    switch(dpadValue) {
+        case DPAD_UP : return new Vector(0, -1);
+        case DPAD_UPRIGHT : return (new Vector(+1, -1)).normalize();
+        case DPAD_RIGHT : return new Vector(+1, 0);
+        case DPAD_DOWNRIGHT : return (new Vector(+1, +1)).normalize();
+        case DPAD_DOWN : return new Vector(0, +1);
+        case DPAD_DOWNLEFT : return (new Vector(-1, +1)).normalize();
+        case DPAD_LEFT : return new Vector(-1, 0);
+        case DPAD_UPLEFT : return (new Vector(-1, -1)).normalize();
+        default : return new Vector(0, 0);
+    }
+}
+
+function getJoyStickDirection(x, y) {
+    if(x === undefined && y === undefined) {
+        let gamepad = getGamepad(0);
+        
+        if(gamepad instanceof Gamepad) {
+            x = gamepad.axes[0];
+            y = gamepad.axes[1];
+        } else {
+            x = 0;
+            y = 0;
+        }
+    } else if(arguments[0] instanceof Gamepad) {
+        let gamepad = arguments[0];
+        
+        x = gamepad.axes[0];
+        y = gamepad.axes[1];
+    } else {
+        if(x === undefined) {x = 0;}
+        if(y === undefined) {y = 0;}
+    }
+    
+    if(Math.abs(x) < 0.5) {x = 0;}
+    if(Math.abs(y) < 0.5) {y = 0;}
+    
+    return new Vector(x, y);
+}
+
+function getGamepad(index = 0) {
+    return navigator.getGamepads()[0];
+}
+
+function gamepad_getDirection(gamepad) {
+    if(gamepad instanceof Gamepad) {
+        return Vector.addition(getDPADDirection(gamepad), getJoyStickDirection(gamepad)).normalize();
+    }
+    
+    return new Vector(0, 0);
+}

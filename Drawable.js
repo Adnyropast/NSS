@@ -415,6 +415,10 @@ class TrailDrawable {
     
     getCount() {return this.closePoints.length;}
     
+    /**
+     * Adds a step in the trail, i.e. a point at the base and and another one on the edge.
+     */
+    
     addStep(closePoint, farPoint, edgePoint) {
         this.closePoints.push(closePoint);
         this.farPoints.push(farPoint);
@@ -469,72 +473,70 @@ class TrailDrawable {
     }
     
     draw(context) {
-        /**
-        
-        for(let i = 0; i < this.polygonDrawables.length; ++i) {
-            this.polygonDrawables[i].draw(context);
+        if(typeof this.curveFunction !== "function") {
+            for(let i = 0; i < this.polygonDrawables.length; ++i) {
+                this.polygonDrawables[i].draw(context);
+            }
+            
+            // for(let i = 0; i < this.edgePolygons.length; ++i) {
+                // this.edgePolygons[i].draw(context);
+            // }
+        } else {
+            let newPolygons = [];
+            let newEdges = [];
+            
+            for(let i = 0; i < this.polygonDrawables.length; ++i) {
+                let total = Math.max(this.polygonDrawables.length-1, 1);
+                
+                let preprogress = Math.max(i-1, 0)/(total);
+                let progression = i/(total);
+                
+                preprogress = this.curveFunction(preprogress);
+                progression = this.curveFunction(progression);
+                
+                let polygonDrawable = this.polygonDrawables[i];
+                let newPolygonDrawable = new PolygonDrawable([
+                    polygonDrawable[0],
+                    polygonDrawable[1],
+                    Vector.addition(polygonDrawable[1], Vector.subtraction(polygonDrawable[2], polygonDrawable[1]).times(progression)),
+                    Vector.addition(polygonDrawable[0], Vector.subtraction(polygonDrawable[3], polygonDrawable[0]).times(preprogress))
+                ]);
+                
+                newPolygonDrawable.setStyle(polygonDrawable.style);
+                newPolygonDrawable.setCamera(polygonDrawable.camera);
+                newPolygonDrawable.setCameraMode(polygonDrawable.cameraMode);
+                
+                newPolygons.push(newPolygonDrawable);
+            }
+            
+            // for(let i = 0; i < this.edgePolygons.length; ++i) {
+                // let preprogress = (i-1)/(this.edgePolygons.length-1);
+                // if(preprogress < 0) {preprogress = 0;}
+                // let progression = i/(this.edgePolygons.length-1);
+                
+                // let polygonDrawable = this.edgePolygons[i];
+                // let newPolygonDrawable = new PolygonDrawable([
+                    // polygonDrawable[0],
+                    // polygonDrawable[1],
+                    // Vector.addition(polygonDrawable[1], Vector.subtraction(polygonDrawable[2], polygonDrawable[1]).times(progression)),
+                    // Vector.addition(polygonDrawable[0], Vector.subtraction(polygonDrawable[3], polygonDrawable[0]).times(preprogress))
+                // ]);
+                
+                // newPolygonDrawable.setStyle(polygonDrawable.style);
+                // newPolygonDrawable.setCamera(polygonDrawable.camera);
+                // newPolygonDrawable.setCameraMode(polygonDrawable.cameraMode);
+                
+                // newEdges.push(newPolygonDrawable);
+            // }
+            
+            for(let i = 0; i < newPolygons.length; ++i) {
+                newPolygons[i].draw(context);
+            }
+            
+            // for(let i = 0; i < newEdges.length; ++i) {
+                // newEdges[i].draw(context);
+            // }
         }
-        
-        for(let i = 0; i < this.edgePolygons.length; ++i) {
-            this.edgePolygons[i].draw(context);
-        }
-        
-        /**/
-        
-        let newPolygons = [];
-        let newEdges = [];
-        
-        for(let i = 0; i < this.polygonDrawables.length; ++i) {
-            let total = Math.max(this.polygonDrawables.length-1, 1);
-            
-            let preprogress = Math.max(i-1, 0)/(total);
-            let progression = i/(total);
-            
-            preprogress = this.curveFunction(preprogress);
-            progression = this.curveFunction(progression);
-            
-            let polygonDrawable = this.polygonDrawables[i];
-            let newPolygonDrawable = new PolygonDrawable([
-                polygonDrawable[0],
-                polygonDrawable[1],
-                Vector.addition(polygonDrawable[1], Vector.subtraction(polygonDrawable[2], polygonDrawable[1]).times(progression)),
-                Vector.addition(polygonDrawable[0], Vector.subtraction(polygonDrawable[3], polygonDrawable[0]).times(preprogress))
-            ]);
-            
-            newPolygonDrawable.setStyle(polygonDrawable.style);
-            newPolygonDrawable.setCamera(polygonDrawable.camera);
-            newPolygonDrawable.setCameraMode(polygonDrawable.cameraMode);
-            
-            newPolygons.push(newPolygonDrawable);
-        }
-        
-        // for(let i = 0; i < this.edgePolygons.length; ++i) {
-            // let preprogress = (i-1)/(this.edgePolygons.length-1);
-            // if(preprogress < 0) {preprogress = 0;}
-            // let progression = i/(this.edgePolygons.length-1);
-            
-            // let polygonDrawable = this.edgePolygons[i];
-            // let newPolygonDrawable = new PolygonDrawable([
-                // polygonDrawable[0],
-                // polygonDrawable[1],
-                // Vector.addition(polygonDrawable[1], Vector.subtraction(polygonDrawable[2], polygonDrawable[1]).times(progression)),
-                // Vector.addition(polygonDrawable[0], Vector.subtraction(polygonDrawable[3], polygonDrawable[0]).times(preprogress))
-            // ]);
-            
-            // newPolygonDrawable.setStyle(polygonDrawable.style);
-            // newPolygonDrawable.setCamera(polygonDrawable.camera);
-            // newPolygonDrawable.setCameraMode(polygonDrawable.cameraMode);
-            
-            // newEdges.push(newPolygonDrawable);
-        // }
-        
-        for(let i = 0; i < newPolygons.length; ++i) {
-            newPolygons[i].draw(context);
-        }
-        
-        // for(let i = 0; i < newEdges.length; ++i) {
-            // newEdges[i].draw(context);
-        // }
         
         /**/
         

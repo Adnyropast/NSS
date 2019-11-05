@@ -15,6 +15,8 @@ function entity_getClassId(entity) {
     return "nf";
 }
 
+let ACTIONADDED = false;
+
 class Entity extends Rectangle {
     constructor(position, size) {
         super(position, size);
@@ -126,6 +128,8 @@ class Entity extends Rectangle {
         this.items = new SetArray();
         
         this.stats["action-costFactor"] = 1;
+        
+        this.freeze = 0;
     }
     
     static fromData(data) {
@@ -555,7 +559,7 @@ class Entity extends Rectangle {
                 for(var j = 0; j < other.interrecipients.length; ++j) {
                     var interrecipient = other.interrecipients[j];
                     
-                    if(interrecipient.matchId(interactor.getId())) {
+                    if(interrecipient.matchId(interactor.getId()) && interactor.confirmInteraction(interrecipient)) {
                         interrecipient.beforeInteraction(interactor);
                         interactor.interact(interrecipient);
                         interrecipient.oninteraction(interactor);
@@ -677,7 +681,8 @@ class Entity extends Rectangle {
         this.preposition = Vector.from(this.position);
         this.presize = Vector.from(this.size);
         
-        for(let i = 0; i < this.controllers.length; ++i) {
+        // for(let i = 0; i < this.controllers.length; ++i) {
+        for(let i in this.controllers) {
             this.controllers[i].bind(this)();
         }
         
@@ -719,9 +724,11 @@ class Entity extends Rectangle {
         // action.endid = "this message should be overwritten";
         
         if(!this.canUseAction(action)) {
-            action.end("User can't use the action.");
+            if(action instanceof Action) action.end("User can't use the action.");
             
-            return this;
+            ACTIONADDED = false;
+            
+            return null;
         }
         
         for(var i = this.actions.length - 1; i >= 0; --i) {
@@ -732,19 +739,25 @@ class Entity extends Rectangle {
                 this.actions.push(action);
                 action.onadd();
                 
+                ACTIONADDED = true;
+                
                 return this;
             }
             
             if(this.actions[i].preventsAddition(action)) {
                 action.setEndid("Blocked from user by action.");
                 
-                return this;
+                ACTIONADDED = false;
+                
+                return null;
             }
         }
         
         action.setUser(this);
         this.actions.push(action);
         action.onadd();
+        
+        ACTIONADDED = true;
         
         return this;
     }
@@ -858,7 +871,7 @@ class Entity extends Rectangle {
     }
     
     canUseAction(action) {
-        return this.containsActset(action.getId());
+        return action instanceof Action && this.containsActset(action.getId());
     }
     
     addActset() {
@@ -1140,7 +1153,8 @@ class Entity extends Rectangle {
     
     triggerEvents(eventName, params = []) {
         if(Array.isArray(this.events[eventName])) {
-            for(let i = 0; i < this.events[eventName].length; ++i) {
+            // for(let i = 0; i < this.events[eventName].length; ++i) {
+            for(let i in this.events[eventName]) {
                 let eventFunction = this.events[eventName][i].bind(this);
                 eventFunction.apply(eventFunction, params);
             }
@@ -1180,6 +1194,68 @@ class Entity extends Rectangle {
         
         return this;
     }
+    
+    getGravityDirection() {
+        let gravity = this.findState("gravity");
+        
+        if(gravity !== undefined) {
+            return gravity.direction;
+        }
+        
+        return new Vector(0, 0);
+    }
+    
+    getThrust() {
+        let tiredRatio = 0.125;
+        
+        if(this.hasState("actuallyGrounded")) {
+            if(this.getEnergyRatio() < tiredRatio) {
+                return this.stats["walk-speed-tired"] || this.stats["walk-speed"] || 0;
+            }
+            
+            return this.stats["walk-speed"] || 0;
+        } if(this.hasState("ladder")) {
+            if(this.getEnergyRatio() < tiredRatio) {
+                return this.stats["climb-speed-tired"] || this.stats["climb-speed"] || 0;
+            }
+            
+            return this.stats["climb-speed"] || 0;
+        } if(this.hasState("water")) {
+            if(this.getEnergyRatio() < tiredRatio) {
+                return this.stats["swim-speed-tired"] || this.stats["swim-speed"] || 0;
+            }
+            
+            return this.stats["swim-speed"] || 0;
+        } else {
+            if(this.getEnergyRatio() < tiredRatio) {
+                return this.stats["air-speed-tired"] || this.stats["air-speed"] || 0;
+            }
+            
+            return this.stats["air-speed"] || 0;
+        }
+        
+        return 0;
+    }
+    
+    setFreeze(freeze) {
+        if(this.freeze < freeze) {
+            this.freeze = freeze;
+        }
+        
+        return this;
+    }
+    
+    isFrozen() {
+        return this.freeze > 0;
+    }
+    
+    thaw() {
+        if(this.freeze > 0) {
+            --this.freeze;
+        }
+        
+        return this;
+    }
 }
 
 class Hitbox extends Entity {
@@ -1187,6 +1263,17 @@ class Hitbox extends Entity {
         super(...arguments);
         
         this.addInteraction(new StunActor());
+        this.launchDirection = [0, 0, 0];
+        this.events["hit"].push(function(recipient) {
+            if(Array.isArray(this.launchDirection)) {
+                let dragInterrecipient = recipient.findInterrecipientWithId("drag");
+                
+                let dragFactor = 0;
+                if(dragInterrecipient != undefined) {dragFactor = dragInterrecipient.forceFactor;}
+                
+                recipient.drag(Vector.multiplication(this.launchDirection, dragFactor));
+            }
+        });
     }
 }
 

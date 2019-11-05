@@ -203,8 +203,8 @@ maps["hub"] = {
         
         {"classId" : "sidewaysSetter", "position" : [-640, -360], "size" : [1280, 720]},
         
-        {"classId" : "nightSkyDecoration"/*, "position" : [-240, -135], "size" : [480, 270]*/},
-        {"classId" : "moonlightDecoration", "position" : [0, 0]}
+        {"classId" : "skyDecoration"/*, "position" : [-240, -135], "size" : [480, 270]*/},
+        {"classId" : "sunlightDecoration", "position" : [0, 0]}
     ]
 };
 
@@ -1015,11 +1015,11 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
                 // lists.player0 = (getPlayerClass().fromMiddle([cX + wallSize[0] + cellSize[0] / 2, cY + wallSize[1] + cellSize[1] / 2]));
                 getCurrentSave().playerPositionM = [cX + wallSize[0] + cellSize[0] / 2, cY + wallSize[1] + cellSize[1] / 2];
                 
-                if(mode == "sideways") {
-                    let ground = (Ground.fromMiddle([cX + fullCellSize[0] / 2, cY + fullCellSize[1] - wallSize[1]], [32, 8]));
+                if(mode == "sideways" && !(cell.walls & 8)) {
+                    let ground = (Ground.fromMiddle([cX + fullCellSize[0] / 2, cY + fullCellSize[1] - wallSize[1] + 4], [cellSize[0], 8]));
                     
                     // entities.push(ground);
-                    map.entities.push({classId : "ground", "positionM" : ground.getPositionM(), "size" : ground.size});
+                    map.entities.push({classId : "softPlatform", "positionM" : ground.getPositionM(), "size" : ground.size});
                 }
             } else if(Math.floor(Math.random() * 3) == 0) {
                 var size = [Math.floor(Math.random() * cellSize[0] / 2 + 8), Math.floor(Math.random() * cellSize[1] / 2 + 8)];

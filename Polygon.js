@@ -13,7 +13,7 @@ class Polygon extends Array {
     constructor(points) {
         super();
         
-        Object.defineProperty(this, "dimension", {"writable" : true, "enumerable" : false, "value" : undefined});
+        Object.defineProperty(this, "dimension", {"writable" : true, "enumerable" : false, "value" : 0});
         Object.defineProperty(this, "center", {"writable" : true, "enumerable" : false, "value" : []});
         
         this.setPoints(points);
@@ -86,8 +86,19 @@ class Polygon extends Array {
      * @return the polygon itself.
      */
     
-    push_(point) {
-        return this.setPoint(this.size(), point);
+    push(point) {
+        super.push(...arguments);
+        
+        let maxDim = this.getDimension();
+        
+        for(let i = 0; i < arguments.length; ++i) {
+            maxDim = Math.max(maxDim, arguments[i].length);
+        }
+        
+        this.setDimension(maxDim);
+        
+        return this.setCenter();
+        // return this.setPoint(this.size(), point);
     }
     
     /**
@@ -264,7 +275,9 @@ class Polygon extends Array {
         
         if(Array.isArray(points)) {
             for(var i = 0; i < points.length; ++i) {
-                // The first point determines the dimension of the polygon
+                /**
+                
+                // The first point determines the dimension of the polygon *
                 
                 if(typeof this.dimension == "undefined") {
                     this.setDimension(points[i].length);
@@ -275,6 +288,10 @@ class Polygon extends Array {
                 else if(points[i].length != this.dimension) {
                     throw "Dimension error : [" + points[i] + "] should have " + this.dimension + " coordinates instead of " + points[i].length;
                 }
+                
+                /**/
+                
+                this.setDimension(Math.max(this.getDimension(), points[i].length));
                 
                 this.setPoint(i, points[i]);
             }
@@ -671,13 +688,13 @@ let diamondparticle = new Polygon([[0, -16], [2, 0], [0, 16], [-2, 0]]);
 let roundparticle = makeRegularPolygon(12, 16);
 
 function makeFirePolygon() {
-    let polygon = makeRandomPolygon(16, 4, 16);
+    let polygon = makeRandomPolygon(16, 2, 16);
     
     polygon.splice(0, 8);
     
-    let base = makeRandomPolygon(16, 8, 16);
+    let base = makeRandomPolygon(16, 10, 16);
     
-    base.splice(8, 16);
+    base.splice(8, Infinity);
     
     polygon.setPoints(polygon.concat(base));
     
@@ -1185,4 +1202,45 @@ function rockOnCanvas() {
     ctx.translate(-canvas.width/2, -canvas.height/2);
     
     return canvas;
+}
+
+function points_center() {
+    let dimension = Array.isArray(arguments[0]) ? arguments[0].length : 0;
+    let center = new Array(dimension);
+    
+    for(let dim = 0; dim < dimension; ++dim) {
+        center[dim] = 0;
+        
+        for(let i = 0; i < arguments.length; ++i) {
+            let point = arguments[i];
+            
+            center[dim] += point[dim];
+        }
+        
+        center[dim] /= arguments.length;
+    }
+    
+    return center;
+}
+
+function polygon_averageSize() {
+    let sum = 0;
+    let count = 0;
+    
+    for(let i = 0; i < arguments.length; ++i) {
+        let polygon = arguments[i];
+        
+        // let center = points_center.apply(points_center, polygon);
+        let center = polygon.getCenter();
+        
+        for(let j = 0; j < polygon.size(); ++j) {
+            let point = polygon.getPoint(j);
+            let vector = Vector.subtraction(point, center);
+            
+            sum += vector.getNorm();
+            ++count;
+        }
+    }
+    
+    return sum / count * 2;
 }

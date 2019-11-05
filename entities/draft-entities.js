@@ -313,11 +313,44 @@ class FireSmokeParticle extends Particle {
         // this.setSelfBrake(1.0625);
         this.setLifespan(32);
         // this.setColorTransition([255, 0, 0, 127], [0, 0, 0, 127], 60);
-        this.setStyle(new ColorTransition([255, 0, 0, 127], [0, 0, 0, 127], 32));
-        this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
+        
+        const CT_FIRESMOKE = new ColorTransition([255, 0, 0, 127], [0, 0, 0, 127], 32);
+        
+        // this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
+        this.setSizeTransition(new MultiColorTransition([Vector.multiplication(size, 1/2), Vector.from(size), [0, 0]], 32));
         
         this.addInteraction(new ReplaceRecipient());
         this.addInteraction(new DragRecipient(-Math.pow(2, -10)));
+        
+        const avgsz = rectangle_averageSize(this);
+        
+        for(let i = 0; i < 3; ++i) {
+            let drawable = new PolygonDrawable(makeRandomPolygon(16, 12, 16));
+            drawable.setStyle(CT_FIRESMOKE.copy().setStep(random(0, 8)));
+            drawable.multiplySize(random(1/2, 1));
+            drawable.multiplySize(avgsz/polygon_averageSize(drawable));
+            drawable.initImaginarySize(avgsz);
+            drawable.setZIndex(random(-1, 1));
+            
+            this.drawables.push(drawable);
+        }
+        
+        this.setSelfBrake(1.03125);
+        this.addInteraction(new DragRecipient(-0.125));
+    }
+    
+    updateDrawable() {
+        const avgsz = rectangle_averageSize(this);
+        const positionM = this.getPositionM();
+        
+        for(let i = 0; i < this.drawables.length; ++i) {
+            let drawable = this.drawables[i];
+            
+            drawable.setImaginarySize(avgsz);
+            drawable.setPositionM(positionM);
+        }
+        
+        return super.updateDrawable();
     }
 }
 
@@ -331,22 +364,32 @@ class FireParticle extends Particle {
         this.setLifespan(64);
         // this.setColorTransition([255, 0, 0, 127], [0, 0, 0, 127], 60);
         // this.setStyle(new ColorTransition([255, 255, 0, 127], [255, 0, 0, 127], this.lifespan));
-        this.setSizeTransition(new MultiColorTransition([Vector.multiplication(size, 1/2), size, [0, 0]], this.lifespan, powt(2)));
+        this.setSizeTransition(new MultiColorTransition([Vector.multiplication(size, random(1/4, 1/2)), Vector.from(size), Vector.multiplication(size, random(1/4, 1/2)), [0, 0]], this.lifespan, powt(1/1.25)));
         
         this.addInteraction(new ReplaceRecipient());
-        this.addInteraction(new DragRecipient(-Math.pow(2, -3)));
+        this.addInteraction(new DragRecipient(-Math.pow(2, -2)));
         
-        this.setDrawable(makeFireParticle().setPositionM(this.getPositionM()));
-        this.setSelfBrake(1.0625);
-        this.drawable.setStyle(new ColorTransition([255, 255, 127, 1], [255, 0, 0, 0.375], this.lifespan, function(t) {return Math.pow(t, 1)}));
-        this.drawable.setLifespan(-1);
-        this.drawable.initImaginarySize(rectangle_averageSize(this));
+        this.setSelfBrake(1.125);
+        
+        for(let i = 0; i < 2; ++i) {
+            let drawable = makeFireParticle();
+            drawable.multiplySize(random(1/2, 1));
+            drawable.setStyle(new ColorTransition([255, 255, 127, 1], [255, 0, 0, 0.375], this.lifespan, function(t) {return Math.pow(t, 1)}));
+            drawable.setLifespan(-1);
+            drawable.initImaginarySize(rectangle_averageSize(this));
+            drawable.setZIndex(random(-1, 0.25));
+            
+            this.drawables.push(drawable);
+        }
     }
     
     updateDrawable() {
-        // this.drawable.multiplySize(1/1.015625);
-        this.drawable.setPositionM(this.getPositionM());
-        this.drawable.setImaginarySize(rectangle_averageSize(this));
+        for(let i = 0; i < this.drawables.length; ++i) {
+            let drawable = this.drawables[i];
+            // this.drawable.multiplySize(1/1.015625);
+            drawable.setPositionM(this.getPositionM());
+            drawable.setImaginarySize(rectangle_averageSize(this));
+        }
         
         return this;
     }
@@ -911,6 +954,14 @@ class TrailerEntity extends Entity {
     updateTrailProperties() {return this;}
     updateBasePosition() {return this;}
     updateBladeAngle() {return this;}
+    
+    getBasePosition() {
+        return this.basePosition;
+    }
+    
+    getBladeAngle() {
+        return this.bladeAngle;
+    }
     
     updateDrawable() {
         return super.updateDrawable();

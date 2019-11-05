@@ -13,6 +13,26 @@ class PlayableCharacter extends Character {
         this.lastAnim = "";
         
         this.defaultAnimStyle = "cyan";
+        
+        this.events["defeat"]["vanish"] = function() {
+            let spd = rectangle_averageSize(this) / 16;
+            
+            for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 4) {
+                var cos = Math.cos(angle), sin = Math.sin(angle);
+                var particle = SmokeParticle.fromMiddle(this.getPositionM(), this.size);
+                particle.setSpeed([spd*cos, spd*sin]);
+                particle.drag(this.speed);
+                particle.setStyle(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1], 32));
+                particle.setSizeTransition(new ColorTransition(this.size, [0, 0], 32));
+                addEntity(particle);
+            }
+            
+            var particle = SmokeParticle.fromMiddle(this.getPositionM(), this.size);
+            particle.drag(this.speed);
+            particle.setStyle(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1], 32));
+            particle.setSizeTransition(new ColorTransition(this.size, [0, 0], 32));
+            addEntity(particle);
+        };
     }
     
     onadd() {
@@ -21,28 +41,6 @@ class PlayableCharacter extends Character {
         this.opponents = OPPONENTS_;
         
         return super.onadd();
-    }
-    
-    ondefeat() {
-        let spd = rectangle_averageSize(this) / 16;
-        
-        for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 4) {
-            var cos = Math.cos(angle), sin = Math.sin(angle);
-            var particle = SmokeParticle.fromMiddle(this.getPositionM(), this.size);
-            particle.setSpeed([spd*cos, spd*sin]);
-            particle.drag(this.speed);
-            particle.setStyle(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1], 32));
-            particle.setSizeTransition(new ColorTransition(this.size, [0, 0], 32));
-            addEntity(particle);
-        }
-        
-        var particle = SmokeParticle.fromMiddle(this.getPositionM(), this.size);
-        particle.drag(this.speed);
-        particle.setStyle(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1], 32));
-        particle.setSizeTransition(new ColorTransition(this.size, [0, 0], 32));
-        addEntity(particle);
-        
-        return super.ondefeat();
     }
     
     onremove() {
@@ -83,9 +81,11 @@ class PlayableCharacter extends Character {
             // if(faceDirection > 0) {face = "right";}
             // else if(faceDirection < 0) {face = "left"}
             
+            let action;
+            
             if(this.hasState("hurt")) {
                 this.onstatehurt();
-            } else if(this.actions.find(function(a) {return a instanceof BusyAction})) {
+            } else if((action = this.actions.find(function(a) {return a instanceof BusyAction})) && action.phase > 0) {
                 let direction = this.getCursorDirection();
                 
                 if(Math.abs(direction[0]) >= Math.abs(direction[1])) {
@@ -101,6 +101,8 @@ class PlayableCharacter extends Character {
                         this.setAnimStyle("attack-up");
                     }
                 }
+            } else if(this.hasState("ladder")) {
+                this.setAnimStyle("attack-up");
             } else if(this.hasState("water")) {
                 if(this.hasState("moving")) {
                     this.onstateswim();
@@ -127,13 +129,6 @@ class PlayableCharacter extends Character {
         }
         
         return this;
-    }
-    
-    update() {
-        // console.log(this.actions);
-        // console.log(this.hasState("ladder-maintain"));
-        
-        return super.update();
     }
     
     onstatehurt() {

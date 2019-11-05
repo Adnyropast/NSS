@@ -630,23 +630,6 @@ class VisibleList {
     empty() {this.items.splice(0, Infinity); return this;}
 }
 
-function rectangle_averageSize() {
-    let sum = 0;
-    let count = 0;
-    
-    for(let i = 0; i < arguments.length; ++i) {
-        let rectangle = arguments[i];
-        
-        for(let dim = 0; dim < rectangle.getDimension(); ++dim) {
-            sum += arguments[i].getSize(dim);
-            
-            ++count;
-        }
-    }
-    
-    return sum / count;
-}
-
 function irandom(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
@@ -667,4 +650,38 @@ function sfsTiming(pow) {
 
 function random(min, max) {
     return min + Math.random() * (max - min);
+}
+
+function makeBackForthCurve(pow) {
+    return function backForthCurve(t) {
+        return -Math.pow(Math.abs(2*t-1), pow) + 1;
+    };
+}
+
+function makeForthBackCurve(pow) {
+    return function forthBackCurve(t) {
+        return Math.pow(Math.abs(2*t-1), pow);
+    };
+}
+
+class Player {
+    constructor() {
+        this.entity = null;
+    }
+}
+
+const PLAYERS = new SetArray(new Player());
+
+function array_equal(array1, array2) {
+    if(array1 && array2 && array1.length === array2.length) {
+        for(let i = 0; i < array1.length; ++i) {
+            if(array1[i] != array2[i]) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    return false;
 }

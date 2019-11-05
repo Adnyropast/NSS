@@ -25,7 +25,15 @@ class EnergyBarDrawable extends RectangleDrawable {
     
     setEnergyTransition(colorTransition) {this.colorTransition = colorTransition; return this;}
     
-    setEnergyRatio(energyRatio) {this.energyRatio = energyRatio; return this}
+    setEnergyRatio(energyRatio) {
+        this.energyRatio = energyRatio;
+        
+        if(this.energyRatio < 0) {
+            this.energyRatio = 0;
+        }
+        
+        return this;
+    }
     
     draw(context) {
         super.draw(context);
@@ -89,7 +97,6 @@ class Character extends Entity {
         this.addActset(AS_CHARACTER);
         
         this.addInteraction(new ContactVanishActor(2));
-        this.addInteraction(new SoftReplaceRecipient());
         
         this.addInteraction(new WallRecipient());
         this.addInteraction(new LadderRecipient());
@@ -97,13 +104,14 @@ class Character extends Entity {
         this.faceSave = FRIGHT;
         
         this.stats["walk-speed"] = 0.5;
-        this.stats["walk-speed-tired"] = 0.25;
+        // this.stats["walk-speed-tired"] = 0.25;
+        this.stats["walk-speed-tired"] = 0.5;
         this.stats["air-speed"] = 0.5;
         this.stats["swim-speed"] = 0.5;
         
         this.addInteraction(new StunRecipient(1));
         
-        this.stats["climb-speed"] = 0.25;
+        this.stats["climb-speed"] = 1;
         // this.stats["jump-force"] = 1.875;
         this.stats["jump-force"] = 1.5;
         this.stats["regeneration"] = 0.0625;

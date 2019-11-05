@@ -10,7 +10,22 @@ class CutterAbility extends BusyAction {
 // const cutterdrawable = new PolygonDrawable([[16, 0], [12, 4], [8, 8], [-8, 16], [0, 0], [-8, -16], [8, -8], [12, -4]]);
 const cutterdrawable = new PolygonDrawable([[16, 0], [12, 12], [0, 12], [-8, 8], [-16, 12], [-8, 0], [0, 0], [17, -4]]);
 
-const cutterEdgeStyle = new ColorTransition([255, 223, 0, 1], [255, 223, 0, 0], 16);
+// const cutterEdgeStyle = new ColorTransition([255, 223, 0, 1], [255, 223, 0, 0], 16);
+const cutterEdgeStyle = new ColorTransition([255, 255, 255, 1], [0, 255, 255, 0], 12, bezierLinear);
+
+const cutterTrailStyle = new MultiColorTransition([[255, 255, 127, 1], [159, 127, 0, 0.5]], 10, powt(4));
+const cutterTrailStyle0 = new ColorTransition([255, 255, 0, 1], [127, 127, 63, 0], 8);
+const cutterTrailStyle1 = new ColorTransition([255, 255, 255, 1], [127, 127, 255, 0], 8);
+
+function colorTransitionMix(ct1, ct2, t) {
+    let duration = Math.max(ct1.duration, ct2.duration);
+    let vector1Transition = new ColorTransition(ct1.vector1, ct2.vector1, duration);
+    let vector2Transition = new ColorTransition(ct1.vector2, ct2.vector2, duration);
+    
+    return new ColorTransition(vector1Transition.at(t), vector2Transition.at(t), duration);
+}
+
+const cutterCyanTrail = new ColorTransition([127, 255, 255, 1], [0, 0, 255, 0], 8, powt(2));
 
 class Cutter extends TrailerEntity {
     constructor() {
@@ -41,17 +56,17 @@ class Cutter extends TrailerEntity {
         let lifespan = 12;
         let otherTrail = new TrailDrawable();
         otherTrail.edgeWidth = 2;
-        otherTrail.trailStyle = new ColorTransition([255, 255, 255, irandom(75, 100)/100], [0, 255, 255, 0], lifespan, bezierLinear);
+        otherTrail.trailStyle = cutterEdgeStyle.copy();
         this.trailDrawable.otherTrails.add(otherTrail);
         otherTrail = new TrailDrawable();
         otherTrail.edgeWidth = -4;
-        otherTrail.trailStyle = new ColorTransition([255, 255, 255, irandom(75, 100)/100], [0, 255, 255, 0], lifespan, bezierLinear);
+        otherTrail.trailStyle = cutterEdgeStyle.copy();
         this.trailDrawable.otherTrails.add(otherTrail);
         
         for(let i = 0; i < 0; ++i) {
             let otherTrail = new TrailDrawable();
             otherTrail.edgeWidth = irandom(-6, +2);
-            otherTrail.trailStyle = new ColorTransition([255, 255, 255, irandom(75, 100)/100], [0, 255, 255, 0], lifespan, bezierLinear);
+            otherTrail.trailStyle = cutterEdgeStyle.copy();
             this.trailDrawable.otherTrails.add(otherTrail);
         }
         
@@ -78,10 +93,14 @@ class Cutter extends TrailerEntity {
             
             let farWidth = Math.cos(this.angle) * 2 + 8;
             
-            if(i/det == 1) {
-                this.trailDrawable.trailStyle = cutterEdgeStyle;
+            if(i/(det-1) > 2.75) {
+                this.trailDrawable.trailStyle = new ColorTransition([255, 255, 255, 1], [0, 255, 255, 0.5], 12).setStep(1-i/det);
             } else {
-                this.trailDrawable.trailStyle = new ColorTransition([255, 255, 255 * i/det, 1], [127, 127, 63 + (255 - 63) * i/det, 0], 8);
+                this.trailDrawable.trailStyle = cutterTrailStyle.copy().setStep(1-i/det);
+                
+                // this.trailDrawable.trailStyle = colorTransitionMix(cutterTrailStyle0, cutterTrailStyle1, i/det);
+                
+                // this.trailDrawable.trailStyle = new ColorTransition([255, 255, 255 * i/det, 1], [127, 127, 63 + (255 - 63) * i/det, 0], 8);
             }
             this.trailDrawable.addSized(closePoint, this.angle, farWidth, farWidth - 1);
         }
@@ -150,6 +169,14 @@ class CutterDash extends SlashAction {
         this.slashDuration = 16;
         this.endlag = 8;
         this.trailDrawable.edgeStyle = ColorTransition.from(cutterEdgeStyle).setDuration(32);
+        
+        for(let i = 0; i < 4; ++i) {
+            let otherTrail = new TrailDrawable();
+            otherTrail.edgeWidth = 2 - i * 2; irandom(-8, +2);
+            this.trailDrawable.otherTrails.add(otherTrail);
+        }
+        
+        this.dragInterrecipient = null;
     }
     
     use() {
@@ -167,12 +194,17 @@ class CutterDash extends SlashAction {
                 this.setRemovable(false);
                 
                 // this.user.hurt(this.getUseCost());
+                
+                this.dragInterrecipient = this.user.findInterrecipientWithId("drag");
+                this.user.removeInterrecipientWithId("drag");
+                this.user.setSpeed(this.direction.normalized(4));
             } else {
                 return this.end();
             }
         }
         if(this.phase < 16) {
-            this.user.drag(this.direction.normalize(thrust * 2));
+            // this.user.drag(this.direction.normalize(thrust * 2));
+            // this.user.setSpeed(this.direction.normalize(3));
         }
         
         if(this.phase == 24) {
@@ -192,8 +224,9 @@ class CutterDash extends SlashAction {
     
     onend() {
         this.user.addInteraction(this.damageableSave);
+        this.user.addInteraction(this.dragInterrecipient);
         
-        return this;
+        return super.onend();
     }
     
     transitionsSetup() {
@@ -203,19 +236,22 @@ class CutterDash extends SlashAction {
         
         this.baseAngleTransition = new ColorTransition([angle - Math.PI/2], [angle + Math.PI/2]);
         this.baseDistanceTransition = new ColorTransition([6], [6]);
-        this.bladeAngleTransition = new ColorTransition([angle - Math.PI], [angle + 1/4*Math.PI]);
+        this.bladeAngleTransition = new ColorTransition([angle - Math.PI], [angle + 3/4*Math.PI]);
         this.bladeWidthTransition = new ColorTransition([16], [16]);
         
         return this;
     }
     
     updateTrailDrawableStyle(detProgress) {
-        if(detProgress == 1) {
+        if(detProgress == 2) {
             this.trailDrawable.trailStyle = new ColorTransition([255, 255, 127, 1], [0, 255, 255, 0], 12);
-            this.trailDrawable.trailStyle = ColorTransition.from(cutterEdgeStyle).setDuration(32);
         } else {
-            this.trailDrawable.trailStyle = new ColorTransition([127*detProgress, 255, 255, 1], [0, 0, 255, 0], 8);
-            this.trailDrawable.trailStyle = new ColorTransition([255, 255, 255 * detProgress, 1], [127, 127, 63 + (255 - 63) * detProgress, 0], 24);
+            this.trailDrawable.trailStyle = cutterCyanTrail.copy().setStep(1-detProgress).setDuration(16);
+            this.trailDrawable.timing = powt(1/64);
+        }
+        
+        for(let i = 0; i < this.trailDrawable.otherTrails.length; ++i) {
+            this.trailDrawable.otherTrails[i].trailStyle = cutterEdgeStyle.copy().setStep(1-detProgress).setDuration(24);
         }
         
         return this;
@@ -273,20 +309,21 @@ class FinalCutter1 extends SlashAction {
     }
     
     updateTrailDrawableStyle(detProgress) {
-        if(detProgress == 1) {
-            this.trailDrawable.trailStyle = new ColorTransition([255, 255, 127, 1], [0, 255, 255, 0], 8);
-            // this.trailDrawable.trailStyle = cutterEdgeStyle;
+        if(this.user.getEnergyRatio() < 0.5) {
+            this.trailDrawable.trailStyle = cutterCyanTrail.copy().setStep(1-detProgress);
+            this.hitbox.setTypeOffense(FX_GOLD_, 8);
         } else {
-            this.trailDrawable.trailStyle = new ColorTransition([127*detProgress, 255, 255, 1], [0, 0, 255, 0], 8);
-            this.trailDrawable.trailStyle = new ColorTransition([255, 255, 255 * detProgress, 1], [127, 127, 63 + (255 - 63) * detProgress, 0], 8);
+            this.trailDrawable.trailStyle = cutterTrailStyle.copy().setStep(1-detProgress);
         }
         
         for(let i = 0; i < this.trailDrawable.otherTrails.length; ++i) {
-            let lifespan = 10;
+            // let lifespan = 10;
             
-            let ct = new ColorTransition([255, 255, 255, irandom(75, 100)/100], [0, 255, 255, 0], lifespan, bezierLinear);
+            // let ct = new ColorTransition([255, 255, 255, irandom(75, 100)/100], [0, 255, 255, 0], lifespan, bezierLinear);
             
-            this.trailDrawable.otherTrails[i].trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), lifespan, bezierLinear);
+            // this.trailDrawable.otherTrails[i].trailStyle = new ColorTransition(ct.at((1-detProgress)/ct.duration), ct.at(1), lifespan, bezierLinear);
+            
+            this.trailDrawable.otherTrails[i].trailStyle = cutterEdgeStyle.copy().setStep(1-detProgress);
         }
         
         return this;
@@ -374,6 +411,14 @@ function ovalTransition(t) {
     return distance;
 }
 
+function fc2Timing(t) {
+    return -Math.cos(t*4*Math.PI)/2+0.5;
+    
+    t %= 0.5;
+    
+    return -Math.pow((t*4-1), 2) + 1;
+}
+
 class FinalCutter2 extends FinalCutter1 {
     constructor() {
         super();
@@ -396,19 +441,29 @@ class FinalCutter2 extends FinalCutter1 {
             
             this.face[0] = Math.sign(this.face[0]);
             
-            this.startBaseAngle = (new Vector(-this.face[0], 0)).getAngle();
-            this.endBaseAngle = this.startBaseAngle - this.face[0] * 2 * Math.PI;
+            const bladeRad1 = 16;
+            const bladeRad2 = 6;
             
-            this.baseAngleTransition = new ColorTransition([this.startBaseAngle], [this.endBaseAngle]);
+            let startBaseAngle = (new Vector(-this.face[0], 0)).getAngle();
+            let endBaseAngle = startBaseAngle - this.face[0] * 2 * Math.PI;
             
-            this.baseDistanceTransition = new ColorTransition([6], [0], 1, ovalTransition);
+            this.baseAngleTransition = new ColorTransition([startBaseAngle], [endBaseAngle], 1, makeFullOvalTiming(bladeRad1, bladeRad2));
+            
+            this.baseDistanceTransition = new ColorTransition([4], [0], 1, makeForthBackCurve(2));
             
             this.startBladeAngle = new Vector(-this.face[0], 0).getAngle();
             this.endBladeAngle = this.startBladeAngle - this.face[0] * 2 * Math.PI;
             
-            this.bladeAngleTransition = new ColorTransition([this.startBladeAngle], [this.endBladeAngle]);
+            this.bladeAngleTransition = new ColorTransition([this.startBladeAngle], [this.endBladeAngle], 1, makeFullOvalTiming(bladeRad1, bladeRad2));
             
-            this.bladeWidthTransition = new ColorTransition([0], [16], 1, ovalTransition);
+            this.bladeWidthTransition = new ColorTransition([0], [1], 1, function(t) {
+                let angle = t * 2*Math.PI;
+                
+                let cos = bladeRad1 * Math.cos(angle);
+                let sin = bladeRad2 * Math.sin(angle);
+                
+                return (new Vector(cos, sin)).getNorm();
+            });
         } else {
             return null;
         }
@@ -451,15 +506,9 @@ class FinalCutter3 extends FinalCutter2 {
             
             this.bladeWidthTransition = new ColorTransition([16], [16]);
             
-            let gravityDirection = this.user.findState("gravity");
+            let gravityDirection = this.user.getGravityDirection();
             
-            if(typeof gravityDirection == "undefined") {gravityDirection = new Vector(0, 0);}
-            else {gravityDirection = gravityDirection.direction;}
-            
-            this.hitbox.events["hit"] = function(recipient) {
-                recipient.drag(gravityDirection.normalized(-10));
-            };
-            // this.hitbox.addInteraction(new DragActor());
+            this.hitbox.launchDirection = gravityDirection.normalized(-10);
         } else {
             return null;
         }
@@ -475,10 +524,7 @@ class FinalCutter3 extends FinalCutter2 {
         }
         
         if(this.phase === 2) {
-            let gravityDirection = this.user.findState("gravity");
-            
-            if(typeof gravityDirection == "undefined") {gravityDirection = new Vector(0, 0);}
-            else {gravityDirection = gravityDirection.direction;}
+            let gravityDirection = this.user.getGravityDirection();
             
             this.user.speed.set(1, Vector.from(gravityDirection).normalized(-6)[1]);
         }
@@ -603,10 +649,7 @@ class FinalCutter5 extends FinalCutter4 {
             
             this.bladeWidthTransition = new ColorTransition([16], [16]);
             
-            let gravityDirection = this.user.findState("gravity");
-            
-            if(gravityDirection !== undefined) {gravityDirection = gravityDirection.direction;}
-            else {gravityDirection = new Vector(0, 0);}
+            let gravityDirection = this.user.getGravityDirection();
             
             this.hitbox.addInteraction(new DragActor(gravityDirection.normalized(6)));
             
@@ -628,7 +671,7 @@ class FinalCutter5 extends FinalCutter4 {
                 this.sbat = this.bladeAngleTransition;
             }
             
-            if(this.user.findState("grounded") === undefined) {
+            if(this.user.findState("grounded") === undefined && !this.user.getGravityDirection().isZero()) {
                 this.bladeAngleTransition = new VectorTransition([Math.acos(this.face0)], [Math.acos(this.face0)]);
                 this.phase = 3;
                 // repaceLoop(1000);
@@ -641,9 +684,7 @@ class FinalCutter5 extends FinalCutter4 {
                 hitbox.shareBlacklist(this.user.getBlacklist());
                 
                 hitbox.setSpeed(direction.normalize(6));
-                hitbox.events["hit"].push(function(recipient) {
-                    recipient.drag(direction.normalized(6));
-                });
+                hitbox.launchDirection = direction.normalized(6);
                 
                 addEntity(hitbox);
             }

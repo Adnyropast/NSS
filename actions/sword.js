@@ -79,10 +79,10 @@ class SwordSlashAction extends SlashAction {
         drawables[2].setStyle("#003F7F");
         drawables[3].setStyle("#005F9F");
         
-        // drawables[0].setStyle("#FFFFFF");
-        // drawables[1].setStyle("#EFEFEF");
-        // drawables[2].setStyle("#7F7F7F");
-        // drawables[3].setStyle("#F7F7F7");
+        drawables[0].setStyle("#FFFFFF");
+        drawables[1].setStyle("#EFEFEF");
+        drawables[2].setStyle("#7F7F7F");
+        drawables[3].setStyle("#F7F7F7");
         
         this.swordDrawable.multiplySize(1/1.5);
         this.swordDrawable.initImaginarySize(rectangle_averageSize(this.hitbox));
@@ -99,6 +99,10 @@ class SwordSlashAction extends SlashAction {
             this.trailDrawable.otherTrails.add(otherTrail);
         }
         
+        this.bladeCT = CT_DEFAULTBLADE;
+        
+        /**
+        
         this.bladeCT = makeRandomBladeCT();
         
         let cv = this.bladeCT[0].vector1;
@@ -107,6 +111,8 @@ class SwordSlashAction extends SlashAction {
         drawables[1].setStyle(rgba.apply(rgba, colorVector_brighten(cv, -16)));
         drawables[2].setStyle(rgba.apply(rgba, colorVector_brighten(cv, -128)));
         drawables[3].setStyle(rgba.apply(rgba, colorVector_brighten(cv, -8)));
+        
+        /**/
     }
     
     updateTrailDrawableStyle(detProgress) {
@@ -175,19 +181,17 @@ class OverheadSlash extends SwordSlashAction {
         
         this.baseAngleTransition = new ColorTransition([-Math.PI/2 - 2 * 2*face[0] * 0.1875], [-Math.PI/2 + 8 * 2*face[0] * 0.1875]);
         
-        // this.baseDistanceTransition = new ColorTransition([12], [12]);
-        this.baseDistanceTransition = new ColorTransition([0], [12], 1, function timing(t) {return Math.pow(t, 1/1.0625);});
+        this.baseDistanceTransition = new ColorTransition([0], [2], 1, makeBackForthCurve(2));
         
         // this.bladeAngleTransition = this.baseAngleTransition;
         // this.bladeAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * Math.PI*3/4], [-Math.PI/2 + face[0] * 3/4 * Math.PI]);
-        this.bladeAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * Math.PI*2.5/4], [-Math.PI/2 + face[0] * 5/4 * Math.PI]);
+        this.bladeAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * Math.PI*3/4], [-Math.PI/2 + face[0] * 5/4 * Math.PI]);
         
         this.bladeWidthTransition = new ColorTransition([20], [20]);
-        this.bladeWidthTransition = new ColorTransition([0], [20], 1, ovalTransition);
         
         this.edgeWidthTransition = new VectorTransition([2], [2]);
         
-        this.hitbox.addInteraction(new DragActor(face.times(0.25)));
+        this.hitbox.launchDirection = face.times(1);
         
         return this;
     }
@@ -219,7 +223,7 @@ class UpwardArcSlash extends SwordSlashAction {
         this.slashDuration = 9;
         // this.startlag = 6;
         
-        this.hitbox.addInteraction(new DragActor([0, -4]));
+        this.hitbox.launchDirection = [0, -4];
         
         this.setUseCost(3);
         this.setUseCost(2);
@@ -229,12 +233,38 @@ class UpwardArcSlash extends SwordSlashAction {
         let hface = this.user.faceSave;
         
         this.baseAngleTransition = new ColorTransition([-Math.PI/2 - Math.PI/2], [-Math.PI/2 + Math.PI/2]);
-        this.baseDistanceTransition = new ColorTransition([12], [12]);
+        this.baseDistanceTransition = new ColorTransition([4], [4]);
         this.bladeAngleTransition = new ColorTransition([Math.PI/2 + Math.PI/4], [Math.PI/2 + 2*Math.PI - 3*Math.PI/4]);
         this.bladeWidthTransition = new ColorTransition([20], [20]);
         
         return this;
     }
+}
+
+function makeHalfOvalTiming(rad1 = 1, rad2 = 1) {
+    return function timing(t) {
+        let angle = t * Math.PI;
+        
+        let cos = rad1 * Math.cos(angle);
+        let sin = rad2 * Math.sin(angle);
+        
+        let res = (new Vector(cos, sin)).getAngle() / Math.PI;
+        
+        return res;
+    };
+}
+
+function makeFullOvalTiming(rad1 = 1, rad2 = 1) {
+    return function timing(t) {
+        let angle = t * 2*Math.PI;
+        
+        let cos = rad1 * Math.cos(angle);
+        let sin = rad2 * Math.sin(angle);
+        
+        let res = (new Vector(cos, sin)).getAngle() / (2*Math.PI);
+        
+        return res;
+    };
 }
 
 class MultiswordAttack1 extends SwordSlashAction {
@@ -254,30 +284,28 @@ class MultiswordAttack1 extends SwordSlashAction {
     
     transitionsSetup() {
         let face = this.user.getCursorDirection();
-        face[0] = Math.sign(face[0]);
-        face[1] = Math.sign(face[1]);
         
-        if(face[0] != 0) {
-            this.baseAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * Math.PI/4], [-Math.PI/2 + face[0] * (Math.PI - Math.PI/4)]);
-            this.baseDistanceTransition = new ColorTransition([12], [12], 1, function(t) {
-                return 1 - Math.pow((t - 0.5)/0.5, 2);
+        if(Math.abs(face[0]) > Math.abs(face[1])) {
+            face[0] = Math.sign(face[0]);
+            face[1] = Math.sign(face[1]);
+            
+            const bladeRad1 = 20;
+            const bladeRad2 = 8;
+            
+            this.baseAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * Math.PI/4], [-Math.PI/2 + face[0] * Math.PI], 1, makeHalfOvalTiming(bladeRad1, bladeRad2));
+            this.baseDistanceTransition = new ColorTransition([0], [4], 1, forthBackTiming);
+            
+            this.bladeAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * Math.PI/2], [-Math.PI/2 + face[0] * 2.5/4*Math.PI], 1, makeHalfOvalTiming(bladeRad1, bladeRad2));
+            this.bladeWidthTransition = new ColorTransition([0], [1], 1, function(t) {
+                let angle = t * Math.PI;
+                
+                let cos = bladeRad1 * Math.cos(angle);
+                let sin = bladeRad2 * Math.sin(angle);
+                
+                return (new Vector(cos, sin)).getNorm();
             });
             
-            this.bladeAngleTransition = new ColorTransition([-Math.PI/2 - face[0] * Math.PI/4], [-Math.PI/2 + face[0] * Math.PI]);
-            this.bladeWidthTransition = new ColorTransition([8], [20], 1, function(t) {
-                return 1 - Math.pow(Math.abs(t - 0.5)/0.5, 2);
-            });
-            
-            this.hitbox.addInteraction(new DragActor([face[0] * 0.125, 0]));
-        } else if(face[1] != 0) {
-            this.preventsAddition = function() {return false};
-            if(face[1] < 0) {
-                this.user.addAction(new UpwardArcSlash());
-            } else {
-                this.user.addAction(new DownwardArcSlash());
-            }
-            this.end();
-            return false;
+            this.hitbox.launchDirection = [face[0] * 0.5, 0];
         } else {
             this.end();
             return false;
@@ -317,20 +345,17 @@ class MultiswordAttack2 extends MultiswordAttack1 {
     
     transitionsSetup() {
         let face = this.user.getCursorDirection();
-        face[0] = Math.sign(face[0]);
         
-        if(face[0] != 0) {
-            this.baseAngleTransition = new ColorTransition([-Math.PI/2 + face[0] * Math.PI/4], [-Math.PI/2 + face[0] * (Math.PI + Math.PI/4)]);
-            this.baseDistanceTransition = new ColorTransition([12], [12], 1, function(t) {
-                return 1 - Math.pow((t - 0.5)/0.5, 2);
-            });
+        if(Math.abs(face[0]) > Math.abs(face[1])) {
+            face[0] = Math.sign(face[0]);
+            
+            this.baseAngleTransition = new ColorTransition([-Math.PI/2], [-Math.PI/2 + face[0] * (Math.PI + Math.PI/4)]);
+            this.baseDistanceTransition = new ColorTransition([6], [0], 1, makeBackForthCurve(2));
             
             this.bladeAngleTransition = this.baseAngleTransition;
-            this.bladeWidthTransition = new ColorTransition([8], [20], 1, function(t) {
-                return 1 - Math.pow(Math.abs(t - 0.5)/0.5, 2);
-            });
+            this.bladeWidthTransition = new ColorTransition([20], [16], 1, powt(2));
             
-            this.hitbox.addInteraction(new DragActor([face[0] * 0.125, 0]));
+            this.hitbox.launchDirection = [face[0] * 0.5, 0];
         } else {
             this.end();
             return false;
@@ -360,12 +385,12 @@ class MultiswordAttackFinish extends MultiswordAttack2 {
         
         if(face[0] != 0) {
             this.baseAngleTransition = new ColorTransition([Math.PI/2], [Math.PI/2 - face[0] * Math.PI]);
-            this.baseDistanceTransition = new ColorTransition([12], [12]);
+            this.baseDistanceTransition = new ColorTransition([4], [4]);
             
             this.bladeAngleTransition = new ColorTransition([Math.PI/2 + face[0] * Math.PI/4], [Math.PI/2 - face[0] * 5/4*Math.PI]);
             this.bladeWidthTransition = new ColorTransition([20], [20]);
             
-            this.hitbox.addInteraction(new DragActor(face.times(2)));
+            this.hitbox.launchDirection = face.times(8);
         } else {
             this.end();
             return false;
@@ -380,7 +405,7 @@ class DownwardArcSlash extends SwordSlashAction {
         super();
         this.setId("downwardArcSlash");
         
-        this.hitbox.addInteraction(new DragActor([0, +4]));
+        this.hitbox.launchDirection = [0, +4];
         
         this.setUseCost(3);
         this.setUseCost(2);
@@ -390,7 +415,7 @@ class DownwardArcSlash extends SwordSlashAction {
         let hface = this.user.faceSave;
         
         this.baseAngleTransition = new ColorTransition([Math.PI/2 + Math.PI/4], [Math.PI/2 - 3/4 * Math.PI]);
-        this.baseDistanceTransition = new ColorTransition([12], [12]);
+        this.baseDistanceTransition = new ColorTransition([4], [4]);
         this.bladeAngleTransition = new ColorTransition([Math.PI/2 + Math.PI/4], [Math.PI/2 - 3/4*Math.PI]);
         this.bladeWidthTransition = new ColorTransition([20], [20]);
         

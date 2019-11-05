@@ -1238,3 +1238,20 @@ var rectanglesInf = [
 ];
 
 /**/
+
+function rectangle_averageSize() {
+    let sum = 0;
+    let count = 0;
+    
+    for(let i = 0; i < arguments.length; ++i) {
+        let rectangle = arguments[i];
+        
+        for(let dim = 0; dim < rectangle.getDimension(); ++dim) {
+            sum += arguments[i].getSize(dim);
+            
+            ++count;
+        }
+    }
+    
+    return sum / count;
+}

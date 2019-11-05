@@ -37,6 +37,10 @@ class Enemy extends Character {
         for(let i = 0; i < count; ++i) {
             this.items.push(new IC["apple"]());
         }
+        
+        this.stats["walk-speed-tired"] = this.stats["walk-speed"] = 0.25;
+        this.stats["swim-speed-tired"] = this.stats["swim-speed"] = 0.25;
+        this.stats["air-speed-tired"] = this.stats["air-speed"] = 0.25;
     }
     
     onadd() {

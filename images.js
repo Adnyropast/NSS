@@ -522,7 +522,8 @@ IMGBG["sky3"] = loadImage("images/background/sky3.png");
 
 const IMGITEM = {
     apple : loadImage("images/items/apple.png"),
-    saveIdentifier : loadImage("images/items/saveIdentifier.png")
+    saveIdentifier : loadImage("images/items/saveIdentifier.png"),
+    inventory : loadImage("images/items/inventory.png")
 };
 
 function colorVector_brighten(colorVector, value) {

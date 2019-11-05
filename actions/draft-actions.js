@@ -418,6 +418,7 @@ class SlashAction extends BusyAction {
             if(this.user.getEnergy() > this.getUseCost()) {
                 this.setRemovable(false);
                 this.user.hurt(this.getUseCost());
+                this.user.addStateObject({name:"attack"});
             } else {
                 return this.end();
             }
@@ -473,5 +474,11 @@ class SlashAction extends BusyAction {
     
     use() {
         return this.slashUpdate();
+    }
+    
+    onend() {
+        this.user.removeState("attack");
+        
+        return super.onend();
     }
 }

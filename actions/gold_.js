@@ -12,17 +12,22 @@ class GoldSolid extends Hitbox {
         super(position, size);
         
         this.setDrawable(PolygonDrawable.from(flameparticle).multiplySize(1/4));
+        this.drawable.multiplySize(rectangle_averageSize(this)/12);
+        this.drawable.stretchM([12, 0]);
         this.drawable.setPositionM(this.getPositionM());
         this.setStyle(new ColorTransition([255, 255, 0, 1], [0, 255, 255, 0.75], 16));
         this.setTypeOffense(FX_GOLD_, 0.25);
         this.setLifespan(16);
-        this.setSelfBrake(1.09375);
+        this.setSelfBrake(1.1875);
         
         this.addInteraction(new TypeDamager());
-        this.addInteraction(new ContactVanishRecipient(1));
+        // this.addInteraction(new ContactVanishRecipient(1));
     }
     
     updateDrawable() {
+        this.drawable.setImaginaryAngle(0);
+        this.drawable.shrinkM([-0.5, 0]);
+        
         this.drawable.setPositionM(this.getPositionM());
         this.drawable.multiplySize(1/1.025);
         this.drawable.setImaginaryAngle(this.speed.getAngle());
@@ -51,12 +56,15 @@ class GoldFlurry extends GoldAbility {
             this.user.hurt(this.getUseCost());
             
             let direction = this.user.getCursorDirection();
+            direction.rotate(Math.sin(this.t) * 0.5);
             
-            var hitbox = GoldSolid.fromMiddle(direction.normalized(rectangle_averageSize(this.user)/2).add(this.user.getPositionM()), [8, 8]);
+            let size = irandom(7, 9);
+            
+            var hitbox = GoldSolid.fromMiddle(direction.normalized(rectangle_averageSize(this.user)/4).add(this.user.getPositionM()), [size, size]);
             hitbox.shareBlacklist(this.user.getBlacklist());
             
-            hitbox.setSpeed(direction.rotated(Math.sin(this.t) * 0.25).normalize(4));
-            hitbox.addInteraction(new DragActor(hitbox.speed.normalized(0.0625)));
+            hitbox.setSpeed(direction.normalized(2.5));
+            hitbox.launchDirection = hitbox.speed.normalized(0.25);
             
             addEntity(hitbox);
         }

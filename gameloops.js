@@ -197,13 +197,14 @@ function setPlayer(entity) {
     if(PLAYER instanceof Entity) {
         // PLAYER.controller = noController;
         <!-- PLAYER.controllers.remove(playerController); -->
-        gameControllers.remove(mainPlayerController);
+        // gameControllers.remove(mainPlayerController);
     }
     
     PLAYER = entity;
+    PLAYERS[0].entity = entity;
     // entity.controller = playerController;
     <!-- entity.controllers.add(playerController); -->
-    gameControllers.add(mainPlayerController);
+    // gameControllers.add(mainPlayerController);
     entity.addInteraction(new MapWarpable);
     entity.battler.setPlayable(true);
     CAMERA.target = entity;
@@ -232,76 +233,6 @@ function setCamera(camera) {
     addEntity(camera);
 }
 
-/*  *
-window.addEventListener("keydown", function(event) {
-    if(PLAYER != null) {
-        for(var i = 0; i < actionevents.length; ++i) {
-            if(actionevents[i].keys.includes(event.keyCode)) {
-                actionevents[i].oneventdown(PLAYER);
-            }
-        }
-    }
-});
-
-/**
-
-window.addEventListener("keyup", function(event) {
-    if(PLAYER != null) {
-        for(var i = 0; i < actionevents.length; ++i) {
-            if(actionevents[i].keys.includes(event.keyCode)) {
-                actionevents[i].oneventup(PLAYER);
-            }
-        }
-    }
-});
-
-/**
-
-window.addEventListener("mousemove", function(event) {
-    if(PLAYER != null) {
-        PLAYER.addAction(new MouseFocus());
-    }
-});
-
-/**
-
-window.addEventListener("mousedown", function(event) {
-    if(PLAYER != null) {
-        PLAYER.addAction(new MouseFocus());
-        for(var i = 0; i < actionevents.length; ++i) {
-            if(actionevents[i].mouse.includes(event.which)) {
-                actionevents[i].oneventdown(PLAYER);
-            }
-        }
-    }
-});
-
-/**
-
-window.addEventListener("mouseup", function(event) {
-    if(PLAYER != null) {
-        PLAYER.removeActionsWithConstructor(MouseFocus);
-        
-        for(var i = 0; i < actionevents.length; ++i) {
-            if(actionevents[i].mouse.includes(event.which)) {
-                actionevents[i].oneventup(PLAYER);
-            }
-        }
-    }
-});
-
-/**
-
-window.addEventListener("blur", function(event) {
-    if(PLAYER != null) {
-        for(let i = 0; i < actionevents.length; ++i) {
-            actionevents[i].oneventup(PLAYER);
-        }
-    }
-});
-
-/**/
-
 addEventListener("blur", gamePause);
 addEventListener("focus", gameResume);
 
@@ -316,7 +247,7 @@ function worldUpdate() {
     loadZone.updateReset();
     
     let entities = ENTITIES.filter(function(entity) {
-        return loadZone.collides(entity);
+        return loadZone.collides(entity) && !entity.isFrozen();
     });
     
     COLLIDABLES.sort(function(a, b) {
@@ -328,7 +259,7 @@ function worldUpdate() {
     /**/
     
     let collidables = COLLIDABLES.filter(function(collidable) {
-        return loadZone.collides(collidable);
+        return loadZone.collides(collidable) && !collidable.isFrozen();
     });
     
     /*/
@@ -390,6 +321,10 @@ function worldUpdate() {
         return true;
     });
     
+    ENTITIES.forEach(function(entity) {
+        entity.thaw();
+    });
+    
     for(var i = 0; i < entities.length; ++i) {
         var entity = entities[i];
         
@@ -397,8 +332,8 @@ function worldUpdate() {
         entity.update();
     }
     
-    for(var i = 0; i < ENTITIES.length; ++i) {
-        var entity = ENTITIES[i];
+    for(var i = 0; i < entities.length; ++i) {
+        var entity = entities[i];
         entity.updateReset();
     }
     
@@ -805,20 +740,30 @@ let itemIndex = 0;
 let itemY = 0;
 let displayHeight = 9;
 
+let gpdSave = [];
+
 function escapeMenu() {
     let inventory = save_getCurrentInventory();
     
-    if(keyList.value(K_LEFT) === 1) {
+    let gamepadDirection = gamepad_getDirection(getGamepad(0));
+    
+    if(Math.sign(gpdSave[0]) === Math.sign(gamepadDirection[0])) {gamepadDirection[0] = 0;}
+    else {gpdSave[0] = gamepadDirection[0];}
+    
+    if(Math.sign(gpdSave[1]) === Math.sign(gamepadDirection[1])) {gamepadDirection[1] = 0;}
+    else {gpdSave[1] = gamepadDirection[1];}
+    
+    if(keyList.value(K_LEFT) === 1 || gamepadDirection[0] < 0) {
         if(itemIndex > 0) {--itemIndex;}
-    } if(keyList.value(K_RIGHT) === 1) {
+    } if(keyList.value(K_RIGHT) === 1 || gamepadDirection[0] > 0) {
         if(itemIndex < inventory.items.length - 1) {++itemIndex;}
-    } if(keyList.value(K_CONFIRM) === 1) {
+    } if(keyList.value(K_CONFIRM) === 1 || gamepadRec.value(BUTTON_A) === 1) {
         inventory.items[itemIndex].commands[0]();
-    } if(keyList.value(222) === 1) {
+    } if(keyList.value(222) === 1 || gamepadRec.value(BUTTON_L) === 1 || gamepadRec.value(BUTTON_B) === 1) {
         save_cdParentInventory();
-    } if(keyList.value(K_UP) === 1) {
+    } if(keyList.value(K_UP) === 1 || gamepadDirection[1] < 0) {
         if(itemIndex >= inventory.displayWidth) {itemIndex -= inventory.displayWidth;}
-    } if(keyList.value(K_DOWN) === 1) {
+    } if(keyList.value(K_DOWN) === 1 || gamepadDirection[1] > 0) {
         if(itemIndex < inventory.items.length - inventory.displayWidth) {itemIndex += inventory.displayWidth;}
     }
     
@@ -827,7 +772,7 @@ function escapeMenu() {
     if(itemIndex >= inventory.items.length) {itemIndex = inventory.items.length - 1;}
     
     if(itemIndex / inventory.displayWidth < itemY) {
-        itemY = Math.floor(itemIndex / inventory.displayWidth);
+        itemY = Math.max(0, Math.floor(itemIndex / inventory.displayWidth));
     } else if(itemIndex / inventory.displayWidth >= itemY + displayHeight) {
         itemY = Math.floor(itemIndex / inventory.displayWidth) - displayHeight + 1;
     }
@@ -867,7 +812,7 @@ function escapeMenu() {
         input.click();
     }
     
-    if(keyList.value(K_ESC) == 1) {
+    if(keyList.value(K_ESC) == 1 || gamepadRec.value(BUTTON_START) === 1) {
         switchPhase(backupPhase);
     }
     
@@ -941,12 +886,14 @@ function setGameTimeout(f, timeout) {
 
 let gameControllers = new SetArray();
 
+gameControllers.add(gameEventController);
+
 function gameUpdate() {
     if(gamePhase == "world") {
         WORLDLOOP.update();
         // worldUpdate();
         
-        if(keyList.value(K_ESC) == 1) {
+        if(keyList.value(K_ESC) == 1 || gamepadRec.value(BUTTON_START) === 1) {
             backupPhase = gamePhase;
             switchPhase("escapeMenu");
         }

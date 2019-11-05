@@ -119,7 +119,45 @@ class TypeDamager extends Interactor {
             entities.push.apply(entities, actor.getBlacklist());
             entities.push.apply(entities, recipient.getBlacklist());
             
-            // console.log(entities);
+            for(let i = 0; i < entities.length; ++i) {
+                const entity = entities[i];
+                
+                // entity.setFreeze(2);
+            }
+            
+            let recipients = recipient.getBlacklist();
+            
+            for(let i = 0; i < recipients.length; ++i) {
+                const entity = recipients[i];
+                
+                let state = entity.findState("originalPositionM");
+                
+                if(state === undefined) {
+                    state = {name:"originalPositionM", value:entity.getPositionM(), count:1};
+                    entity.addStateObject(state);
+                } else {
+                    ++state.count;
+                }
+                
+                let positionM = state.value;
+                
+                let avgsz = rectangle_averageSize(entity);
+                
+                entity.setPositionM(Vector.addition(positionM, (new Vector(Math.random(), Math.random())).normalize(avgsz/16)));
+                
+                setGameTimeout(function() {
+                    entity.setPositionM(Vector.addition(positionM, (new Vector(Math.random(), Math.random())).normalize(avgsz/32)));
+                    
+                    setGameTimeout(function() {
+                        entity.setPositionM(positionM);
+                        --state.count;
+                        
+                        if(state.count <= 0) {
+                            entity.removeState("originalPositionM");
+                        }
+                    }, 1);
+                }, 1);
+            }
         } else {/**
             ++interrecipient.rehitTimer;
             
@@ -249,12 +287,13 @@ typeImpacts[FX_SHARP] = function onimpact(actor, recipient) {
     
     addDrawable(new CutDrawable(middlePosition, [Math.random() * 2- 1, Math.random() * 2 - 1]).multiplySize(bothAvgsz/16));
     
-    let c = 6;// irandom(4, 8);
+    let c = 5;// irandom(4, 8);
     
     for(let i = 0; i < c; ++i) {
         let angle = i * 2*Math.PI/c;
         
         let particle = DiamondParticle.fromMiddle(middlePosition, [bothAvgsz/16, bothAvgsz/16]);
+        particle.setZIndex(random(-3, +1));
         
         particle.setSpeed((new Vector(irandom(bothAvgsz/12, bothAvgsz/8), 0)).rotate(angle + Math.random()));
         
@@ -381,13 +420,27 @@ typeImpacts[FX_FIRE] = function onimpact(actor, recipient) {
     
     /**/
     
-    let count = 2;
+    let count = 1;
     
     for(let i = 0; i < count; ++i) {
         let particle = FireParticle.fromMiddle(Vector.addition(actorPositionM, (new Vector(Math.random(), Math.random())).normalize(8)), [16, 16]);
-        // particle.drawable.setZIndex(Math.random() - 0.25);
+        
         addEntity(particle);
     }
+    
+    count = 5;
+    
+    for(let i = 0; i < count; ++i) {
+        let angle = (i+Math.random())/count * 2*Math.PI;
+        
+        let particle = FireSmokeParticle.fromMiddle(middlePosition, [bothAvgsz/2, bothAvgsz/2]);
+        
+        particle.setSpeed(Vector.fromAngle(angle).normalize(bothAvgsz/16));
+        
+        addEntity(particle);
+    }
+    
+    
 };
 
 typeImpacts[FX_ELECTRIC] = function onimpact(actor, recipient) {

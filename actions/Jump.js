@@ -151,6 +151,8 @@ class Jump extends Action {
     }
 }
 
+busyBannedActions.add(Jump);
+
 class MidairJump extends Jump {
     constructor() {
         super();
@@ -197,7 +199,7 @@ class EnergyJump extends Jump {
             }
             
             this.initialForce /= stale + 1;
-            this.direction = Vector.from(this.user.gravityDirection).normalize(-this.initialForce);
+            this.direction = Vector.from(this.user.getGravityDirection()).normalize(-this.initialForce);
         }
         
         if(this.phase < 2) {
@@ -263,12 +265,12 @@ class AutoJump extends Action {
                 return this;
             }
             
-            this.user.removeState("ladder").removeState("ladder-maintain");
+            if(ladder) {
+                this.user.removeState("ladder");
+                this.user.replaceStateObject({name : "noLadder", countdown : 20});
+            }
             
-            let gravityDirection = this.user.findState("gravity");
-            
-            if(typeof gravityDirection == "undefined") {gravityDirection = [0, 0]}
-            else {gravityDirection = gravityDirection.direction}
+            let gravityDirection = this.user.getGravityDirection();
             
             let jumpForce = this.user.stats["jump-force"];
             
