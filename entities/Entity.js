@@ -39,7 +39,7 @@ class Entity extends Rectangle {
         
         // this.solid = false;
         // this.crusher = false;
-        this.whitelist = COLLIDABLES;
+        this.whitelist = WORLDLOOP.getCollidables();
         this.blacklist = new SetArray(this);
         
         this.collidedWith = new SetArray();
@@ -74,7 +74,7 @@ class Entity extends Rectangle {
         this.route = null;// Vector
         this.cursor = null;// Entity
         
-        this.effectiveEnergy = this.realEnergy = this.energy = 1;
+        this.energy = 1;
         // this.regeneration = 0;
         // this.effects = [];
         
@@ -130,6 +130,10 @@ class Entity extends Rectangle {
         this.stats["action-costFactor"] = 1;
         
         this.freeze = 0;
+        
+        this.worldLoop = null;
+        
+        this.order = 0;
     }
     
     static fromData(data) {
@@ -286,11 +290,11 @@ class Entity extends Rectangle {
     // 
     
     getRealEnergy() {
-        return this.stats["realEnergy"]; return this.realEnergy;
+        return this.stats["realEnergy"];
     }
     
     setRealEnergy(realEnergy) {
-        this.stats["realEnergy"] = this.realEnergy = realEnergy;
+        this.stats["realEnergy"] = realEnergy;
         
         return this;
     }
@@ -583,13 +587,13 @@ class Entity extends Rectangle {
                 if(preposition[1] + presize[1]/2 < this.preposition[1] + this.presize[1]/2) {
                     // console.log("up");
                     other.replaceStateObject({name:"lastReplaced", value:4, countdown:2});
+                    // return this.replace(other, 4, bounce);
                     return this.replace(other, this.locate(other), bounce);
-                    return this.replace(other, 4, bounce);
                 } else {
                     // console.log("down");
                     other.replaceStateObject({name:"lastReplaced", value:8, countdown:2});
+                    // return this.replace(other, 8, bounce);
                     return this.replace(other, this.locate(other), bounce);
-                    return this.replace(other, 8, bounce);
                 }
             }
             
@@ -597,13 +601,13 @@ class Entity extends Rectangle {
                 if(preposition[0] + presize[0]/2 < this.preposition[0] + this.presize[0]/2) {
                     // console.log("left");
                     other.replaceStateObject({name:"lastReplaced", value:1, countdown:2});
+                    // return this.replace(other, 1, bounce);
                     return this.replace(other, this.locate(other), bounce);
-                    return this.replace(other, 1, bounce);
                 } else {
                     // console.log("right");
                     other.replaceStateObject({name:"lastReplaced", value:2, countdown:2});
+                    // return this.replace(other, 2, bounce);
                     return this.replace(other, this.locate(other), bounce);
-                    return this.replace(other, 2, bounce);
                 }
             }
             
@@ -1255,6 +1259,22 @@ class Entity extends Rectangle {
         }
         
         return this;
+    }
+    
+    addEntity(entity) {
+        if(this.worldLoop != null) {
+            this.worldLoop.addEntity(entity);
+        }
+        
+        return this;
+    }
+    
+    getWorldEntities() {
+        if(this.worldLoop != null) {
+            return this.worldLoop.getEntities();
+        }
+        
+        return new SetArray();
     }
 }
 

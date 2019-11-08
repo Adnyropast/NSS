@@ -12,11 +12,6 @@ class SlashEffect extends Hitbox {
         super(position, size);
         this.setTypeOffense(FX_SHARP, 1);
         
-        var grd = CANVAS.getContext("2d").createLinearGradient(0, 0, 0, this.getHeight());
-        grd.addColorStop(0, "#00FFFF00");
-        grd.addColorStop(1, "#00FFFFBF");
-        
-        this.setStyle(grd);
         this.setStyle(INVISIBLE);
         
         this.addInteraction(new TypeDamager());
@@ -432,7 +427,7 @@ class AutoSword extends SwordAbility {
     use() {
         if(this.phase == 0) {
             if(this.user.collidesWithPoint(this.user.cursor.getPositionM())) {
-                
+                this.end();
             } else {
                 let cursorDirection = this.user.getCursorDirection();
                 

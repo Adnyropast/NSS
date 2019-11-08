@@ -348,8 +348,8 @@ class ThrustActor extends Interactor {
     }
     
     getThrustValue() {
+        // return this.thrustValue;
         return this.getActor().getThrust();
-        return this.thrustValue;
     }
 }
 
@@ -815,7 +815,7 @@ class SoftThrustRecipient extends ThrustRecipient {
         let recipient = this.getRecipient();
         
         if(!actor.hasState("crouch") && actor.speed[1] > 0 && (recipient.locate(actor) & 4)) {
-            return {"thrustValue" : interactor.getThrustValue() * this.thrustFactor};
+            return super.negotiate(...arguments);
         }
         
         return {"thrustValue" : 0};

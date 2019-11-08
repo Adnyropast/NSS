@@ -1205,6 +1205,10 @@ class Rectangle {
         
         return true;
     }
+    
+    getCoordinate1(dimension) {return this.position[dimension];}
+    getCoordinateM(dimension) {return this.position[dimension] + this.size[dimension]/2;}
+    getCoordinate2(dimension) {return this.position[dimension] + this.size[dimension];}
 }
 
 /**/
@@ -1254,4 +1258,40 @@ function rectangle_averageSize() {
     }
     
     return sum / count;
+}
+
+function makeEncompassingRectangle(rectangles, paddings = {left:0, right:0, up:0, down:0}) {
+    let dimension = 0;
+    
+    for(let i = 0; i < rectangles.length; ++i) {
+        dimension = Math.max(dimension, rectangles[i].getDimension());
+    }
+    
+    let minPosition = (new Array(dimension)).fill(+Infinity);
+    let maxPosition = (new Array(dimension)).fill(-Infinity);
+    
+    for(let i = 0; i < rectangles.length; ++i) {
+        const rectangle = rectangles[i];
+        
+        for(let dim = 0; dim < rectangle.getDimension(); ++dim) {
+            if(rectangle.getCoordinate1(dim) < minPosition[dim]) {
+                minPosition[dim] = rectangle.getCoordinate1(dim);
+            } if(rectangle.getCoordinate2(dim) > maxPosition[dim]) {
+                maxPosition[dim] = rectangle.getCoordinate2(dim);
+            }
+        }
+    }
+    
+    minPosition[0] -= paddings["left"] || 0;
+    maxPosition[0] += paddings["right"] || 0;
+    minPosition[1] -= paddings["up"] || 0;
+    maxPosition[1] += paddings["down"] || 0;
+    
+    let size = new Array(dimension);
+    
+    for(let dim = 0; dim < dimension; ++dim) {
+        size[dim] = maxPosition[dim] - minPosition[dim];
+    }
+    
+    return new Rectangle(minPosition, size);
 }

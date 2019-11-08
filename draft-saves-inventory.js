@@ -64,3 +64,46 @@ function getInventoryFromPath(path) {
     
     return inventory;
 }
+
+function saveInventoryFile() {
+    // let filename = (new Date()).toJSON() + ".json";
+    // filename = filename.replace(/:/g, "'");
+    let filename = "save-inventory.json";
+    // let pathname = "saves/" + filename;
+    pathname = filename;
+    let success = false;
+    
+    if(fs) {
+        fs.writeFileSync(pathname, JSON.stringify(INVENTORY.getData()));
+        success = true;
+    }
+    
+    return {
+        filename : filename,
+        pathname : pathname,
+        success : success
+    };
+}
+
+let saveOnQuit = false;
+let saveOnWarp = true;
+
+addEventListener("beforeunload", function() {
+    if(saveOnQuit) {
+        updateCurrentCharacter();
+        saveInventoryFile();
+        updateSaveState({savePath : currentSavePath});
+    }
+});
+
+if(fs != undefined) {
+    try {
+        let data = JSON.parse(fs.readFileSync("save-inventory.json", {encoding : "utf-8"}));
+        
+        let inventory = IC["inventory"].fromData(data);
+        
+        INVENTORY = inventory;
+    } catch(error) {
+        
+    }
+}

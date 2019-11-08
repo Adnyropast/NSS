@@ -83,8 +83,6 @@ class BulletShot extends Action {
             this.end();
         }
         
-        // console.log(ENTITIES);
-        
         return this;
     }
     
@@ -109,7 +107,7 @@ EC["adnyropast"] = class Adnyropast extends PlayableCharacter {
         
         this.cursorDistance = 32;
         
-        this.addInteraction(new ReplaceRecipient());
+        this.stats["midairJump-count"] = "Infinity";
     }
     
     updateDrawable() {

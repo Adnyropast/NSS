@@ -289,6 +289,10 @@ IC["characterIdentifier"] = class CharacterIdentifier extends Item {
             PLAYER.initPositionM(positionM);
             PLAYER.setFace(faceSave);
         };
+        
+        this.commands[1] = function() {
+            
+        };
     }
     
     static fromData(data) {
@@ -329,6 +333,14 @@ IC["saveIdentifier"] = class SaveIdentifier extends Item {
             currentSavePath = getCurrentSave().inventoryPath + saveIdentifier.id + "/";
             itemIndex = 0;
             loadMap(getCurrentSave().lastMap);
+        };
+        
+        this.commands[1] = function duplicate() {
+            
+        };
+        
+        this.commands[2] = function erase() {
+            
         };
     }
     

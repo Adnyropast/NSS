@@ -72,15 +72,17 @@ class MouseFocus extends FocusAction {
     }
     
     use() {
-        if(mouse.moveValue == 1 || mouse.value(1) == 1) {
+        if(mouse.moveValue < 10 || mouse.value(1)) {
             this.user.cursor.setPositionM(getMousePosition());
+            // this.user.cursor.destination = getMousePosition();
             this.allowMoveFocus = false;
         } else {
             // console.log(this.user.actions);
             this.allowMoveFocus = true;
+            this.user.cursor.destination = null;
+            
+            this.end();
         }
-        
-        this.end();
         
         return this;
     }
@@ -143,7 +145,10 @@ class MoveFocus extends FocusAction {
         /**/
         
         if(this.user.route != null) {
-            this.user.cursor.setPositionM(this.user.route);
+            // this.user.cursor.setPositionM(this.user.route);
+            const positionM = this.user.getPositionM();
+            let vector = Vector.subtraction(this.user.route, positionM);
+            this.user.cursor.destination = Vector.addition(positionM, vector.normalize(80));
         }
         
         return this;

@@ -277,10 +277,12 @@ class AutoJump extends Action {
             this.direction = Vector.from(gravityDirection).normalize(-jumpForce);
             
             if(grounded) {
-                this.jumpAction = new Jump();
-                this.jumpAction.direction = this.direction;
-                
-                this.user.addAction(this.jumpAction);
+                if(!gravityDirection.isZero()) {
+                    this.jumpAction = new Jump();
+                    this.jumpAction.direction = this.direction;
+                    
+                    this.user.addAction(this.jumpAction);
+                }
             } else if(typeof wallState != "undefined") {
                 this.wallSide = wallState.side;
                 

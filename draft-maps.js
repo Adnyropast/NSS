@@ -46,7 +46,7 @@ function loadFromLists(lists) {
     // if(!(lists.player0 instanceof Entity)) {console.warn("Player not defined :", lists.player0)}
     // if(!Array.isArray(lists.entities)) {console.warn("Entities not defined :", lists.entities)}
     
-    clearMap();
+    WORLDLOOP.clearSets();
     
     if(lists.camera instanceof Entity) {
         setCamera(lists.camera);
@@ -1182,7 +1182,7 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
     }
     
     return map;
-    return lists;
+    // return lists;
 }
 
 function loadMaze(mazeSize = [10, 10], cellSize = [128, 96], wallSize = [32, 32], mode = array_random(["topdown", "sideways", "sideways-water"])) {

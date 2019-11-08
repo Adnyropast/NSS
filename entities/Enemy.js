@@ -247,8 +247,6 @@ class SniperEnemy extends Enemy {
                 }
             }
             
-            // if(this.hasState("grounded") && worldCounter % 16 == 0) this.removeActionsWithConstructor(Jump);
-            
             if(this.cursor.target != null) {
                 this.addAction(new PositionCursorTarget());
                 

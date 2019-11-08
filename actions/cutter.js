@@ -268,9 +268,9 @@ function finalCutter1BladeTransition(t) {
     let rt = (t - shiftTime) / (1-shiftTime);
     
     return ovalTransition((rt+1)/2);
-    return Math.pow(Math.abs(rt - 0.5) / 0.5, 3);
-    return 1 * (Math.cos(rt * 2*Math.PI) + 1) / 4 + 0.5;
-    return 1 * forthBackTiming(rt);
+    // return Math.pow(Math.abs(rt - 0.5) / 0.5, 3);
+    // return 1 * (Math.cos(rt * 2*Math.PI) + 1) / 4 + 0.5;
+    // return 1 * forthBackTiming(rt);
 }
 
 class FinalCutter1 extends SlashAction {
@@ -287,7 +287,7 @@ class FinalCutter1 extends SlashAction {
         
         this.baseDistanceTransition = new ColorTransition([6], [2], 1, forthBackTiming);
         
-        this.det = 12;
+        // this.det = 12;
         this.hitbox.setLifespan(this.slashDuration + 1);
         
         this.followup = FinalCutter2;
@@ -396,9 +396,9 @@ function finalCutter2BladeTransition(t) {
     // addEntity(Entity.fromMiddle([t*16, tmpr*16], [2, 2]).setStyle("red").setLifespan(16));
     
     return tmpr;
-    return Math.abs(Math.cos(t * 2*Math.PI));
-    return Math.pow((tmpr - 0.5) / 0.5, 2);
-    return Math.min(1, forthBackTiming(Math.abs(t - 0.5) / 0.5));
+    // return Math.abs(Math.cos(t * 2*Math.PI));
+    // return Math.pow((tmpr - 0.5) / 0.5, 2);
+    // return Math.min(1, forthBackTiming(Math.abs(t - 0.5) / 0.5));
 }
 
 function ovalTransition(t) {
@@ -413,10 +413,11 @@ function ovalTransition(t) {
 
 function fc2Timing(t) {
     return -Math.cos(t*4*Math.PI)/2+0.5;
-    
+    /**
     t %= 0.5;
     
     return -Math.pow((t*4-1), 2) + 1;
+    /**/
 }
 
 class FinalCutter2 extends FinalCutter1 {

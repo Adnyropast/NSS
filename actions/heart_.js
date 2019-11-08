@@ -47,7 +47,7 @@ class BloodShot extends Action {
             var projectile = BloodProjectile.fromMiddle(direction.normalized(rectangle_averageSize(this.user) / 2).add(this.user.getPositionM()), [4, 4]);
             
             projectile.setSpeed(direction.normalize(4));
-            projectile.addInteraction(new DragActor(projectile.speed.normalized(1)));
+            projectile.launchDirection = projectile.speed.normalized(1);
             projectile.shareBlacklist(this.user.getBlacklist());
             
             addEntity(projectile);
@@ -91,6 +91,7 @@ class BlowoutShots extends Action {
             
             var projectile = BloodProjectile.fromMiddle(direction.normalized(rectangle_averageSize(this.user) / 2).add(this.user.getPositionM()), [4, 4]);
             projectile.setSpeed(direction.normalize(4));
+            projectile.launchDirection = direction.normalized(1);
             projectile.shareBlacklist(this.user.getBlacklist());
             projectile.setLifespan(20);
             addEntity(projectile);
@@ -167,7 +168,7 @@ class VeinSweep extends SlashAction {
             this.bladeWidthTransition = new VectorTransition([32], [32]);
         }
         
-        this.hitbox.addInteraction(new DragActor(face.times(0.25)));
+        this.hitbox.launchDirection = face.times(1);
         
         return this;
     }

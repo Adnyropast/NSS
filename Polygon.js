@@ -569,6 +569,8 @@ class Polygon extends Array {
         
         return true;
         
+        /**
+        
         for(let i = 0; i < this.size(); ++i) {
             let corner = this.getPoint(i);
             let previous = this.getPoint((i-1 < 0) ? this.size()-1 : i-1);
@@ -581,6 +583,8 @@ class Polygon extends Array {
         }
         
         return true;
+        
+        /**/
     }
     
     collides(polygon) {
@@ -606,6 +610,8 @@ class Polygon extends Array {
         
         return false;
         
+        /**
+        
         let center = (new Array(this.getDimension())).fill(0);
         let count = 0;
         
@@ -622,6 +628,8 @@ class Polygon extends Array {
         }
         
         return this.collidesWithPoint(center) && polygon.collidesWithPoint(center);
+        
+        /**/
     }
     
     /* 16/10/2019 */

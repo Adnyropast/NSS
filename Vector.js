@@ -342,10 +342,6 @@ class Vector extends Array {
         }
         
         return copy;
-        
-        var copy = this.copy();
-        
-        return copy.add.apply(copy, arguments);
     }
     
     subtract() {
@@ -577,6 +573,8 @@ class Vector extends Array {
     toString() {
         return "[" + this.join(", ") + "]";
         
+        /**
+        
         var res = "[";
         
         for(var i = 0; i < this.size(); i++) {
@@ -588,6 +586,8 @@ class Vector extends Array {
         }
         
         return res + "]";
+        
+        /**/
     }
     
     /* 22/12/2018 */
@@ -609,6 +609,8 @@ class Vector extends Array {
         
         return angle;
         
+        /**
+        
         var scalar = 0;
         var tnorm = 0, onorm = 0;
         
@@ -623,6 +625,8 @@ class Vector extends Array {
         
         return Math.acos(scalar / (tnorm * onorm));
         return Math.acos(this.scalar(vector) / (this.getNorm() * vector.getNorm()));
+        
+        /**/
     }
     
     /* 24/06/2019 */
@@ -798,6 +802,8 @@ class VectorTransition {
     
     setStep(step) {this.step = step; return this;}
     getStep() {return this.step;}
+    
+    getCurrent() {return this.at(this.getProgress());}
 }
 
 function toDegree(angle) {

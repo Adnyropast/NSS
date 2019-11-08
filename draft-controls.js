@@ -367,7 +367,8 @@ function getKDirection(kleft = K_LEFT, kup = K_UP, kright = K_RIGHT, kdown = K_D
 }
 
 function getMousePosition(dimension) {
-    const positionOnCanvas = Vector.subtraction(mouse.position, [CANVAS.offsetLeft, CANVAS.offsetTop]).multiply([CANVAS.width / CANVAS.clientWidth, CANVAS.height / CANVAS.clientHeight]);
+    const positionRelative = Vector.subtraction(mouse.position, [CANVAS.offsetLeft, CANVAS.offsetTop]);
+    const positionOnCanvas = Vector.multiplication(positionRelative, [CANVAS.width / CANVAS.clientWidth, CANVAS.height / CANVAS.clientHeight]);
     
     if(arguments.length == 1) {
         let offset = CAMERA != null ? CAMERA.getOffset()[dimension] : 0;
@@ -375,7 +376,7 @@ function getMousePosition(dimension) {
         return positionOnCanvas[dimension] / CAMERA.getSizeProp(dimension) + offset;
     }
     
-    let offset = CAMERA != null ? CAMERA.getOffset() : 0;
+    let offset = CAMERA != null ? CAMERA.getOffset() : [0, 0];
     
     return positionOnCanvas.divide(CAMERA.getSizeProp()).add(offset);
 }
@@ -512,6 +513,11 @@ function updateEventAction(json, player = PLAYERS[0]) {
     });
     controls.click[1].push(function() {
         player.entity.addAction(new MouseFocus())
+    });
+    controls.keys[49].push(function() {
+        if(player.entity instanceof EC["adnyropast"]) {
+            // console.log("lcreatemenu");
+        }
     });
 }
 

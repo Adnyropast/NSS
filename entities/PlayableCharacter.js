@@ -5,9 +5,7 @@ class PlayableCharacter extends Character {
         this.resetEnergy(50);
         // this.setEffectFactor("default", 1);
         
-        this.cursor.setSizeM([16, 16]);
-        this.cursor.setStyle("#00FFFF5F");
-        this.cursor.setStyle("rgba(255, 0, 0, 0.5)").setZIndex(-1000);
+        this.cursor = PlayerCursor.fromMiddle(this.getPositionM(), [16, 16]);
         
         this.anim = null;
         this.lastAnim = "";
@@ -414,3 +412,70 @@ AC["movementLeft"] = MovementLeft;
 AC["movementUp"] = MovementUp;
 AC["movementRight"] = MovementRight;
 AC["movementDown"] = MovementDown;
+
+class CursorSmoke extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        const avgsz = rectangle_averageSize(this);
+        
+        this.setLifespan(24);
+        this.addInteraction(new DragRecipient(0.03125));
+        
+        this.setSizeTransition(new VectorTransition(Array.from(this.size), [0, 0], this.lifespan, powt(2)));
+        
+        let drawable = new PolygonDrawable(makeRandomPolygon(16, 12, 16));
+        drawable.multiplySize(avgsz/polygon_averageSize(drawable));
+        drawable.initImaginarySize(avgsz);
+        
+        this.setDrawable(drawable);
+    }
+    
+    updateDrawable() {
+        this.drawable.shadowBlur = this.lifespan - this.lifeCounter;
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
+        this.drawable.setPositionM(this.getPositionM());
+        
+        return this;
+    }
+}
+
+class PlayerCursor extends Cursor {
+    constructor() {
+        super(...arguments);
+        
+        let crosshair = new MultiPolygonDrawable();
+        crosshair.setZIndex(-1000);
+        
+        for(let i = 0; i < 8; ++i) {
+            let angle = i/8 * 2*Math.PI;
+            let vector = Vector.fromAngle(angle).normalize(16);
+            
+            let drawable = new PolygonDrawable(makePathPolygon([[0, 0], vector.divided(2), vector], 1));
+            drawable.setStyle(CT_RAINBOW.copy().setDuration(1024));
+            drawable.shadowBlur = 8;
+            
+            crosshair.push(drawable);
+        }
+        
+        this.drawables[0] = crosshair;
+        
+        let circle = new PolygonDrawable(makePathPolygon(makeOvalPath(32, 8, 8), 0.5))
+        circle.setZIndex(-1000);
+        circle.setStyle(CT_RAINBOW.copy().setDuration(1024));
+        circle.shadowBlur = 16;
+        this.drawables[1] = circle;
+        
+        this.controllers.add(function() {
+            if(this.lifeCounter % 2 === 0) {
+                let smoke = CursorSmoke.fromMiddle(Vector.addition(this.getPositionM(), [random(-4, 4), random(-4, 4)]), [8, 8]);
+                let cv = this.drawables[1].style.getCurrent();
+                let cv_start = colorVector_brighten(cv, 128);
+                let cv_end = colorVector_alterAlpha(cv, -0.5);
+                smoke.drawable.setStyle(new ColorTransition(cv_start, cv_end, smoke.lifespan, powt(2)));
+                
+                addEntity(smoke);
+            }
+        });
+    }
+}

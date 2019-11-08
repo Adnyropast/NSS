@@ -7,10 +7,6 @@ class GameLoop {
         this.counter = 0; -1;
         this.counterLimit = Infinity;
         this.controllers = new SetArray();
-        this.controllers.add(function() {
-            ++this.counter;
-            if(this.counter > this.counterLimit) {this.counter = this.counterLimit;}
-        });
     }
     
     update() {
@@ -18,24 +14,110 @@ class GameLoop {
             this.controllers[i].bind(this)();
         }
         
+        ++this.counter;
+        if(this.counter > this.counterLimit) {this.counter = this.counterLimit;}
+        
         return this;
     }
     
     setCamera(camera) {this.camera = camera; return this;}
     getCamera() {return this.camera;}
+    
+    getDrawables() {return this.drawables;}
+    addDrawable(drawable) {
+        if(drawable == null) {
+            return null;
+        }
+        
+        drawable.setCamera(this.camera);
+        this.drawables.add(drawable);
+        
+        return this;
+    }
+    
+    removeDrawable(drawable) {
+        this.drawables.remove(drawable);
+        
+        return this;
+    }
+}
+
+class WorldLoop extends GameLoop {
+    constructor() {
+        super();
+        
+        this.entities = new SetArray();
+        this.collidables = new SetArray();
+    }
+    
+    setCamera(camera) {
+        CAMERA = camera;
+        this.camera = camera;
+        this.addEntity(camera);
+        
+        return this;
+    }
+    
+    getCollidables() {return this.collidables;}
+    
+    addEntity(entity) {
+        entity.worldLoop = this;
+        entity.onadd();
+        
+        this.entities.add(entity);
+        
+        if(entity.isCollidable()) {
+            this.collidables.add(entity);
+        }
+        
+        return this;
+    }
+    
+    getEntities() {return this.entities;}
+    
+    addEntities(entities) {
+        for(var i = 0; i < entities.length; ++i) {
+            this.addEntity(entities[i]);
+        }
+        
+        return this;
+    }
+    
+    removeEntity(entity) {
+        if(entity instanceof Entity) {
+            entity.onremove();
+        }
+        
+        this.entities.remove(entity);
+        this.collidables.remove(entity);
+        
+        if(entity == PLAYER) {
+            PLAYER = null;
+        }
+        
+        return this;
+    }
+    
+    clearSets() {
+        this.entities.clear();
+        this.collidables.clear();
+        this.drawables.clear();
+        
+        ALLIES_.clear();
+        OPPONENTS_.clear();
+    }
 }
 
 const GAMELOOP = new GameLoop();
-const WORLDLOOP = new GameLoop();
-WORLDLOOP.setCamera = function setCamera(camera) {CAMERA = camera; this.camera = camera; return this;}
+const WORLDLOOP = new WorldLoop();
 const BATTLELOOP = new GameLoop();
 const ESCAPELOOP = new GameLoop();
 
 const NOENTITY = new SetArray();
-const ENTITIES = new SetArray();
-const COLLIDABLES = new SetArray();
-const DRAWABLES = new SetArray();
-const PLAYABLES = new SetArray();
+// const ENTITIES = new SetArray();
+// const COLLIDABLES = new SetArray();
+// const DRAWABLES = new SetArray();
+// const PLAYABLES = new SetArray();
 var CAMERA = null;
 var PLAYER = null;
 
@@ -48,57 +130,23 @@ let OBSTACLES = new SetArray();
 let NONOBSTACLES = new SetArray();
 
 function addEntity(entity) {
-    entity.onadd();
-    
-    ENTITIES.add(entity);
-    
-    if(entity.isCollidable()) {
-        COLLIDABLES.add(entity);
-    }
-}
-
-function addEntities(entities) {
-    for(var i = 0; i < entities.length; ++i) {
-        addEntity(entities[i]);
-    }
+    WORLDLOOP.addEntity(entity);
 }
 
 function removeEntity(entity) {
-    if(entity instanceof Entity) {
-        entity.onremove();
-    }
-    
-    ENTITIES.remove(entity);
-    COLLIDABLES.remove(entity);
-    // DRAWABLES.remove(entity);
-    
-    if(entity == PLAYER) {
-        PLAYER = null;
-    }
-}
-
-function clearMap() {
-    ENTITIES.clear();
-    COLLIDABLES.clear();
-    DRAWABLES.clear();
-    
-    ALLIES_.clear();
-    OPPONENTS_.clear();
+    WORLDLOOP.removeEntity(entity);
 }
 
 function addDrawable(drawable) {
-    if(drawable != null) {
-        drawable.setCamera(CAMERA);
-        DRAWABLES.add(drawable);
-    }
+    WORLDLOOP.addDrawable(drawable);
 }
 
 function removeDrawable(drawable) {
-    DRAWABLES.remove(drawable);
-    BATTLEDRAWABLES.remove(drawable);
-    GLOBALDRAWABLES.remove(drawable);
+    WORLDLOOP.removeDrawable(drawable);
+    BATTLELOOP.removeDrawable(drawable);
+    GAMELOOP.removeDrawable(drawable);
     
-    if(drawable == COVERDRAWABLE) {
+    if(drawable === COVERDRAWABLE) {
         COVERDRAWABLE = null;
     }
 }
@@ -187,27 +235,17 @@ function removeInterrecipient(interrecipient) {
     /**/
 }
 
-function mainPlayerController() {
-    if(PLAYER != null) {
-        playerController.bind(PLAYER)();
-    }
-}
-
 function setPlayer(entity) {
     if(PLAYER instanceof Entity) {
         // PLAYER.controller = noController;
-        <!-- PLAYER.controllers.remove(playerController); -->
-        // gameControllers.remove(mainPlayerController);
     }
     
     PLAYER = entity;
     PLAYERS[0].entity = entity;
-    // entity.controller = playerController;
-    <!-- entity.controllers.add(playerController); -->
-    // gameControllers.add(mainPlayerController);
     entity.addInteraction(new MapWarpable);
     entity.battler.setPlayable(true);
     CAMERA.target = entity;
+    CAMERA.targets.clear().add(entity);
     
     entity.events["defeat"].push(function() {
         setGameTimeout(function() {
@@ -230,7 +268,6 @@ function setPlayer(entity) {
 
 function setCamera(camera) {
     WORLDLOOP.setCamera(camera);
-    addEntity(camera);
 }
 
 addEventListener("blur", gamePause);
@@ -238,27 +275,31 @@ addEventListener("focus", gameResume);
 
 /**/
 
-let worldCounter = 0;
-
 let loadZone = new Entity([NaN, NaN, NaN], [896, 504, 896]);
 
 function worldUpdate() {
-    loadZone.setPositionM(CAMERA.getPositionM());
+    loadZone.setPositionM(this.camera.getPositionM());
     loadZone.updateReset();
     
-    let entities = ENTITIES.filter(function(entity) {
+    array_bubbleSort(this.entities, function(a, b) {
+        if(a.order > b.order) {return +1;}
+        if(a.order < b.order) {return -1;}
+        return 0;
+    });
+    
+    let entities = this.entities.filter(function(entity) {
         return loadZone.collides(entity) && !entity.isFrozen();
     });
     
-    COLLIDABLES.sort(function(a, b) {
+    /**
+    
+    this.collidables.sort(function(a, b) {
         if(a.collide_priority < b.collide_priority) {return -1;}
         if(a.collide_priority > b.collide_priority) {return +1;}
         return 0;
     });
     
-    /**/
-    
-    let collidables = COLLIDABLES.filter(function(collidable) {
+    let collidables = this.collidables.filter(function(collidable) {
         return loadZone.collides(collidable) && !collidable.isFrozen();
     });
     
@@ -268,9 +309,9 @@ function worldUpdate() {
         return entity.isCollidable();
     });
     
-    /**/
+    /**
     
-    DRAWABLES.sort(function(a, b) {
+    this.drawables.sort(function(a, b) {
         /*  *
         
         let distA = Vector.subtraction(a.getPositionM(), CAMERA.position).getNorm();
@@ -282,7 +323,7 @@ function worldUpdate() {
             return +1;
         }
         
-        /*/
+        /*
         
         if(a.getZIndex() > b.getZIndex()) {
             return -1;
@@ -290,12 +331,20 @@ function worldUpdate() {
             return +1;
         }
         
-        /*  */
+        /*  *
         
         return 0;
     });
     
-    let drawables = DRAWABLES.filter(function(drawable) {
+    /**/
+    
+    array_bubbleSort(this.drawables, function(a, b) {
+        if(a.getZIndex() > b.getZIndex()) {return -1;}
+        if(a.getZIndex() < b.getZIndex()) {return +1;}
+        return 0;
+    });
+    
+    let drawables = this.drawables.filter(function(drawable) {
         if(drawable.cameraMode === "none" || drawable.cameraMode === "reproportion") {return true;}
         
         if(typeof drawable.getPositionM == "undefined") {return true;}
@@ -321,7 +370,7 @@ function worldUpdate() {
         return true;
     });
     
-    ENTITIES.forEach(function(entity) {
+    this.entities.forEach(function(entity) {
         entity.thaw();
     });
     
@@ -573,9 +622,11 @@ let commands = [];
 */
 let MAINBATTLER = null;
 
-const BATTLEDRAWABLES = new SetArray();
+const BATTLEDRAWABLES = BATTLELOOP.drawables;
 
-const BATTLECAMERA = Camera.fromMiddle([0, 0, 0], [256, 144, 0]);
+BATTLELOOP.setCamera(Camera.fromMiddle([0, 0, 0], [256, 144, 0]));
+
+const BATTLECAMERA = BATTLELOOP.getCamera();
 
 function setBattleViewPoint(mainBattler) {
     if(MAINBATTLER != null) {
@@ -725,8 +776,10 @@ function battleUpdate() {
     // 
     
     for(let i = 0; i < BATTLEDRAWABLES.length; ++i) {
-        BATTLEDRAWABLES[i].update();
-        BATTLEDRAWABLES[i].draw(context);
+        let drawable = BATTLEDRAWABLES[i];
+        
+        drawable.update();
+        drawable.draw(context);
     }
     /*
     for(let i = 0; i < commands.length; ++i) {
@@ -742,8 +795,21 @@ let displayHeight = 9;
 
 let gpdSave = [];
 
+const ESCDRAWABLES = ESCAPELOOP.drawables;
+
 function escapeMenu() {
-    let inventory = save_getCurrentInventory();
+    const inventory = save_getCurrentInventory();
+    
+    const marginLR = 8, marginTB = 5;
+    const spaceBetween = 4;
+    const gridWidth = (640 - 2*marginLR);
+    const gridHeight = (120 - 2*marginTB);
+    
+    const cellWidth = (gridWidth - spaceBetween * (inventory.displayWidth-1)) / inventory.displayWidth;
+    const cellHeight = cellWidth;
+    
+    const hProp = CANVAS.width / 640;
+    const vProp = CANVAS.height / 360;
     
     let gamepadDirection = gamepad_getDirection(getGamepad(0));
     
@@ -765,6 +831,54 @@ function escapeMenu() {
         if(itemIndex >= inventory.displayWidth) {itemIndex -= inventory.displayWidth;}
     } if(keyList.value(K_DOWN) === 1 || gamepadDirection[1] > 0) {
         if(itemIndex < inventory.items.length - inventory.displayWidth) {itemIndex += inventory.displayWidth;}
+    }
+    
+    if(keyList.value(KEY_SPACE) === 1) {
+        let commands = inventory.items[itemIndex].commands;
+        
+        let commandsNames = [];
+        
+        for(let i = 0; i < commands.length; ++i) {
+            commandsNames.push(commands[i].name);
+        }
+        
+        let fontFamily = "Segoe UI";
+        let textColor = "black";
+        let strokeColor = "blue";
+        
+        let width = makeTextCanvas(longestText(commandsNames, fontFamily), 16, fontFamily, textColor, strokeColor).width;
+        let height = 8;
+        
+        let x = itemIndex % inventory.displayWidth;
+        let y = Math.floor(itemIndex / inventory.displayWidth) - itemY;
+        
+        x *= cellWidth + spaceBetween;
+        y *= cellHeight + spaceBetween;
+        
+        x += marginLR + cellWidth / 2;
+        y += marginTB + cellHeight / 2;
+        
+        x = Math.min(x, 640 - width);
+        y = Math.min(y, 360 - width);
+        
+        let menu = new RectangleDrawable([x, y], [width, height]);
+        
+        menu.setCameraMode("reproportion");
+        
+        menu.baseWidth = 640;
+        menu.baseHeight = 360;
+        
+        ESCDRAWABLES["menu"] = menu;
+    }
+    
+    if(keyList.value(105) === 1) {
+        let data = saveInventoryFile();
+        
+        if(data.success) {
+            alert("Saved as \"" + data.filename + "\".");
+        } else {
+            alert("Could not save the inventory state.");
+        }
     }
     
     if(itemIndex < 0) {itemIndex = 0;}
@@ -823,13 +937,9 @@ function escapeMenu() {
     
     /**/
     
-    const marginLR = 8, marginTB = 5;
-    const spaceBetween = 4;
-    const gridWidth = (640 - 2*marginLR);
-    const gridHeight = (120 - 2*marginTB);
-    
     for(let i = 0; i < inventory.items.length; ++i) {
-        let width = (gridWidth - spaceBetween * (inventory.displayWidth-1)) / inventory.displayWidth, height = width;
+        let width = cellWidth, height = cellHeight;
+        
         let x = i % inventory.displayWidth;
         x *= width + spaceBetween;
         x += marginLR;
@@ -837,11 +947,9 @@ function escapeMenu() {
         y *= height + spaceBetween;
         y += 0 + marginTB;
         
-        let hProp = CANVAS.width / 640;
-        let vProp = CANVAS.height / 360;
-        
         x *= hProp;
         y *= vProp;
+        
         width *= hProp;
         height *= vProp;
         
@@ -854,6 +962,12 @@ function escapeMenu() {
         if(typeof img != "undefined") {
             context.drawImage(img, x, y, width, height);
         }
+    }
+    
+    for(let i in ESCDRAWABLES) {
+        let drawable = ESCDRAWABLES[i];
+        
+        drawable.draw(context);
     }
 }
 
@@ -909,8 +1023,6 @@ function gameUpdate() {
     }
     
     // 
-    
-    ++worldCounter;
     
     // 
     

@@ -16,7 +16,7 @@ function saveMapState() {
 function getCurrentMapState() {
     let map = {
         camera : {positionM : CAMERA.getPositionM(), size : CAMERA.size},
-        entities : entitiesToData(ENTITIES)
+        entities : entitiesToData(WORLDLOOP.entities)
     };
     
     return map;
@@ -70,4 +70,33 @@ function save_getCurrentInventory(saveIdentifier = getCurrentSave()) {
 }
 
 let currentSavePath = "/8/";
-let currentSaveIdentifier = null;
+
+function getSaveState() {
+    if(fs != undefined) {
+        try {
+            let saveState = fs.readFileSync("save-state.json", {encoding:"utf-8"});
+            
+            let data = JSON.parse(saveState);
+            
+            return data;
+        } catch(error) {
+            // fs.writeFileSync("save-state.json", "{}");
+        }
+    }
+    
+    return {};
+}
+
+currentSavePath = getSaveState().savePath || currentSavePath;
+
+function updateSaveState(properties) {
+    if(fs != undefined) {
+        let saveState = getSaveState();
+        
+        for(let i in properties) {
+            saveState[i] = properties[i];
+        }
+        
+        fs.writeFileSync("save-state.json", JSON.stringify(saveState));
+    }
+}

@@ -267,29 +267,27 @@ function makeGradientCTilesPattern(horizontalCount, verticalCount, bgTransition,
 // makeGradientCTiles(64, 64, new ColorTransition([255, 0, 0, 1], [0, 255, 255, 1], 7), new ColorTransition([255, 255, 255, 1], [0, 0, 0, 1], 7));
 // makeGradientCTiles(16, 256, new ColorTransition([255, 0, 0, 1], [0, 255, 255, 1]), new ColorTransition([255, 255, 255, 1], [0, 0, 0, 1]));
 
-function makeTextCanvas(content, font = "Luckiest Guy", fillStyle = "black", strokeStyle) {
-    let c = document.createElement("canvas");
-    let ctx = c.getContext("2d");
+function makeTextCanvas(content, fontHeight = 75, fontFamily = "Luckiest Guy", fillStyle = "black", strokeStyle) {
+    let canvas = document.createElement("canvas");
+    let ctx = canvas.getContext("2d");
     
-    const fontHeight = 75;
+    canvas.height = fontHeight;
     
-    c.height = fontHeight;
+    ctx.font = fontHeight + "px " + fontFamily;
+    canvas.width = ctx.measureText(content).width;
     
     ctx.textBaseline = "top";
-    ctx.font = fontHeight + "px " + font;
-    c.width = ctx.measureText(content).width;
-    ctx.textBaseline = "top";
-    ctx.font = fontHeight + "px " + font
+    ctx.font = fontHeight + "px " + fontFamily;
     
     ctx.fillStyle = fillStyle;
     ctx.fillText(content, 0, 0);
     
-    if(typeof strokeStyle != "undefined") {
+    if(strokeStyle !== undefined) {
         ctx.strokeStyle = strokeStyle;
         ctx.strokeText(content, 0, 0);
     }
     
-    return c;
+    return canvas;
 }
 
 const tfparams = {
@@ -299,12 +297,12 @@ const tfparams = {
     "padding-top" : 0
 };
 
-function makeTextFit(content, width, height, font = "Luckiest Guy", fillStyle = "black", strokeStyle) {
+function makeTextFit(content, width, height, fontFamily = "Luckiest Guy", fillStyle = "black", strokeStyle) {
     let finalCanvas = document.createElement("canvas");
     finalCanvas.width = width, finalCanvas.height = height;
     let ctx = finalCanvas.getContext("2d");
     
-    let textCanvas = makeTextCanvas(content, font, fillStyle, strokeStyle);
+    let textCanvas = makeTextCanvas(content, undefined, fontFamily, fillStyle, strokeStyle);
     
     if(textCanvas.width != 0) {
         // ctx.drawImage(textCanvas, 0, 0, textCanvas.width * height / textCanvas.height, height);
@@ -571,4 +569,15 @@ function colorVector_alterAlpha(color, value) {
     if(color[3] > 1) {color[3] = 1;}
     
     return color;
+}
+
+function rgbaStringToVector(rgbaString) {
+    let matches = rgbaString.match(/rgba?\((\d*\.?\d*)\s*,\s*(\d*\.?\d*)\s*,\s*(\d*\.?\d*)\s*,?\s*(\d*\.?\d*)\)/);
+    
+    let red = Number(matches[1]);
+    let blue = Number(matches[2]);
+    let green = Number(matches[3]);
+    let alpha = matches[4] === "" ? 1 : Number(matches[4]);
+    
+    return [red, blue, green, alpha];
 }

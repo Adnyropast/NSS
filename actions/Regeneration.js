@@ -15,7 +15,7 @@ class Regeneration extends Action {
     
     allowsReplacement(action) {
         return false;
-        return action.getId() == "regeneration";
+        // return action.getId() == "regeneration";
     }
     
     preventsAddition(action) {return false;}

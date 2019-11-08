@@ -75,7 +75,6 @@ class Character extends Entity {
         this.setZIndex(0);
         
         this.cursor = Cursor.fromMiddle([this.getXM(), this.getYM()], [this.getWidth(), this.getHeight()]);
-        this.cursor.shareBlacklist(this.getBlacklist());
         
         // this.uiEnergy = new TextDrawable();
         this.energyBar = new EnergyBarDrawable([0, 0], [36, 12]);
@@ -146,6 +145,7 @@ class Character extends Entity {
     
     onadd() {
         addEntity(this.cursor);
+        this.cursor.shareBlacklist(this.getBlacklist());
         
         NONOBSTACLES.add(this);
         
@@ -276,10 +276,24 @@ class Cursor extends Entity {
         this.currentIndex = -1;
         this.detect = console.warn.bind(console.warn, "Cursor.prototype.detect");
         this.targeted = [];
+        
+        this.controllers.add(function() {
+            if(this.destination != null) {
+                let vector = Vector.subtraction(this.destination, this.getPositionM());
+                
+                if(vector.getNorm() < ALMOST_ZERO) {
+                    this.setPositionM(this.destination);
+                } else {
+                    this.speed.set(vector.divide(1.5));
+                }
+            }
+        });
     }
     
     centerTarget() {
-        if(!ENTITIES.includes(this.target)) {
+        const worldEntities = this.getWorldEntities();
+        
+        if(!worldEntities.includes(this.target)) {
             this.target = null;
         }
         
@@ -291,6 +305,8 @@ class Cursor extends Entity {
     }
     
     setNextTarget() {
+        const worldEntities = this.getWorldEntities();
+        
         var targets = [];
         
         for(var i = 0; i < this.collidedWith.length; ++i) {
@@ -318,7 +334,7 @@ class Cursor extends Entity {
             this.targets.splice(0, 1);
             // this.setPositionM(this.targets[this.currentIndex].getPositionM());
             
-            if(ENTITIES.indexOf(this.target) == -1) {
+            if(worldEntities.indexOf(this.target) == -1) {
                 this.setNextTarget();
             }
         }
@@ -332,6 +348,16 @@ class Cursor extends Entity {
         this.detect = detect;
         
         return this;
+    }
+    
+    updateDrawable() {
+        const positionM = this.getPositionM();
+        
+        for(let i = 0; i < this.drawables.length; ++i) {
+            this.drawables[i].setPositionM(positionM);
+        }
+        
+        return super.updateDrawable();
     }
 }
 

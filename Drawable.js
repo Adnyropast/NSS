@@ -8,6 +8,11 @@ class Drawable {
         
         this.style = INVISIBLE;
         this.controllers = new SetArray();
+        
+        this.globalAlpha = 1;
+        this.shadowBlur = 0;
+        this.shadowColor = undefined;
+        this.strokeStyle = undefined;
     }
     
     getZIndex() {return this.zIndex;}
@@ -59,6 +64,14 @@ class Drawable {
         
         return this.strokeStyle;
     }
+    
+    getShadowColor() {
+        if(this.shadowColor !== undefined) {
+            return this.shadowColor;
+        }
+        
+        return this.getStyle();
+    }
 }
 
 class RectangleDrawable extends Rectangle {
@@ -79,6 +92,9 @@ class RectangleDrawable extends Rectangle {
         
         this.baseWidth = 640;
         this.baseHeight = 360;
+        
+        this.shadowBlur = 0;
+        this.shadowColor = undefined;
     }
     
     getZIndex() {return this.zIndex;}
@@ -160,6 +176,9 @@ class RectangleDrawable extends Rectangle {
             height = CANVAS.height;
         }
         
+        context.shadowBlur = this.shadowBlur;
+        context.shadowColor = this.getShadowColor();
+        
         var style = this.getStyle();
         var alpha = this.getAlpha();
         context.globalAlpha = alpha;
@@ -167,6 +186,8 @@ class RectangleDrawable extends Rectangle {
         this.actuallyDraw(context, style, x, y, width, height);
         
         context.globalAlpha = 1;
+        context.shadowBlur = 0;
+        context.shadowColor = "rgba(0, 0, 0, 0)";
         
         return this;
     }
@@ -179,26 +200,24 @@ class RectangleDrawable extends Rectangle {
         try {
         
         if(style instanceof HTMLImageElement || style instanceof HTMLCanvasElement) {
+            context.shadowColor = "black";
+            
             context.drawImage(style, 0, 0, width, height);
         } else {
-            context.fillStyle = style;
-            
-            context.fillRect(0, 0, width, height);
+            if(style !== INVISIBLE) {
+                context.fillStyle = style;
+                
+                context.fillRect(0, 0, width, height);
+            }
         }
         
-        context.strokeStyle = this.getStrokeStyle();
-        context.strokeRect(0, 0, width, height);
+        if(this.getStrokeStyle() !== INVISIBLE) {
+            context.strokeStyle = this.getStrokeStyle();
+            context.strokeRect(0, 0, width, height);
+        }
         
         } catch(error) {
-            if(!this.sss) {
-                this.sss = true;
-                console.log(style);
-                ENTITIES.forEach(function(e) {
-                    if(e.drawable === this) {
-                        console.log(e);
-                    }
-                });
-            }
+            console.error(error, style);
         }
         
         context.translate(-x, -y);
@@ -211,6 +230,10 @@ class RectangleDrawable extends Rectangle {
     
     setStrokeStyle(strokeStyle) {this.strokeStyle = strokeStyle; return this;}
     getStrokeStyle() {return Drawable.prototype.getStrokeStyle.bind(this)();}
+    
+    getShadowColor() {
+        return Drawable.prototype.getShadowColor.bind(this)();
+    }
 }
 
 /**
@@ -242,6 +265,13 @@ class PolygonDrawable extends Polygon {
         this.camera = null;
         
         this.controllers = new SetArray();
+        
+        this.shadowBlur = 0;
+        
+        this.baseWidth = 640;
+        this.baseHeight = 360;
+        
+        this.shadowColor = undefined;
     }
     
     getZIndex() {return this.zIndex;}
@@ -289,6 +319,15 @@ class PolygonDrawable extends Polygon {
                 y *= hprop;
             }
             
+            if(this.cameraMode === "reproportion") {
+                let hProp = 1, vProp = 1;
+                if(this.baseWidth) {hProp = CANVAS.width / this.baseWidth;}
+                if(this.baseHeight) {vProp = CANVAS.height / this.baseHeight;}
+                
+                x *= hProp;
+                y *= vProp;
+            }
+            
             if(i == 0) {
                 context.moveTo(x, y);
             } else {
@@ -298,11 +337,17 @@ class PolygonDrawable extends Polygon {
         
         context.closePath();
         
+        context.shadowBlur = this.shadowBlur;
+        context.shadowColor = this.getShadowColor();
+        
         context.fillStyle = this.getStyle();
         context.fill();
         context.strokeStyle = this.getStrokeStyle();
         context.lineWidth = this.lineWidth;
         context.stroke();
+        
+        context.shadowBlur = 0;
+        context.shadowColor = "rgba(0, 0, 0, 0)";
         
         return this;
     }
@@ -320,6 +365,10 @@ class PolygonDrawable extends Polygon {
     setStrokeStyle(strokeStyle) {this.strokeStyle = strokeStyle; return this;}
     
     setCamera(camera) {this.camera = camera; return this;}
+    
+    getShadowColor() {
+        return Drawable.prototype.getShadowColor.bind(this)();
+    }
 }
 
 /**
@@ -354,11 +403,6 @@ class TextDrawable {
         
         context.fillStyle = this.color;
         context.fillText(this.content, x, y);
-        // context.fillText(PLAYER.energy, 66.75 * CANVAS.height / BASEHEIGHT, 0);
-        // context.fillText(PLAYER.energy, 0, 16);
-        // context.fillText(PLAYER.energy, 0, 32);
-        // context.fillText(PLAYER.energy, 0, 48);
-        // context.fillText(PLAYER.energy, 0, 64);
         
         return this;
     }
@@ -758,12 +802,14 @@ class TextRectangleDrawable extends RectangleDrawable {
         this.setStyle("white");
         
         this.textEnhance = 1;
+        
+        this.fontFamily = "Segoe UI";
     }
     
     setContent(content) {
         this.content = content;
         // this.contentStyle = makeTextCanvas(content);
-        this.contentStyle = makeTextFit(content, this.getWidth() * this.textEnhance, this.getHeight() * this.textEnhance);
+        this.contentStyle = makeTextFit(content, this.getWidth() * this.textEnhance, this.getHeight() * this.textEnhance, this.fontFamily);
         
         return this;
     }

@@ -1,19 +1,30 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="utf-8"></meta>
+        <meta charset="utf-8">
         <title>Not So Simple</title>
         
-        <link rel="icon", href="images/seed.png"></link>
-        <link rel="stylesheet", href="view/nss.css"></link>
+        <link rel="icon" href="images/seed.png">
+        <link rel="stylesheet" href="view/nss.css">
     </head>
     <body>
         <div id="main-div">
-            <canvas id="canv", width=1280, height=720></canvas>
+            <canvas id="canv" width=1280 height=720></canvas>
             <!-- <canvas id="canv", width=960, height=540></canvas> -->
             <!-- <canvas id="canv", width=640, height=360></canvas> -->
         </div>
         
+        <script>
+        
+        let ipcRenderer;
+        let fs;
+        
+        if(window.require != undefined) {
+            ipcRenderer = require("electron").ipcRenderer;
+            fs = require("fs");
+        }
+        
+        </script>
         <script src="draft-menu.js"></script>
         
         <script src="events.js"></script>
@@ -23,7 +34,7 @@
         <script src="Polygon.js"></script>
         <script src="draft.js"></script>
         
-        <script id="canvas", src="canvas.js"></script>
+        <script src="canvas.js"></script>
         
         <script src="images.js"></script>
         

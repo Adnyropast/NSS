@@ -23,6 +23,9 @@ var K_CDIRECTION = K_CLEFT.concat(K_CUP).concat(K_CDOWN).concat(K_CRIGHT);
 var K_FLURRY = [70];
 /**/
 
+const KEY_SPACE = 32;
+const KEY_TAB = 9;
+
 class KeyboardEventsRecorder {
     constructor() {
         Object.defineProperty(this, "array", {"value" : [], "enumerable" : false, "writable" : true});
@@ -32,6 +35,7 @@ class KeyboardEventsRecorder {
             if(event.keyCode == 112) {event.preventDefault();}
             if(this.value(112)) {console.log(event.key + " : " + event.keyCode);}
             if(event.keyCode == 113) {console.log(this + "");}
+            if(event.keyCode === KEY_TAB) {event.preventDefault()}
             
             this.hold(event.keyCode);
         }).bind(this)});
@@ -516,7 +520,7 @@ class GamepadEventsRecorder {
                 let button = gamepad.buttons[i];
                 
                 if(button.pressed) {
-                    // console.log(i);
+                    console.log(i);
                     
                     if(this.buttons[i]) {
                         ++this.buttons[i];
@@ -563,8 +567,25 @@ function getDPADDirection(dpadValue) {
         case DPAD_DOWNLEFT : return (new Vector(-1, +1)).normalize();
         case DPAD_LEFT : return new Vector(-1, 0);
         case DPAD_UPLEFT : return (new Vector(-1, -1)).normalize();
-        default : return new Vector(0, 0);
+        case DPAD_UT : return new Vector(0, 0);
+        default : {
+            return new Vector(0, 0);
+        }
     }
+    
+    let dpad = [DPAD_UT, DPAD_UP, DPAD_UPRIGHT, DPAD_RIGHT, DPAD_DOWNRIGHT, DPAD_DOWN, DPAD_DOWNLEFT, DPAD_LEFT, DPAD_UPLEFT];
+    
+    let minDistance;
+    let roundedValue = DPAD_UT;
+    
+    for(let i = 0; i < dpad.length; ++i) {
+        if(!minDistance || minDistance > Math.abs(dpad[i] - dpadValue)) {
+            minDistance = Math.abs(dpad[i] - dpadValue);
+            roundedValue = dpad[i];
+        }
+    }
+    
+    return getDPADDirection(roundedValue);
 }
 
 function getJoyStickDirection(x, y) {

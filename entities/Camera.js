@@ -2,6 +2,7 @@
 const DEF_CAMPOS = [0, 0, -(Math.pow(2, 9) + Math.pow(2, 8))/2];
 // const DEF_CAMSIZE = [448, 252, 0];
 const DEF_CAMSIZE = [416, 234, 0];
+// const DEF_CAMSIZE = [16*10, 9*10, 0];
 
 class Camera extends Entity {
     constructor(position, size = DEF_CAMSIZE) {
@@ -35,6 +36,10 @@ class Camera extends Entity {
         
         this.maxSize = [480, 270];
         this.minSize = [256, 144];
+        
+        this.originalSize = size;
+        
+        this.order = Infinity;
     }
     
     static fromData(data) {
@@ -54,6 +59,8 @@ class Camera extends Entity {
                     camera.setSizeM(dim, data.size[dim]);
                 }
             }
+            
+            camera.originalSize = data.size || camera.originalSize;
             
             return camera;
         }
@@ -123,7 +130,7 @@ class Camera extends Entity {
                 this.drag([0, +this.accVal]);
             }
         }
-        /**/
+        /**
         
         if(this.target != null) {
             this.route = this.target.getPositionM();
@@ -131,6 +138,40 @@ class Camera extends Entity {
         } else if(this.route != null) {
             this.route = null;
             this.removeAction(this.movementTo);
+        }
+        
+        /**/
+        
+        let rect = makeEncompassingRectangle(this.targets, {left:16, right:16, up:16, down:16});
+        
+        if(Vector.normOf(rect.size) > Vector.normOf(this.originalSize)) {
+            const dimension = Math.min(rect.size.length, 3);
+            const proportions = [16, 9, 16];
+            let biggestRatio = 0;
+            let biggestDimension = -1;
+            
+            for(let dim = 0; dim < dimension; ++dim) {
+                let ratio = rect.size[dim] / proportions[dim];
+                
+                if(ratio > biggestRatio) {
+                    biggestRatio = ratio;
+                    biggestDimension = dim;
+                }
+            }
+            
+            let size = Vector.multiplication(proportions, biggestRatio);
+            
+            this.setSizeM(size);
+        } else {
+            this.setSizeM(this.originalSize);
+        }
+        
+        if(keyList.value(13)) console.log(this.originalSize);
+        
+        if(this.targets.length > 0) {
+            // this.setPositionM(rect.getPositionM());
+            this.route = rect.getPositionM();
+            this.addAction(this.movementTo);
         }
         
         /**/

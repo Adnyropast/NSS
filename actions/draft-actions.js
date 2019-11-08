@@ -482,3 +482,58 @@ class SlashAction extends BusyAction {
         return super.onend();
     }
 }
+
+class SpeechAction extends Action {
+    constructor(content = randomText()) {
+        super();
+        this.setId("speech");
+        
+        this.content = content;
+        this.speechSpeed = 0.25;
+        this.speechIndex = 0;
+        
+        this.textBubble = new TextBubble([NaN, NaN], [64, 40]);
+        
+        this.endlag = 32;
+        this.endTimeout = -1;
+    }
+    
+    use() {
+        this.textBubble.setXM(this.user.getXM());
+        this.textBubble.setY2(this.user.getY1() - 16);
+        
+        if(this.phase === 0) {
+            addEntity(this.textBubble);
+        }
+        
+        let speechIndex = Math.floor(this.speechIndex);
+        
+        this.textBubble.setContent(this.content.substring(0, speechIndex));
+        
+        this.speechIndex += this.speechSpeed;
+        
+        if(this.speechIndex >= this.content.length) {
+            this.speechIndex = this.content.length - 1;
+            
+            if(this.endTimeout === -1) {
+                this.endTimeout = this.endlag;
+            }
+        }
+        
+        if(this.endTimeout > 0) {
+            --this.endTimeout;
+        } if(this.endTimeout === 0) {
+            this.end();
+        }
+        
+        return this;
+    }
+    
+    onend() {
+        removeEntity(this.textBubble);
+        
+        return this;
+    }
+}
+
+AC["speech"] = SpeechAction;

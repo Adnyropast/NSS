@@ -685,3 +685,61 @@ function array_equal(array1, array2) {
     
     return false;
 }
+
+const capitalAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const lowercaseAlphabet = "abcdefghijklmnopqrstuvwxyz";
+
+let characters = [' ', '-', '.', '!', '?', ';', ':'];
+
+for(let i = 65; i <= 90; ++i) {
+    characters.push(String.fromCharCode(i));
+    characters.push(String.fromCharCode(i).toLowerCase());
+}
+
+function randomText() {
+    let count = irandom(16, 128);
+    let text = "";
+    
+    for(let i = 0; i < count; ++i) {
+        text += array_random(characters);
+    }
+    
+    return text;
+}
+
+function longestText(texts, fontFamily = "Segoe UI") {
+    let canvas = document.createElement("canvas");
+    let ctx = canvas.getContext("2d");
+    ctx.font = "10px " + fontFamily;
+    
+    texts = Array.from(texts);
+    
+    texts.sort(function(a, b) {
+        return ctx.measureText(b).width - ctx.measureText(a).width;
+    });
+    
+    return texts[0];
+}
+
+function array_bubbleSort(array, compareFn = function(a, b) {
+    if(a > b) {return +1;}
+    if(a < b) {return -1;}
+    return 0;
+}) {
+    let sorted = true;
+    
+    while(sorted) {
+        sorted = false;
+        
+        for(let i = 0; i < array.length - 1; ++i) {
+            if(compareFn(array[i], array[i+1]) > 0) {
+                let x = array[i];
+                array[i] = array[i+1];
+                array[i+1] = x;
+                sorted = true;
+            }
+        }
+    }
+    
+    return array;
+}
