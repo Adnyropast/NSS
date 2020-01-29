@@ -5,8 +5,6 @@ EC["haple"] = class Haple extends PlayableCharacter {
         // this.setRegeneration(0.0625);
         // this.addAction(new Regeneration(0.0625));
         
-        this.cursorDistance = 32;
-        
         this.addActset(AS_GOLD, AS_CUTTER, AS_SWORD, "zoneEngage", AS_FIRE, AS_PLASMA, AS_ARTIST, "speech");
         
         this.setBattler(HapleBattler.fromEntity(this));
@@ -34,7 +32,7 @@ EC["haple"] = class Haple extends PlayableCharacter {
             "midairJump-count" : 1
         });
         
-        this.events["defeat"]["vanish"] = function() {
+        this.setEventListener("defeat", "vanish", function() {
             let count = 8;
             let positionM = this.getPositionM();
             
@@ -47,7 +45,7 @@ EC["haple"] = class Haple extends PlayableCharacter {
                 
                 addEntity(particle);
             }
-        };
+        });
     }
     
     updateDrawable() {
@@ -56,6 +54,37 @@ EC["haple"] = class Haple extends PlayableCharacter {
         this.drawableOffset[0] = 0;
         
         return super.updateDrawable();
+    }
+    
+    update() {
+        super.update();
+        
+        if(this.lifeCounter % 1 === 0) {
+            DEBUG.clear();
+            
+            for(let i in this.state) {
+                try {
+                    // DEBUG.log(JSON.stringify(this.state[i]));
+                } catch(e) {
+                    
+                }
+            }
+            
+            if(this.route != null) {
+                // DEBUG.log(this.route[0]);
+                // DEBUG.log(this.route[1]);
+            }
+            
+            for(let i = 0; i < this.actions.length; ++i) {
+                try {
+                    DEBUG.log(JSON.stringify(this.actions[i].id));
+                } catch(e) {
+                    
+                }
+            }
+        }
+        
+        return this;
     }
 };
 

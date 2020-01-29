@@ -595,6 +595,12 @@ class Polygon extends Array {
         }
         
         for(let i = 0; i < this.size(); ++i) {
+            if(polygon.collidesWithPoint(this[i])) {
+                return true;
+            }
+        }
+        
+        for(let i = 0; i < this.size(); ++i) {
             let vector1 = Vector.subtraction(this[(i+1 >= this.size()) ? (0) : (i+1)], this[i]);
             
             for(let j = 0; j < polygon.size(); ++j) {
@@ -673,6 +679,27 @@ class Polygon extends Array {
         
         return zM;
     }
+    
+    stretchBase(vector) {
+        const angle = this.getImaginaryAngle();
+        
+        this.setImaginaryAngle(0);
+        this.stretchM(vector);
+        this.setImaginaryAngle(angle);
+        
+        return this;
+    }
+    
+    shrinkBase(vector) {
+        const angle = this.getImaginaryAngle();
+        
+        this.setImaginaryAngle(0);
+        this.shrinkM(vector);
+        this.setImaginaryAngle(angle);
+        
+        return this;
+    }
+    
 }
 
 /**/
@@ -1133,7 +1160,7 @@ function makePathPolygon(path, width=2, type) {
     polygon.push(path[path.length - 1]);
     polygon.push.apply(polygon, reverse.reverse());
     
-    return polygon;
+    return new Polygon(polygon);
 }
 
 function makeArcPath(pointsCount, radius, startAngle, endAngle) {
@@ -1251,4 +1278,50 @@ function polygon_averageSize() {
     }
     
     return sum / count * 2;
+}
+
+function makeCloudMultiPolygon(pointsCount, width = 32, height = 16) {
+    const avgsz = (width + height) / 2;
+    let multiPolygon = new MultiPolygon();
+    
+    for(let i = 0; i < pointsCount; ++i) {
+        let x = random(-width/2, width/2);
+        let y = random(-height/2, height/2);
+        
+        let cloud = makeRandomPolygon(avgsz/1.5, avgsz/3, avgsz/2);
+        
+        cloud.setPositionM([x, y]);
+        
+        multiPolygon.push(cloud);
+    }
+    
+    return multiPolygon;
+}
+
+function makeSpiralPath(startAngle, endAngle, minDistance, maxDistance, count = 16) {
+    let points = [];
+    
+    let angleTransition = new VectorTransition([startAngle], [endAngle]);
+    let distanceTransition = new VectorTransition([minDistance], [maxDistance]);
+    
+    for(let i = 0; i < count; ++i) {
+        let angle = angleTransition.at(i / (count-1))[0];
+        let distance = distanceTransition.at(i / (count-1))[0];
+        
+        points.push(Vector.fromAngle(angle).normalize(distance));
+    }
+    
+    return points;
+}
+
+function makeOvalPath(pointsCount, radius1, radius2) {
+    let points = [];
+    
+    for(let i = 0; i < pointsCount; ++i) {
+        let angle = i/(pointsCount-1) * 2*Math.PI;
+        
+        points.push([radius1 * Math.cos(angle), radius2 * Math.sin(angle)]);
+    }
+    
+    return points;
 }

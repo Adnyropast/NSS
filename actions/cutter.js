@@ -734,15 +734,3 @@ class AutoCutter extends CutterAbility {
 AC["autoCutter"] = AutoCutter;
 
 AC["cutterDash"] = CutterDash;
-
-function makeOvalPath(pointsCount, radius1, radius2) {
-    let points = [];
-    
-    for(let i = 0; i < pointsCount; ++i) {
-        let angle = i/(pointsCount-1) * 2*Math.PI;
-        
-        points.push([radius1 * Math.cos(angle), radius2 * Math.sin(angle)]);
-    }
-    
-    return points;
-}

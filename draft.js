@@ -59,10 +59,6 @@ function getDD(bits) {
     return directions;
 }
 
-function array_random(array) {
-    return array[Math.floor(Math.random() * array.length)];
-}
-
 function directionToWord(direction) {
     var word = "";
     
@@ -91,6 +87,32 @@ function directionsToWords(directions) {
     }
     
     return words;
+}
+
+function vector_fromDirections(directions, dimensions = undefined) {
+    if(typeof dimensions === "undefined") {
+        dimensions = 0;
+        
+        for(let i = 0; i < directions.length; ++i) {
+            const dimension = directions[i].dimension;
+            
+            if(dimension + 1 > dimensions) {
+                dimensions = dimension + 1;
+            }
+        }
+    }
+    
+    const vector = Vector.filled(dimensions, 0);
+    
+    for(let i = 0; i < directions.length; ++i) {
+        const direction = directions[i];
+        const dimension = direction.dimension;
+        const sign = direction.sign;
+        
+        vector[dimension] += sign;
+    }
+    
+    return vector;
 }
 
 function maze_toString1(maze) {
@@ -672,20 +694,6 @@ class Player {
 
 const PLAYERS = new SetArray(new Player());
 
-function array_equal(array1, array2) {
-    if(array1 && array2 && array1.length === array2.length) {
-        for(let i = 0; i < array1.length; ++i) {
-            if(array1[i] != array2[i]) {
-                return false;
-            }
-        }
-        
-        return true;
-    }
-    
-    return false;
-}
-
 const capitalAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const lowercaseAlphabet = "abcdefghijklmnopqrstuvwxyz";
 
@@ -721,25 +729,14 @@ function longestText(texts, fontFamily = "Segoe UI") {
     return texts[0];
 }
 
-function array_bubbleSort(array, compareFn = function(a, b) {
-    if(a > b) {return +1;}
-    if(a < b) {return -1;}
-    return 0;
-}) {
-    let sorted = true;
+function average() {
+    let average = 0;
     
-    while(sorted) {
-        sorted = false;
-        
-        for(let i = 0; i < array.length - 1; ++i) {
-            if(compareFn(array[i], array[i+1]) > 0) {
-                let x = array[i];
-                array[i] = array[i+1];
-                array[i+1] = x;
-                sorted = true;
-            }
-        }
+    for(let i = 0; i < arguments.length; ++i) {
+        average += arguments[i];
     }
     
-    return array;
+    average /= arguments.length;
+    
+    return average;
 }

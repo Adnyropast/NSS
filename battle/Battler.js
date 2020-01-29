@@ -24,6 +24,16 @@ class Battler {
         this.picks = new SetArray();
         
         this.controllers = new SetArray();
+        
+        this.controllers[0] = function() {
+            if(!this.isReady()) {
+                const skill = new SKILLS["enemyAttack"];
+                Array.prototype.push.apply(skill.targets, this.getOpponents());
+                
+                this.addPick(skill);
+                this.setReady(true);
+            }
+        };
     }
     
     static fromEntity(entity) {
@@ -126,7 +136,7 @@ class Battler {
     getEnergy() {return this.entity.getEnergy();}
     
     update() {
-        for(let i = 0; i < this.controllers.length; ++i) {
+        for(let i in this.controllers) {
             this.controllers[i].bind(this)();
         }
         
@@ -307,6 +317,7 @@ class Battler {
         /**/
         
         BATTLECAMERA.setSizeM([totalWidth, properHeight]);
+        BATTLECAMERA.originalSize = BATTLECAMERA.size;
         
         return this;
     }
@@ -356,8 +367,6 @@ class HapleBattler extends Battler {
             let skill = new SKILLS["attack"];
             battler.selectedMove = skill;
             battler.controltype = "targetpick";
-            battler.autoReady = false;
-            // battler.addPick(skill);
         }});
         this.visibleList.addItem({name:"Strong Attack", use:function use() {
             
@@ -365,19 +374,18 @@ class HapleBattler extends Battler {
         this.visibleList.addItem({name:"Defend", use:function use() {
             
         }});
-        this.visibleList.addItem({name:"Pass", use:function use() {
-            
-        }});
         this.visibleList.addItem({name:"Flee", use:function use() {
             battler.addPick(new SKILLS["flee"]);
+            battler.setReady(true);
+        }});
+        this.visibleList.addItem({name:"Go!"/*"Pass"*/, use:function use() {
+            battler.setReady(true);
         }});
         
-        this.autoReady = true;
+        this.autoReady = false;
         this.controltype = ["moveselect", "targetpick"][0];
         this.targetcursor = 0;
         this.selectedMove = null;
-        
-        this.targets = new SetArray();
         
         this.battlerPlayerController = function() {
             if(this.controltype === "moveselect") {
@@ -385,44 +393,42 @@ class HapleBattler extends Battler {
                     this.visibleList.decIndex();
                 } if(keyList.value(K_DOWN) == 1) {
                     this.visibleList.incIndex();
-                } if(keyList.value(13) == 1) {
+                } if(keyList.value(K_CONFIRM) == 1) {
                     this.visibleList.getItem().use();
                     
-                    if(this.autoReady) {
-                        this.setReady(true);
-                    }
+                    // if(this.autoReady) {
+                        // this.setReady(true);
+                    // }
                 }
             } else if(this.controltype === "targetpick") {
                 if(keyList.value(K_LEFT) == 1) {
                     --this.targetcursor;
-                    
-                    if(this.targetcursor < 0) {this.targetcursor = 0;}
                 } if(keyList.value(K_RIGHT) == 1) {
                     ++this.targetcursor;
-                    
-                    if(this.targetcursor >= BATTLERS.length) {this.targetcursor = BATTLERS.length - 1;}
                 } if(keyList.value(K_UP) == 1) {
-                    this.targets[this.targetcursor] = true;
+                    const target = getSortedBattlers()[this.targetcursor];
+                    this.selectedMove.targets.add(target);
                 } if(keyList.value(K_DOWN) == 1) {
-                    this.targets[this.targetcursor] = false;
+                    const target = getSortedBattlers()[this.targetcursor];
+                    this.selectedMove.targets.remove(target);
                 } if(keyList.value(K_CONFIRM) == 1) {
-                    let targets = [];
-                    
-                    for(let i = 0; i < BATTLERS.length; ++i) {
-                        if(this.targets[i]) {
-                            targets.push(BATTLERS[i]);
-                        }
-                    }
-                    
-                    this.selectedMove.targets.push.apply(this.selectedMove.targets, targets);
                     this.addPick(this.selectedMove);
-                    this.autoReady = true;
                     this.controltype = "moveselect";
-                    this.setReady(true);
+                    if(this.autoReady) {
+                        this.setReady(true);
+                    }
                 } if(keyList.value(K_ESC) == 1) {
-                    this.autoReady = true;
                     this.controltype = "moveselect";
                 }
+            }
+            
+            if(this.targetcursor < 0) {this.targetcursor = 0;}
+            if(this.targetcursor >= BATTLERS.length) {this.targetcursor = BATTLERS.length - 1;}
+            
+            if(keyList.value(KEY_CTRL)) {
+                this.autoReady = true;
+            } else if(keyList.justReleased(KEY_CTRL)) {
+                this.autoReady = false;
             }
         };
         
@@ -433,6 +439,8 @@ class HapleBattler extends Battler {
         this.targetDrawable.setStyle((new ColorTransition([0, 255, 255, 1], [0, 191, 255, 1], 64)).setLoop(true));
         this.targetDrawable.setCamera(this.drawable.camera).setCameraMode(this.drawable.cameraMode);
         this.targetDrawable.multiplySize(1/4);
+        
+        this.controllers.clear();
     }
     
     getCommandsPage() {
@@ -456,39 +464,54 @@ class HapleBattler extends Battler {
         
         this.multiDrawable.drawables.clear();
         
-        let visibleOptions = this.visibleList.getVisible();
-        
-        tfparams["positioning"] = 0.5;
-        tfparams["padding-top"] = 8;
-        
-        for(let i = 0; i < visibleOptions.length; ++i) {
-            let angle = i * Math.PI / 8;
+        if(this.controltype === "moveselect") {
             
-            let option = (new TextRectangleDrawable([this.drawable.getXM() + 4*Math.cos(angle), this.drawable.getYM() + 4*i], [32, 4]));
-            option.textEnhance = 16;
-            option.setContent(visibleOptions[i].name);
+            let visibleOptions = this.visibleList.getVisible();
             
-            if(visibleOptions[i] == this.visibleList.getItem()) {
-                // option.setStyle("yellow");
-                option.setStyle(this.selectedColorTransition.getNextStyle());
+            tfparams["positioning"] = 0.5;
+            tfparams["padding-top"] = 8;
+            
+            for(let i = 0; i < visibleOptions.length; ++i) {
+                let angle = i * Math.PI / 8;
+                
+                let option = (new TextRectangleDrawable([this.drawable.getXM() + 4*Math.cos(angle), this.drawable.getYM() + 4*i], [32, 4]));
+                option.textEnhance = 16;
+                option.setContent(visibleOptions[i].name);
+                
+                if(visibleOptions[i] == this.visibleList.getItem()) {
+                    // option.setStyle("yellow");
+                    option.setStyle(this.selectedColorTransition.getNextStyle());
+                }
+                
+                this.multiDrawable.add(option);
             }
             
-            this.multiDrawable.add(option);
-        }
-        
-        tfparams["positioning"] = 0;
-        tfparams["padding-top"] = 0;
-        
-        // this.drawable.
-        
-        if(this.controltype === "targetpick") {
-            BATTLEDRAWABLES.add(this.targetDrawable);
+            tfparams["positioning"] = 0;
+            tfparams["padding-top"] = 0;
             
-            let drawable = BATTLERS[this.targetcursor].drawable;
+            // this.drawable.
+        } if(this.controltype === "targetpick") {
+            BATTLELOOP.addDrawable(this.targetDrawable);
+            
+            let drawable = getSortedBattlers()[this.targetcursor].drawable;
             
             this.targetDrawable.setPositionM(Vector.addition(drawable.getPositionM(), [0, -drawable.getHeight()/2 - 8]));
+            
+            const targets = this.selectedMove.targets;
+            
+            for(let i = 0; i < targets.length; ++i) {
+                const target = targets[i];
+                const targetDrawable = target.drawable;
+                
+                const drawable = RectangleDrawable.from(targetDrawable);
+                drawable.setLifespan(1);
+                drawable.setCameraMode("basic");
+                drawable.setStyle(new ColorTransition([0, 255, 255, 0.5], [255, 255, 255, 0.125], 32).setLoop(true));
+                
+                BATTLELOOP.addDrawable(drawable);
+            }
         } else {
-            BATTLEDRAWABLES.remove(this.targetDrawable);
+            BATTLELOOP.removeDrawable(this.targetDrawable);
         }
         
         return this;
@@ -496,14 +519,14 @@ class HapleBattler extends Battler {
     
     onturnstart() {
         this.controllers.add(this.battlerPlayerController);
-        BATTLEDRAWABLES.add(this.multiDrawable);
+        BATTLELOOP.addDrawable(this.multiDrawable);
         
         return this;
     }
     
     onturnend() {
         this.controllers.remove(this.battlerPlayerController);
-        BATTLEDRAWABLES.remove(this.multiDrawable);
+        BATTLELOOP.removeDrawable(this.multiDrawable);
         
         return this;
     }
@@ -550,4 +573,19 @@ class CommandLabel extends RectangleDrawable {
         
         return super.draw(context);
     }
+}
+
+function getSortedBattlers() {
+    const battlers = SetArray.from(BATTLERS);
+    
+    array_bubbleSort(battlers, function(a, b) {
+        const aX = a.drawable.getX();
+        const bX = b.drawable.getX();
+        
+        if(aX > bX) {return +1;}
+        if(aX < bX) {return -1;}
+        return 0;
+    });
+    
+    return battlers;
 }

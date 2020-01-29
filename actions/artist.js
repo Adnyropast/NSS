@@ -28,8 +28,7 @@ class PaintDroplet extends Entity {
     }
     
     updateDrawable() {
-        this.drawable.setImaginaryAngle(0);
-        if(this.lifeCounter < 14) {this.drawable.shrinkM([-1, 0]);}
+        if(this.lifeCounter < 14) {this.drawable.shrinkBase([-1, 0]);}
         this.drawable.setImaginaryAngle(this.speed.getAngle());
         this.drawable.setImaginarySize(rectangle_averageSize(this));
         this.drawable.setPositionM(this.getPositionM());
@@ -66,7 +65,8 @@ class BrushSlash extends SlashAction {
         this.bladeAngleTransition = this.baseAngleTransition;
         this.bladeWidthTransition = new VectorTransition([0], [12], 1, ovalTransition);
         
-        this.hitbox.addInteraction(new DragActor(direction.normalized(1)));
+        // this.hitbox.addInteraction(new DragActor(direction.normalized(1)));
+        this.hitbox.launchDirection = direction.normalized(3);
         
         return this;
     }
@@ -75,19 +75,18 @@ class BrushSlash extends SlashAction {
         super.use();
         
         if(this.phase >= 4 && this.phase <= 8) {
-            let count = 6 - Math.abs(5 - this.phase);
-            let positionM = this.hitbox.getPositionM();
-            let avgsz = rectangle_averageSize(this.hitbox);
+            const count = 6 - Math.abs(5 - this.phase);
+            const positionM = this.hitbox.getPositionM();
+            const avgsz = rectangle_averageSize(this.hitbox);
             
-            for(let i = 0; i < count; ++i) {
-                let angle = ((i+Math.random())/count) * 2*Math.PI;
-                let direction = Vector.fromAngle(angle);
-                
-                let particle = PaintDroplet.fromMiddle(direction.normalized(avgsz/2).add(positionM), [12, 12]);
-                particle.setSpeed(direction.normalized(irandom(2, 16)/8));
-                
-                addEntity(particle);
-            }
+            entityExplode.initialDistance = avgsz/2;
+            entityExplode.randomAngleVariation = 1;
+            entityExplode(count, PaintDroplet, positionM, [12, 12], 1)
+            .forEach(function(entity) {
+                entity.speed.multiply(irandom(2, 16)/8);
+            });
+            entityExplode.initialDistance = 0;
+            entityExplode.randomAngleVariation = 0;
         }
         
         return this;

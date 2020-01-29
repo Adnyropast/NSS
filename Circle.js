@@ -134,6 +134,16 @@ class Circle {
         
         return dist < this.radius;
     }
+    
+    translate(vector) {
+        const minDim = Math.min(this.getDimension(), vector.length);
+        
+        for(let dim = 0; dim < minDim; ++dim) {
+            this.center[dim] += vector[dim];
+        }
+        
+        return this;
+    }
 }
 
 /**/

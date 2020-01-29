@@ -13,6 +13,40 @@ function makeEntityFromData(entityData) {
     return entityClass.fromData(object_clone(entityData));
 }
 
+function makeNewMapState(mapname) {
+    const map = maps[mapname];
+    let camera = undefined;
+    
+    try {
+        camera = object_clone(map.camera);
+    } catch(e) {}
+    
+    let variable_entities = {};
+    
+    try {
+        variable_entities = JSON.parse(JSON.stringify(map.variable_entities));
+    } catch(e) {}
+    
+    return {
+        camera: camera,
+        variable_entities: variable_entities
+    };
+}
+
+function makeNewSaveMaps() {
+    const mapsStates = {};
+    
+    for(let mapname in maps) {
+        mapsStates[mapname] = makeNewMapState(mapname);
+    }
+    
+    return mapsStates;
+}
+
+function map_exists(mapname) {
+    return maps.hasOwnProperty(mapname);
+}
+
 function loadFromData(data) {
     let lists = {
         "camera" : null,
@@ -21,17 +55,30 @@ function loadFromData(data) {
         "drawables" : []
     };
     
-    if(data.hasOwnProperty("camera")) {
+    if(data.hasOwnProperty("camera") && data.camera != undefined) {
         lists.camera = Camera.fromData(object_clone(data.camera));
     }
     
     lists.player0 = getCurrentCharacter();
     lists.player0.initPositionM(getCurrentSave().playerPositionM);
     
-    for(var i = 0; i < data.entities.length; ++i) {
-        let entityData = data.entities[i];
-        
-        lists.entities.push(makeEntityFromData(entityData));
+    if(data.variable_entities) {
+        for(var i = 0; i < data.variable_entities.length; ++i) {
+            let entityData = data.variable_entities[i];
+            const entity = makeEntityFromData(entityData);
+            entity.mapVariable = true;
+            
+            lists.entities.push(entity);
+        }
+    }
+    
+    if(data.fixed_entities) {
+        for(var i = 0; i < data.fixed_entities.length; ++i) {
+            let entityData = data.fixed_entities[i];
+            const entity = makeEntityFromData(entityData);
+            
+            lists.entities.push(entity);
+        }
     }
     
     if(Array.isArray(data["drawables"])) for(let i = 0; i < data.drawables.length; ++i) {
@@ -64,13 +111,21 @@ function loadFromLists(lists) {
 }
 
 function loadMap(mapname) {
-    let save = getCurrentSave();
-    let maps = save.maps;
-    
-    if(maps.hasOwnProperty(mapname)) {
+    if(map_exists(mapname)) {
+        const actualMap = maps[mapname];
+        
+        const save = getCurrentSave();
+        const saveMap = save.maps[mapname];
+        
+        
         save.lastMap = mapname;
         
-        loadFromData(maps[mapname]);
+        loadFromData(saveMap);
+        loadFromData({
+            camera: saveMap.camera,
+            fixed_entities: actualMap.fixed_entities,
+            variable_entities: saveMap.variable_entities
+        });
     }
 }
 
@@ -157,18 +212,15 @@ var maps = {};
 
 maps["test-background"] = {
     "camera" : {"positionM" : [256, 144], "size" : [512, 288]},
-    "entities" : [
+    "fixed_entities" : [
         {"classId" : "skyDecoration", "position" : [0, 0], "size" : [512, 288]}
     ]
 };
 
 maps["hub"] = {
     "camera" : {"positionM" : [0, 0]},
-    "entities" : [
-        {"classId" : "cameraBoundary", "position" : [0, -135], "size" : [0, 0]},
-        {"classId" : "cameraBoundary", "position" : [0, +135], "size" : [0, 0]},
-        {"classId" : "cameraBoundary", "position" : [-240, 0], "size" : [0, 0]},
-        {"classId" : "cameraBoundary", "position" : [+240, 0], "size" : [0, 0]},
+    "fixed_entities" : [
+        {"classId" : "cameraBoundaryAround", "position" : [-240, -135], "size" : [480, 270]},
         
         // {"classId" : "invisibleWall", "positionM" : ["-Infinity", -135], "size" : ["Infinity", 0]},
         // {"classId" : "invisibleWall", "positionM" : ["-Infinity", +135], "size" : ["Infinity", 0]},
@@ -183,19 +235,15 @@ maps["hub"] = {
         {"classId" : "ground", "position" : [-128, 64], "size" : [256, 360-64], "style" : "#FF0000"},
         {"classId" : "ground", "position" : [-256, 56], "size" : [128, 16], "style" : "#0000FF"},
         {"classId" : "ground", "position" : [128, 56], "size" : [128, 16], "style" : "#0000FF"},
-        // {"classId" : "lookupDoor", "position" : [-120, 32], "size" : [16, 32], "mapname" : "hpp0", "warpPositionM" : [40, 248]/*[-176, 70]*/},
+        {"classId" : "lookupDoor", "position" : [-120, 32], "size" : [16, 32], "mapname" : "hpp0", "warpPositionM" : [40, 248]/*[-176, 70]*/},
         // {"classId" : "lookupDoor", "position" : [-120, 32], "size" : [16, 32], "mapname" : "hpp1", "warpPositionM" : [16, 56]},
         // {"classId" : "lookupDoor", "position" : [-120, 32], "size" : [16, 32], "mapname" : "hpp2", "warpPositionM" : [16, 248]},
-        {"classId" : "lookupDoor", "position" : [-120, 32], "size" : [16, 32], "mapname" : "hpp3", "warpPositionM" : [16, 56]},
-        {"classId" : "lookupDoor", "position" : [8, 32], "size" : [16, 32], "mapname" : "maze"},
-        {"classId" : "lookupDoor", "position" : [40, 32], "size" : [16, 32], "mapname" : "maze-topdown"},
-        {"classId" : "lookupDoor", "position" : [72, 32], "size" : [16, 32], "mapname" : "maze-sideways"},
-        {"classId" : "lookupDoor", "position" : [104, 32], "size" : [16, 32], "mapname" : "maze-water"},
-        {"classId" : "lookupDoor", "position" : [-88, 32], "size" : [16, 32], "mapname" : "maze0"},
-        
-        {"classId" : "dummy", "position" : [144, 32], "size" : [16, 32]},
-        {"classId" : "dummy", "position" : [176, 0], "size" : [48, 56]},
-        {"classId" : "dummy", "position" : [-136, -56], "size" : [8, 8]},
+        // {"classId" : "lookupDoor", "position" : [-120, 32], "size" : [16, 32], "mapname" : "hpp3", "warpPositionM" : [16, 56]},
+        {"classId" : "lookupDoor", "positionM" : [16, 32+20], "size" : [10, 24], "mapname" : "maze"},
+        {"classId" : "lookupDoor", "positionM" : [48, 32+20], "size" : [10, 24], "mapname" : "maze-topdown"},
+        {"classId" : "lookupDoor", "positionM" : [80, 32+20], "size" : [10, 24], "mapname" : "maze-sideways"},
+        {"classId" : "lookupDoor", "positionM" : [112, 32+20], "size" : [10, 24], "mapname" : "maze-water"},
+        {"classId" : "lookupDoor", "positionM" : [-80, 32+20], "size" : [12, 24], "mapname" : "maze0"},
         
         {"classId" : "tree2", "position" : [36, 64-56], "size" : [56, 56]},
         {"classId" : "tree2", "position" : [4, 64-56], "size" : [56, 56]},
@@ -205,33 +253,38 @@ maps["hub"] = {
         
         {"classId" : "skyDecoration"/*, "position" : [-240, -135], "size" : [480, 270]*/},
         {"classId" : "sunlightDecoration", "position" : [0, 0]}
+    ],
+    "variable_entities": [
+        {"classId" : "dummy", "position" : [144, 32], "size" : [16, 32]},
+        {"classId" : "dummy", "position" : [176, 0], "size" : [48, 56]},
+        {"classId" : "dummy", "position" : [-136, -56], "size" : [8, 8]}
     ]
 };
 
 maps["maze"] = {
-    "entities" : [{"classId" : "mazeGenerator"}]
+    "fixed_entities" : [{"classId" : "mazeGenerator"}]
 };
 
 maps["maze-topdown"] = {
-    "entities" : [{"classId" : "mazeGenerator", "mode" : "topdown"}]
+    "fixed_entities" : [{"classId" : "mazeGenerator", "mode" : "topdown"}]
 };
 
 maps["maze-sideways"] = {
-    "entities" : [{"classId" : "mazeGenerator", "mode" : "sideways"}]
+    "fixed_entities" : [{"classId" : "mazeGenerator", "mode" : "sideways"}]
 };
 
 maps["maze-water"] = {
-    "entities" : [{"classId" : "mazeGenerator", "mode" : "sideways-water"}]
+    "fixed_entities" : [{"classId" : "mazeGenerator", "mode" : "sideways-water"}]
 };
 
 maps["maze0"] = {
     "camera" : {"positionM" : [256, 144], "size" : [512, 288]},
-    "entities" : [{"classId" : "mazeGenerator", "mode" : "test"}]
+    "fixed_entities" : [{"classId" : "mazeGenerator", "mode" : "test"}]
 };
 
 maps["hpp0"] = {
     "camera" : {"positionM" : [256, 144], "size" : [256*2, 144*2]},
-    "entities" : [
+    "fixed_entities" : [
         // {"classId" : "cameraBoundary", "position" : [0, -126], "size" : ["Infinity", 0]},
         // {"classId" : "cameraBoundary", "position" : [0, +126], "size" : ["Infinity", 0]},
         // {"classId" : "cameraBoundary", "position" : [-224, 0], "size" : [0, "Infinity"]},
@@ -277,7 +330,7 @@ maps["hpp0"] = {
 maps["hpp1"] = {
     // "camera" : {"positionM" : [0, 0], "size" : [448, 252]},
     "camera" : {"positionM" : [256, 144], "size" : [256*2, 144*2]},
-    "entities" : [
+    "fixed_entities" : [
         // {"classId" : "cameraBoundary", "position" : [0, -126], "size" : ["Infinity", 0]},
         // {"classId" : "cameraBoundary", "position" : [0, +126], "size" : ["Infinity", 0]},
         // {"classId" : "cameraBoundary", "position" : [-224, 0], "size" : [0, "Infinity"]},
@@ -519,7 +572,7 @@ maps["hpp1"] = {
 
 maps["hpp2"] = {
     "camera" : {"positionM" : [256, 144], "size" : [256*2, 144*2]},
-    "entities" : [
+    "fixed_entities" : [
         {"classId" : "cameraBoundaryAround", "position" : [0, 0], "size" : [256*2, 144*2]},
         {"classId" : "invisibleWall", "position" : [0, -288], "size" : [512, 288]},
         
@@ -746,7 +799,7 @@ maps["hpp2"] = {
 
 maps["hpp3"] = {
     "camera" : {"positionM" : [256, 144], "size" : [512, 288]},
-    "entities" : [
+    "fixed_entities" : [
         {"classId" : "cameraBoundaryAround", "position" : [0, 0], "size" : [256*2, 144*2]},
         {"classId" : "invisibleWall", "position" : [0, -288], "size" : [512, 288]},
         
@@ -935,7 +988,7 @@ maps["hpp3"] = {
 
 maps["hppa"] = {
     "camera" : {"positionM" : [0, 0], "size" : [448, 252]},
-    "entities" : [
+    "fixed_entities" : [
         {"classId" : "cameraBoundary", "position" : [0, -126], "size" : ["Infinity", 0]},
         {"classId" : "cameraBoundary", "position" : [0, +126], "size" : ["Infinity", 0]},
         {"classId" : "cameraBoundary", "position" : [-224, 0], "size" : [0, "Infinity"]},
@@ -964,13 +1017,13 @@ function rv() {return Math.random() * 255;}
 function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
     let map = {
         "camera" : {"positionM" : []},
-        "entities" : []
+        "variable_entities" : []
     };
     
-    var actualMazeSize = [mazeSize[0] * (cellSize[0] + wallSize[0] * 2), mazeSize[1] * (cellSize[1] + wallSize[1] * 2)];
-    var fullCellSize = [cellSize[0] + wallSize[0] * 2, cellSize[1] + wallSize[1] * 2];
+    const actualMazeSize = [mazeSize[0] * (cellSize[0] + wallSize[0] * 2), mazeSize[1] * (cellSize[1] + wallSize[1] * 2)];
+    const fullCellSize = [cellSize[0] + wallSize[0] * 2, cellSize[1] + wallSize[1] * 2];
     
-    var maze = makeMaze(mazeSize[0], mazeSize[1]);
+    const maze = makeMaze(mazeSize[0], mazeSize[1]);
     let lists = {
         camera : null,
         player0 : null,
@@ -997,7 +1050,7 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
     // entities.push(new CameraBoundary([-Infinity, boundaryHeight], [Infinity, boundaryHeight]));
     // entities.push(new CameraBoundary([-boundaryWidth, -Infinity], [boundaryWidth, Infinity]));
     // entities.push(new CameraBoundary([boundaryWidth, -Infinity], [boundaryWidth, Infinity]));
-    map.entities.push({classId : "cameraBoundaryAround", position : [0, 0], size : [boundaryWidth, boundaryHeight]});
+    map.variable_entities.push({classId : "cameraBoundaryAround", position : [0, 0], size : [boundaryWidth, boundaryHeight]});
     
     for(var x = 0; x < mazeSize[0]; ++x) {
         for(var y = 0; y < mazeSize[1]; ++y) {
@@ -1019,7 +1072,7 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
                     let ground = (Ground.fromMiddle([cX + fullCellSize[0] / 2, cY + fullCellSize[1] - wallSize[1] + 4], [cellSize[0], 8]));
                     
                     // entities.push(ground);
-                    map.entities.push({classId : "softPlatform", "positionM" : ground.getPositionM(), "size" : ground.size});
+                    map.variable_entities.push({classId : "softPlatform", "positionM" : ground.getPositionM(), "size" : ground.size});
                 }
             } else if(Math.floor(Math.random() * 3) == 0) {
                 var size = [Math.floor(Math.random() * cellSize[0] / 2 + 8), Math.floor(Math.random() * cellSize[1] / 2 + 8)];
@@ -1037,7 +1090,7 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
                     classId = "sniperEnemy";
                 }
                 
-                map.entities.push({classId : classId, position : enemy.position, size : enemy.size});
+                map.variable_entities.push({classId : classId, position : enemy.position, size : enemy.size});
             }
             
             if(cell.walls & 1) {
@@ -1054,7 +1107,7 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
                 );
                 
                 // entities.push(wall);
-                map.entities.push({classId : "mazeWall", position : wall.position, size : wall.size});
+                map.variable_entities.push({classId : "mazeWall", position : wall.position, size : wall.size});
                 /**/
             } else {
                 /**
@@ -1079,7 +1132,7 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
                 );
                 
                 // entities.push(wall);
-                map.entities.push({classId : "mazeWall", position : wall.position, size : wall.size});
+                map.variable_entities.push({classId : "mazeWall", position : wall.position, size : wall.size});
                 /**/
             } else {
                 /**
@@ -1104,7 +1157,7 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
                 );
                 
                 // entities.push(wall);
-                map.entities.push({classId : "mazeWall", position : wall.position, size : wall.size});
+                map.variable_entities.push({classId : "mazeWall", position : wall.position, size : wall.size});
                 /**/
             } else {
                 /**
@@ -1135,7 +1188,7 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
                 );
                 
                 // entities.push(wall);
-                map.entities.push({classId : "mazeWall", position : wall.position, size : wall.size});
+                map.variable_entities.push({classId : "mazeWall", position : wall.position, size : wall.size});
                 /**/
             } else {
                 /**
@@ -1158,17 +1211,17 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
         let groundArea = new GroundArea([0, 0], actualMazeSize);
         
         // entities.push(groundArea);
-        map.entities.push({classId : "mazeGroundArea", position : groundArea.position, size : groundArea.size});
-        map.entities.push({classId : "sunlightDecoration", position : [0, 0]});
+        map.variable_entities.push({classId : "mazeGroundArea", position : groundArea.position, size : groundArea.size});
+        map.variable_entities.push({classId : "sunlightDecoration", position : [0, 0]});
     } else if(mode == "sideways") {
         // entities.push((new AirArea([0, 0], actualMazeSize)));
         // entities.push((new GravityField([0, 0], actualMazeSize)));
         // entities.push((new EC["skyDecoration"]([0, 0], actualMazeSize)));
         // entities.push((new EC["sunlightDecoration"]()));
         
-        map.entities.push({classId : "sidewaysSetter", position : [0, 0], size : actualMazeSize});
-        map.entities.push({classId : "skyDecoration", position : [0, 0], size : actualMazeSize});
-        map.entities.push({classId : "sunlightDecoration", position : [0, 0]});
+        map.variable_entities.push({classId : "sidewaysSetter", position : [0, 0], size : actualMazeSize});
+        map.variable_entities.push({classId : "skyDecoration", position : [0, 0], size : actualMazeSize});
+        map.variable_entities.push({classId : "sunlightDecoration", position : [0, 0]});
     } else if(mode == "sideways-water") {
         // entities.push((new WaterArea([0, 0], actualMazeSize)));
         
@@ -1177,8 +1230,8 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
         // drawables.push((new RectangleDrawable([0, 0], actualMazeSize)).setZIndex(-Infinity).setStyle(waterStyle));
         // entities.push((new EC["sunlightDecoration"]()));
         
-        map.entities.push({classId : "waterArea", position : [0, 0], size : actualMazeSize});
-        map.entities.push({classId : "sunlightDecoration", position : [0, 0]});
+        map.variable_entities.push({classId : "waterArea", position : [0, 0], size : actualMazeSize});
+        map.variable_entities.push({classId : "sunlightDecoration", position : [0, 0]});
     }
     
     return map;

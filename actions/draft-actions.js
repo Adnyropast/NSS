@@ -152,6 +152,8 @@ class ZoneEngage extends BusyAction {
         this.targets = new SetArray();
         
         this.duration = 32;
+        
+        this.opponentFound = false;
     }
     
     use() {
@@ -184,16 +186,10 @@ class ZoneEngage extends BusyAction {
         }
         
         if(this.phase == this.duration) {
-            let opponentFound = false;
-            
             for(let i = 0; i < this.targets.length; ++i) {
                 if(this.user.opponents.includes(this.targets[i])) {
-                    opponentFound = true;
+                    this.opponentFound = true;
                 }
-            }
-            
-            if(opponentFound) {
-                engageBattle(this.targets);
             }
             
             this.setRemovable(true);
@@ -210,6 +206,10 @@ class ZoneEngage extends BusyAction {
         
         removeEntity(this.zone);
         removeEntity(this.wind);
+        
+        if(this.opponentFound) {
+            engageBattle(this.targets);
+        }
         
         return super.onend();
     }

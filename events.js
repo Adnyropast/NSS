@@ -25,6 +25,7 @@ var K_FLURRY = [70];
 
 const KEY_SPACE = 32;
 const KEY_TAB = 9;
+const KEY_CTRL = 17;
 
 class KeyboardEventsRecorder {
     constructor() {

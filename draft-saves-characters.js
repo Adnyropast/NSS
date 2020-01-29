@@ -10,7 +10,7 @@ function getCharacterData(character) {
 }
 
 function updateCurrentCharacter() {
-    let entity = PLAYER;
+    let entity = PLAYERS[0].entity;
     let characterData = getCurrentCharacterData();
     
     characterData.classId;

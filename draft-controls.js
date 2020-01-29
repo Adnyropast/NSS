@@ -386,14 +386,14 @@ function getMousePosition(dimension) {
 AC["fc3"] = FinalCutter3;
 
 let ctrljson = {
-    "keyonce" : [
+    "keyOnce" : [
         {"keyCode" : 46, "actionId" : "ldelete"},
         {"keyCode" : 49, "actionId" : "lselect"},
         {"keyCode" : 84, "actionId" : "test"},
         {"keyCode" : [74], "actionId" : "goldenJab"},
         {"keyCode" : [97], "actionId" : "lSave"}
     ],
-    "keyrepeat" : [
+    "keyRepeat" : [
         {"keyCode" : 86, "actionId" : "flamethrower"},
         {"keyCode" : 77, "actionId" : "plasmaLightning"},
         {"keyCode" : 79, "actionId" : "autoSword"},
@@ -413,40 +413,42 @@ let ctrljson = {
         {"keyCode" : [73], "actionId" : "autoCutter"},
         {"keyCode" : [80, 82], "actionId" : "rocketPunch"},
         {"keyCode" : [66], "actionId" : "brushSlash"},
-        {"keyCode" : [84], "actionId" : "fc3"}
+        {"keyCode" : [84], "actionId" : "fc3"},
+        {"keyCode" : [223], "actionId" : "targetFocus"},
     ],
-    "keytoggle" : [
+    "keyToggle" : [
         // {"keyCode" : [67], "actionId" : "followMe"},
         // {"keyCode" : [82], "actionId" : "rocketPunch"},
         // {"keyCode" : [86], "actionId" : "flamethrower"},
+        {"keyCode" : [191], "actionId" : "targetFocus"},
     ],
-    "mouseonce" : [
+    "mouseOnce" : [
         // {"which" : 1, "actionId" : "lplace"},
         // {"which" : 1, "actionId" : "lcreate"},
         // {"which" : 2, "actionId" : "lselect"},
         // {"which" : 1, "actionId" : "rocketPunch"},
     ],
-    "mouserepeat" : [
+    "mouseRepeat" : [
         {"which" : 1, "actionId" : "autoLcreate"},
         // {"which" : 1, "actionId" : "autoSword"}
         // {"which" : 1, "actionId" : "plasmaLightning"}
         {"which" : 3, "actionId" : "autoLdelete"},
         // {"which" : 1, "actionId" : "rocketPunch"}
     ],
-    "mousetoggle" : [
+    "mouseToggle" : [
         // {"which" : 1, "actionId" : "rocketPunch"},
         // {"which" : 3, "actionId" : "flamethrower"},
     ],
-    "buttononce" : [
+    "buttonOnce" : [
         {"button" : 3, "actionId" : "goldenJab"},
     ],
-    "buttonrepeat" : [
+    "buttonRepeat" : [
         {"button" : 5, "actionId" : "autoJump"},
         {"button" : 2, "actionId" : "autoSword"},
         {"button" : 0, "actionId" : "autoCutter"},
         {"button" : 1, "actionId" : "rocketPunch"},
     ],
-    "buttontoggle" : [
+    "buttonToggle" : [
         {"button" : -1, "actionId" : "flamethrower"},
     ]
 };
@@ -454,56 +456,56 @@ let ctrljson = {
 function updateEventAction(json, player = PLAYERS[0]) {
     clearEventAction();
     
-    for(let i = 0; i < json.keyonce.length; ++i) {
-        let assoc = json.keyonce[i];
+    for(let i = 0; i < json.keyOnce.length; ++i) {
+        let assoc = json.keyOnce[i];
         
         addKeyAction(assoc.keyCode, getActionClass(assoc.actionId), player);
     }
     
-    for(let i = 0; i < json.keyrepeat.length; ++i) {
-        let assoc = json.keyrepeat[i];
+    for(let i = 0; i < json.keyRepeat.length; ++i) {
+        let assoc = json.keyRepeat[i];
         
         addKeyActionRepeat(assoc.keyCode, getActionClass(assoc.actionId), player);
     }
     
-    for(let i = 0; i < json.keytoggle.length; ++i) {
-        let assoc = json.keytoggle[i];
+    for(let i = 0; i < json.keyToggle.length; ++i) {
+        let assoc = json.keyToggle[i];
         
         addKeyActionToggle(assoc.keyCode, getActionClass(assoc.actionId), player);
     }
     
-    for(let i = 0; i < json.mouseonce.length; ++i) {
-        let assoc = json.mouseonce[i];
+    for(let i = 0; i < json.mouseOnce.length; ++i) {
+        let assoc = json.mouseOnce[i];
         
         addClickAction(assoc.which, getActionClass(assoc.actionId), player);
     }
     
-    for(let i = 0; i < json.mouserepeat.length; ++i) {
-        let assoc = json.mouserepeat[i];
+    for(let i = 0; i < json.mouseRepeat.length; ++i) {
+        let assoc = json.mouseRepeat[i];
         
         addClickActionRepeat(assoc.which, getActionClass(assoc.actionId), player);
     }
     
-    for(let i = 0; i < json.mousetoggle.length; ++i) {
-        let assoc = json.mousetoggle[i];
+    for(let i = 0; i < json.mouseToggle.length; ++i) {
+        let assoc = json.mouseToggle[i];
         
         addClickActionToggle(assoc.which, getActionClass(assoc.actionId), player);
     }
     
-    for(let i = 0; i < json.buttononce.length; ++i) {
-        let assoc = json.buttononce[i];
+    for(let i = 0; i < json.buttonOnce.length; ++i) {
+        let assoc = json.buttonOnce[i];
         
         addButtonAction(assoc.button, getActionClass(assoc.actionId), player);
     }
     
-    for(let i = 0; i < json.buttonrepeat.length; ++i) {
-        let assoc = json.buttonrepeat[i];
+    for(let i = 0; i < json.buttonRepeat.length; ++i) {
+        let assoc = json.buttonRepeat[i];
         
         addButtonActionRepeat(assoc.button, getActionClass(assoc.actionId), player);
     }
     
-    for(let i = 0; i < json.buttontoggle.length; ++i) {
-        let assoc = json.buttontoggle[i];
+    for(let i = 0; i < json.buttonToggle.length; ++i) {
+        let assoc = json.buttonToggle[i];
         
         addButtonActionToggle(assoc.button, getActionClass(assoc.actionId), player);
     }

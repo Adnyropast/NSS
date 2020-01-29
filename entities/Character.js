@@ -201,17 +201,14 @@ class Character extends Entity {
         return this;
     }
     
-    onland(obstacle) {
-        let norm = this.speed.getNorm();
+    onland(event) {
+        const obstacle = event.obstacle;
         
-        let directions = getDD(this.locate(obstacle));
-        let vector = new Vector(0, 0);
+        let norm = this.speed.getNorm();
         
         let avgsz = rectangle_averageSize(this);
         
-        for(let i = 0; i < directions.length; ++i) {
-            vector[directions[i].dimension] += directions[i].sign * avgsz/2;
-        }
+        const vector = vector_fromDirections(getDD(this.locate(obstacle)), this.getDimension()).normalize(avgsz/2);
         
         let positionM = Vector.addition(this.getPositionM(), vector);
         
@@ -222,7 +219,9 @@ class Character extends Entity {
         // particle.resetSpikeDrawable(irandom(6, 9), new ColorTransition([-Math.PI/2], [+Math.PI/2]), irandom(8, 10), irandom(16, 18), 6);
         particle.resetSpikeDrawable(irandom(7, 9), new ColorTransition([-Math.PI/2], [+Math.PI/2]), function() {return irandom(8, 10);}, function() {return irandom(14, 18);}, 6);
         
-        addEntity(particle);
+        // addEntity(particle);
+        
+        /**
         
         let count = irandom(2, 3);
         let direction = this.speed.rotated(Math.PI/2).normalize(avgsz/2);
@@ -230,7 +229,8 @@ class Character extends Entity {
         for(let i = 0; i < count; ++i) {
             let d = direction.rotated(random(-0.5, +0.5));
             
-            let smokeParticle = SmokeParticle.fromMiddle(Vector.addition(positionM, d));
+            let smokeParticle = SmokeParticle.fromMiddle(Vector.addition(positionM, d), [norm, norm]);
+            smokeParticle.drawable.setStyle("black");
             
             smokeParticle.setSpeed(d.normalized(random(0.75, 1.75)));
             
@@ -242,12 +242,44 @@ class Character extends Entity {
         for(let i = 0; i < count; ++i) {
             let d = direction.rotated(random(-0.5, +0.5));
             
-            let smokeParticle = SmokeParticle.fromMiddle(Vector.addition(positionM, d));
+            let smokeParticle = SmokeParticle.fromMiddle(Vector.addition(positionM, d), [norm, norm]);
+            smokeParticle.drawable.setStyle("black");
             
             smokeParticle.setSpeed(d.normalized(random(0.75, 1.75)));
             
             addEntity(smokeParticle);
         }
+        
+        /**/
+        
+        entityExplode.initialDistance = this.getWidth()/2;
+        entityExplode.initialAngle = Math.PI/12;
+        entityExplode.xRadius = 0.25;
+        entityExplode.radiusRotate = this.speed.getAngle();
+        entityExplode(12, SmokeParticle, positionM, [norm, norm], 1)
+        .forEach(function(entity) {
+            // entity.speed.multiply(random(1.25, 1.75));
+            entity.speed.multiply(random(norm * 0.25, norm * 0.5));
+            // entity.drawable.style = "blue";
+        });
+        entityExplode.initialDistance = 0;
+        entityExplode.xRadius = 1;
+        entityExplode.radiusRotate = 0;
+        
+        /**/
+        
+        directionSparks.randomAngleVariation = 0.5;
+        directionSparks(8, Entity, positionM, [norm/3, norm/3], this.speed.normalized(-1))
+        .forEach(function(entity) {
+            entity.setLifespan(32);
+            entity.setSelfBrake(1.03125);
+            entity.speed.multiply(random(1, 2));
+            entity.addInteraction(new DragRecipient(0.125));
+            entity.drawable.style = "gray";
+        });
+        directionSparks.randomAngleVariation = 0;
+        
+        /**/
         
         return this;
     }
@@ -275,10 +307,19 @@ class Cursor extends Entity {
         this.targets = new SetArray();
         this.currentIndex = -1;
         this.detect = console.warn.bind(console.warn, "Cursor.prototype.detect");
-        this.targeted = [];
+        this.targeted = new SetArray();
         
         this.controllers.add(function() {
-            if(this.destination != null) {
+            if(this.target != null) {
+                let targetPositionM = this.target.getPositionM();
+                let vector = Vector.subtraction(targetPositionM, this.getPositionM());
+                
+                if(vector.getNorm() < ALMOST_ZERO) {
+                    this.setPositionM(targetPositionM);
+                } else {
+                    this.speed.set(vector.divide(1.5));
+                }
+            } else if(this.destination != null) {
                 let vector = Vector.subtraction(this.destination, this.getPositionM());
                 
                 if(vector.getNorm() < ALMOST_ZERO) {
@@ -298,7 +339,7 @@ class Cursor extends Entity {
         }
         
         if(this.target != null) {
-            this.setPositionM(this.target.getPositionM());
+            // this.setPositionM(this.target.getPositionM());
         }
         
         return this;
@@ -358,28 +399,5 @@ class Cursor extends Entity {
         }
         
         return super.updateDrawable();
-    }
-}
-
-class FocusClosest extends FocusAction {
-    use() {
-        if(this.user.cursor == null) return this.end("no cursor");
-        if(this.user.cursor.targets.length == 0) return this.end("no targets");
-        
-        this.user.cursor.target = this.user.cursor.targets[0];
-        var max = Vector.distance(this.user.cursor.target.getPositionM(), this.user.getPositionM());
-        
-        for(var i = 1; i < this.user.cursor.targets.length; ++i) {
-            var distance = Vector.distance(this.user.cursor.targets[i].getPositionM(), this.user.getPositionM());
-            
-            if(distance < max) {
-                max = distance;
-                this.user.cursor.target = this.user.cursor.targets[i];
-            }
-        }
-        
-        this.user.cursor.centerTarget();
-        
-        return this;
     }
 }

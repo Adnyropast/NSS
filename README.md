@@ -8,7 +8,7 @@ Blablabla I don't know what else to write.
 
 ## Controls
 
-Escape : temporary ugly menu, for now solely for changing characters (first square : Adnyropast, second : Haple, third : Ten) (Escape to leave the menu, Enter to change character on the proper square)
+Escape : escape menu
 
 Left arrow, A, Q : Left
 
@@ -18,16 +18,4 @@ Right arrow, D : Right
 
 Down arrow, S : Down (also regenerates more energy, and allows characters to go through certain platforms)
 
-Space : Jump
-
-E : Battle engage move (drags characters in a turn-based battle system, barely started working on it)
-
-I : Boomerang attack (Adnyropast, Haple)
-
-O : Sword slash (Adnyropast, Haple)
-
-P : Punch projectile (Adnyropast, Haple)
-
-P : Other projectile (Adnyropast, Ten)
-
-F : Flurry attack (Adnyropast, Haple)
+Space Key : Jump

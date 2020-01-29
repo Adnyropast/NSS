@@ -3,7 +3,7 @@ function makeNewGame() {
     return {
         "playerPositionM" : [0, 0],
         "lastMap" : "hub",
-        "maps" : JSON.parse(JSON.stringify(maps)),
+        "maps" : makeNewSaveMaps(),
         "inventoryPath" : "/",
         "playerIdPath" : "/4/"
     };
@@ -16,7 +16,7 @@ function saveMapState() {
 function getCurrentMapState() {
     let map = {
         camera : {positionM : CAMERA.getPositionM(), size : CAMERA.size},
-        entities : entitiesToData(WORLDLOOP.entities)
+        variable_entities : entitiesToData(WORLDLOOP.entities.filter(function(entity) {return entity.mapVariable;}))
     };
     
     return map;

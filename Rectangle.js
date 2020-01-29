@@ -873,61 +873,72 @@ class Rectangle {
     }
     
     getPolygons() {
-        var res = new Array(6);
-        
-        for(var i = 0; i < 6; i++) {
-            
+        if(this.getDimension() === 2) {
+            return new Polygon([
+                [this.getX1(), this.getY1()],
+                [this.getX2(), this.getY1()],
+                [this.getX2(), this.getY2()],
+                [this.getX1(), this.getY2()]
+            ]);
         }
         
-        var x1 = this.position[0]; var x2 = this.position[0] + this.size[0];
-        var y1 = this.position[1]; var y2 = this.position[1] + this.size[1];
-        var z1 = this.position[2]; var z2 = this.position[2] + this.size[2];
-        
-        var res = new Array(6);
-        
-        res[2] = new Polygon([
-            [x1, y1, z1],
-            [x1, y1, z2],
-            [x1, y2, z2],
-            [x1, y2, z1]
-        ]);
-        
-        res[1] = new Polygon([
-            [x2, y1, z1],
-            [x2, y1, z2],
-            [x2, y2, z2],
-            [x2, y2, z1]
-        ]);
-        
-        res[3] = new Polygon([
-            [x1, y1, z1],
-            [x1, y1, z2],
-            [x2, y1, z2],
-            [x2, y1, z1]
-        ]);
-        
-        res[4] = new Polygon([
-            [x1, y2, z1],
-            [x2, y2, z1],
-            [x2, y2, z2],
-            [x1, y2, z2]
-        ]);
-        
-        res[0] = new Polygon([
-            [x1, y1, z1],
-            [x2, y1, z1],
-            [x2, y2, z1],
-            [x1, y2, z1]
-        ]);
-        
-        res[5] = new Polygon([
-            [x1, y1, z2],
-            [x2, y1, z2],
-            [x2, y2, z2],
-            [x1, y2, z2]
-        ]);
-        
-        return res;
+        else if(this.getDimension() === 3) {
+            var res = new Array(6);
+            
+            for(var i = 0; i < 6; i++) {
+                
+            }
+            
+            var x1 = this.position[0]; var x2 = this.position[0] + this.size[0];
+            var y1 = this.position[1]; var y2 = this.position[1] + this.size[1];
+            var z1 = this.position[2]; var z2 = this.position[2] + this.size[2];
+            
+            var res = new Array(6);
+            
+            res[2] = new Polygon([
+                [x1, y1, z1],
+                [x1, y1, z2],
+                [x1, y2, z2],
+                [x1, y2, z1]
+            ]);
+            
+            res[1] = new Polygon([
+                [x2, y1, z1],
+                [x2, y1, z2],
+                [x2, y2, z2],
+                [x2, y2, z1]
+            ]);
+            
+            res[3] = new Polygon([
+                [x1, y1, z1],
+                [x1, y1, z2],
+                [x2, y1, z2],
+                [x2, y1, z1]
+            ]);
+            
+            res[4] = new Polygon([
+                [x1, y2, z1],
+                [x2, y2, z1],
+                [x2, y2, z2],
+                [x1, y2, z2]
+            ]);
+            
+            res[0] = new Polygon([
+                [x1, y1, z1],
+                [x2, y1, z1],
+                [x2, y2, z1],
+                [x1, y2, z1]
+            ]);
+            
+            res[5] = new Polygon([
+                [x1, y1, z2],
+                [x2, y1, z2],
+                [x2, y2, z2],
+                [x1, y2, z2]
+            ]);
+            
+            return res;
+        }
     }
     
     getPoints() {
@@ -1209,6 +1220,12 @@ class Rectangle {
     getCoordinate1(dimension) {return this.position[dimension];}
     getCoordinateM(dimension) {return this.position[dimension] + this.size[dimension]/2;}
     getCoordinate2(dimension) {return this.position[dimension] + this.size[dimension];}
+    
+    collidesWithPolygon(polygon) {
+        const p = this.getPolygons();
+        
+        return p.collides(polygon);
+    }
 }
 
 /**/

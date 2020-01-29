@@ -25,8 +25,7 @@ class GoldSolid extends Hitbox {
     }
     
     updateDrawable() {
-        this.drawable.setImaginaryAngle(0);
-        this.drawable.shrinkM([-0.5, 0]);
+        this.drawable.shrinkBase([-0.5, 0]);
         
         this.drawable.setPositionM(this.getPositionM());
         this.drawable.multiplySize(1/1.025);
@@ -64,7 +63,7 @@ class GoldFlurry extends GoldAbility {
             hitbox.shareBlacklist(this.user.getBlacklist());
             
             hitbox.setSpeed(direction.normalized(2.5));
-            hitbox.launchDirection = hitbox.speed.normalized(0.25);
+            hitbox.launchDirection = hitbox.speed.normalized(0.5);
             
             addEntity(hitbox);
         }
@@ -90,19 +89,22 @@ AC["goldFlurry"] = GoldFlurry;
 class RocketPunchProjectile extends Projectile {
     constructor(position, size) {
         super(position, size);
+        
+        this.setLifespan(12);
+        
         this.setDrawable(PolygonDrawable.from(flameparticle).multiplySize(1/2));
         this.drawable.setPositionM(this.getPositionM());
-        this.setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 255, 0.5], 24));
+        this.setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 255, 0.5], this.lifespan));
         // this.setBrakeExponent(0);
         // this.setForceFactor(0);
         // this.setRegeneration(-1);
         this.setTypeOffense(FX_GOLD_, 4);
         
         this.setZIndex(-97);
-        this.setLifespan(24);
+        
         
         this.addInteraction(new TypeDamager());
-        let sizeTransition = new ColorTransition(Vector.multiplication(size, 1/2), size, 24, backForthTiming);
+        let sizeTransition = new ColorTransition(Vector.multiplication(size, 1/2), size, this.lifespan, backForthTiming);
         
         this.controllers.add(function() {
             this.setSizeM(sizeTransition.getNext());
@@ -205,28 +207,25 @@ class RocketPunch extends GoldAbility {
             
             var projectile = RocketPunchProjectile.fromMiddle(startPosition, [8, 8]);
             
-            projectile.setSpeed(direction.normalized(8));
+            projectile.setSpeed(direction.normalized(6));
             // projectile.setForce(projectile.speed.times(2));
-            projectile.addInteraction(new DragActor(projectile.speed.times(1)));
+            // projectile.addInteraction(new DragActor(projectile.speed.times(1)));
+            projectile.launchDirection = projectile.speed;
             projectile.shareBlacklist(this.user.getBlacklist());
             
             addEntity(projectile);
             
-            let count = 8;
-            
-            for(let i = 0; i < count; ++i) {
-                let angle = (i+Math.random()*2-1)/(count-1) * 2*Math.PI;
-                
-                let particle = GoldSmokeParticle.fromMiddle(startPosition, [12, 12]);
-                
-                particle.setSpeed(Vector.fromAngle(angle).normalize(Math.random()+1));
-                
-                addEntity(particle);
-            }
+            entityExplode.randomAngleVariation = 1;
+            entityExplode(8, GoldSmokeParticle, startPosition, [12, 12], 1)
+            .forEach(function(entity) {
+                entity.speed.multiply(Math.random() + 1);
+            });
+            entityExplode.randomAngleVariation = 0;
             
             this.user.setFace(projectile.speed[0]);
             
             this.user.hurt(this.getUseCost());
+            this.user.drag(direction.normalized(-1));
         } else if(this.phase > 16) {
             this.setRemovable(true);
             this.end();
@@ -312,10 +311,13 @@ class GoldenJab extends GoldAbility {
     use() {
         let averagesize = rectangle_averageSize(this.user);
         
-        let positionM = this.user.getCursorDirection().normalize(averagesize).add(this.user.getPositionM());
+        const direction = this.user.getCursorDirection();
+        
+        let positionM = direction.normalized(averagesize).add(this.user.getPositionM());
         
         let hitbox = GoldBurstHitbox.fromMiddle(positionM, [averagesize, averagesize]);
         hitbox.shareBlacklist(this.user.getBlacklist());
+        hitbox.setSpeed(direction.normalized(ALMOST_ZERO));
         
         addEntity(hitbox);
         

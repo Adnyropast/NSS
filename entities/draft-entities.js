@@ -248,9 +248,9 @@ class GoldSmokeParticle extends Particle {
             this.drawable.setStyle(new ColorTransition([0, irandom(191, 255), 255, 1], [0, 63, 255, 0], 32, function(t) {return Math.pow(t, 4);}));
         }
         
-        this.drawable.setZIndex(-Math.random() * 4 + 3);
+        this.drawable.setZIndex(random(-1, 8));
         
-        this.setSizeTransition(new MultiColorTransition([Vector.multiplication(size, 1/1.125), size, [0, 0]], 32));
+        this.setSizeTransition(new MultiColorTransition([Vector.multiplication(size, 1/1.125), Vector.from(size), [0, 0]], 32));
         this.drawable.initImaginarySize(rectangle_averageSize(this));
     }
     
@@ -261,6 +261,7 @@ class GoldSmokeParticle extends Particle {
         
         this.drawable.setImaginaryAngle(this.speed.getAngle());
         
+        this.drawable.shadowBlur = this.lifespan - this.lifeCounter;
         
         return this;
     }
@@ -272,15 +273,18 @@ class SmokeParticle extends Particle {
     constructor(position, size = [8, 8]) {
         super(position, size);
         
+        this.setLifespan(48);
+        
         let avgsz = rectangle_averageSize(this);
         
-        this.setDrawable(PolygonDrawable.from(makeRandomPolygon(avgsz*2, 12, 16)).setLifespan(32).setPositionM(this.getPositionM()).multiplySize(8/16));
+        this.setDrawable(PolygonDrawable.from(makeRandomPolygon(Math.max(4, avgsz*2), 12, 16)).setLifespan(this.lifespan).setPositionM(this.getPositionM()).multiplySize(8/16));
+        this.drawable.multiplySize(avgsz/16);
         this.drawable.initImaginarySize(avgsz);
         
         this.collidable = true;
         // this.forceFactor = 0.5;
         // this.setSelfBrake(1.0625);
-        this.setLifespan(32);
+        
         // this.setColorTransition([255, 255, 255, 191], [223, 223, 223, 31], 60);
         this.setStyle(ColorTransition.from(smokeColorTransition));
         
@@ -289,16 +293,19 @@ class SmokeParticle extends Particle {
         // this.addInteraction(new BrakeRecipient(1.5));
         
         // this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
-        this.setSizeTransition(new MultiColorTransition([Vector.multiplication(size, 1/2), size, Vector.multiplication(size, 1/2), [0, 0]], 32));
+        this.setSizeTransition(new MultiColorTransition([Vector.multiplication(size, 1/2), size, Vector.multiplication(size, 1/2), [0, 0]], this.lifespan));
         this.setSelfBrake(1.03125);
         
         this.drawable.setZIndex(random(-1, +1));
+        
+        this.drawable.setStrokeStyle("lightGray");
     }
     
     updateDrawable() {
         // this.drawable.multiplySize(1/1.0625);
         this.drawable.setImaginarySize(rectangle_averageSize(this));
         this.drawable.setPositionM(this.getPositionM());
+        this.drawable.rotate(Math.PI/128);
         
         return this;
     }
@@ -371,7 +378,7 @@ class FireParticle extends Particle {
         
         this.setSelfBrake(1.125);
         
-        for(let i = 0; i < 2; ++i) {
+        for(let i = 0; i < 3; ++i) {
             let drawable = makeFireParticle();
             drawable.multiplySize(random(1/2, 1));
             drawable.setStyle(new ColorTransition([255, 255, 127, 1], [255, 0, 0, 0.375], this.lifespan, function(t) {return Math.pow(t, 1)}));
@@ -554,7 +561,7 @@ EC["mazeGenerator"] = class MazeGenerator extends Entity {
                 addEntity(makeEntityFromData(maze.entities[i]));
             }
             
-            PLAYER.initPositionM(getCurrentSave().playerPositionM);
+            PLAYERS[0].entity.initPositionM(getCurrentSave().playerPositionM);
             
             removeEntity(this);
         } else {
@@ -616,7 +623,7 @@ EC["skyDecoration"] = class SkyDecoration extends Entity {
         
         this.setStyle(c);
         
-        /**
+        /* MAKE SKY BACKGROUND *
         
         let m = 4;
         
@@ -635,42 +642,38 @@ EC["skyDecoration"] = class SkyDecoration extends Entity {
         ctx.fillStyle = grd;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        /*  *
+        /* MAKE CLOUDS *
         
-        console.log(this.getPosition1(), this.getPositionM(), this.getPosition2());
-        
-        for(let i = 0; i < 16; ++i) {
+        for(let i = 0; i < 12; ++i) {
             let cloud = Cloud.fromMiddle([random(this.getX1(), this.getX2()), random(this.getY1(), this.getY2())], [128, 64]);
             
             cloud.drawable.baseWidth = this.getDrawable().baseWidth;
             cloud.drawable.baseHeight = this.getDrawable().baseHeight;
             
-            console.log(cloud.getPosition1(), cloud.getPositionM(), cloud.getPosition2());
-            
             this.clouds.add(cloud);
-            
-            cloud = BigCloud.fromMiddle([random(this.getX1(), this.getX2()), random(this.getY1(), this.getY2())], [128, 64]);
+        }
+        
+        for(let i = 0; i < 0; ++i) {
+            let cloud = BigCloud.fromMiddle([random(this.getX1(), this.getX2()), random(this.getY1(), this.getY2())], [128, 64]);
             
             cloud.drawable.baseWidth = this.getDrawable().baseWidth;
             cloud.drawable.baseHeight = this.getDrawable().baseHeight;
-            
-            console.log(cloud.getPosition1(), cloud.getPositionM(), cloud.getPosition2());
-            
-            this.clouds.add(cloud);
-            
-            cloud = DarkerCloud.fromMiddle([random(this.getX1(), this.getX2()), random(this.getY1(), this.getY2())], [128, 64]);
-            
-            cloud.drawable.baseWidth = this.getDrawable().baseWidth;
-            cloud.drawable.baseHeight = this.getDrawable().baseHeight;
-            
-            console.log(cloud.getPosition1(), cloud.getPositionM(), cloud.getPosition2());
             
             this.clouds.add(cloud);
         }
         
-        /**/
+        for(let i = 0; i < 0; ++i) {
+            let cloud = DarkerCloud.fromMiddle([random(this.getX1(), this.getX2()), random(this.getY1(), this.getY2())], [128, 64]);
+            
+            cloud.drawable.baseWidth = this.getDrawable().baseWidth;
+            cloud.drawable.baseHeight = this.getDrawable().baseHeight;
+            
+            this.clouds.add(cloud);
+        }
         
-        this.drawable.setStyle(IMGBG["sky2"]);
+        /* PRE-EXISTING BACKGROUND IMAGE */
+        
+        this.drawable.setStyle(IMGBG["skyblur5"]);
         
         /**/
     }
@@ -708,6 +711,7 @@ EC["invisibleWall"] = class InvisibleWall extends ActorCollidable {
 EC["sidewaysSetter"] = class SidewaysSetter extends Entity {
     constructor() {
         super(...arguments);
+        this.collidable = false;
         
         this.gravityField = new EC["gravityField"](...arguments);
         this.airArea = new EC["airArea"](...arguments);
@@ -721,7 +725,7 @@ EC["sidewaysSetter"] = class SidewaysSetter extends Entity {
     }
     
     update() {
-        removeEntity(this);
+        // removeEntity(this);
         
         return this;
     }
@@ -993,21 +997,23 @@ class TrailerEntity extends Entity {
     }
 }
 
-class CloudDrawable extends PolygonDrawable {
+class CloudDrawable extends MultiPolygonDrawable {
     constructor() {
-        super(makeRandomPolygon(32, 14, 16));
+        // super(makeRandomPolygon(32, 12, 16));
+        super();
+        this.setPolygons(makeCloudMultiPolygon(16, random(16, 64), random(8, 32)));
         
-        this.stretchM([irandom(0, 48), 0]);
+        // this.stretchM([irandom(16, 64), 0]);
         this.multiplySize(irandom(2, 4));
         
-        let light = 255; irandom(239, 255);
-        let alpha = 1; irandom(191, 255) / 255;
+        let light = irandom(239, 255);
+        let alpha = irandom(191, 255) / 255;
         
         this.setStyle(rgba(light, light, light, alpha));
         
         this.setCameraMode("reproportion");
         
-        this.shadowBlur = 16;
+        this.setShadowBlur(12);
     }
 }
 
@@ -1019,15 +1025,11 @@ class Cloud extends Entity {
         
         this.getDrawable().setZIndex(Math.pow(2, 20) - 2);
         
-        this.drawables[0] = new RectangleDrawable([NaN, NaN], [2, 2]);
-        this.drawables[0].setCameraMode("reproportion");
-        this.drawables[0].setStyle("#FF0000FF");
+        this.alwaysLoad = true;
     }
     
     updateDrawable() {
         this.getDrawable().setPositionM(this.getPositionM());
-        
-        this.drawables[0].setPositionM(this.getPositionM());
         
         return this;
     }
@@ -1038,7 +1040,7 @@ class BigCloud extends Cloud {
         super(...arguments);
         
         this.getDrawable().multiplySize(3);
-        this.getDrawable().setStyle(rgba(255, 255, 255, irandom(0, 31) / 255));
+        this.getDrawable().setStyle(rgba(255, 255, 255, irandom(15, 31) / 255));
         this.getDrawable().setZIndex(Math.pow(2, 20) - 1);
     }
 }
@@ -1047,8 +1049,11 @@ class DarkerCloud extends Cloud {
     constructor() {
         super(...arguments);
         
-        this.getDrawable().setStyle(rgba(223, 223, 223, 0.875));
-        this.getDrawable().setZIndex(Math.pow(2, 20) - 3);
+        let drawable = this.getDrawable();
+        
+        drawable.multiplySize(1/2);
+        drawable.setStyle(rgba(223, 223, 223, 0.75));
+        drawable.setZIndex(Math.pow(2, 20) - 3);
     }
 }
 

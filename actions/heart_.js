@@ -175,19 +175,3 @@ class VeinSweep extends SlashAction {
 }
 
 AC["veinSweep"] = VeinSweep;
-
-function makeSpiralPath(startAngle, endAngle, minDistance, maxDistance, count = 16) {
-    let points = [];
-    
-    let angleTransition = new VectorTransition([startAngle], [endAngle]);
-    let distanceTransition = new VectorTransition([minDistance], [maxDistance]);
-    
-    for(let i = 0; i < count; ++i) {
-        let angle = angleTransition.at(i / (count-1))[0];
-        let distance = distanceTransition.at(i / (count-1))[0];
-        
-        points.push(Vector.fromAngle(angle).normalize(distance));
-    }
-    
-    return points;
-}

@@ -37,6 +37,8 @@ class FireEffect extends Hitbox {
             drawable.setImaginarySize(rectangle_averageSize(this));
             // drawable.stretchM(this.speed.normalized(0.125));
             drawable.setPositionM(this.getPositionM());
+            
+            drawable.shadowBlur = this.lifespan - this.lifeCounter;
         }
         
         return this;
@@ -50,11 +52,16 @@ class Flamethrower extends BusyAction {
         
         this.setUseCost(0.5);
         this.setUseCost(4);
-        
-        this.typeDamager = (new TypeDamager()).setRehit(6);
     }
     
     use() {
+        let customState = this.user.findState("apFlamethrower");
+        
+        if(customState === undefined) {
+            customState = {name : "apFlamethrower", typeDamager : (new TypeDamager()).setRehit(12)};
+            this.user.addStateObject(customState);
+        }
+        
         if(this.getUseCost() > 0.25) {
             this.setUseCost(this.getUseCost()/1.25);
         }
@@ -65,7 +72,7 @@ class Flamethrower extends BusyAction {
         
         this.phase %= this.phaseLimit;
         
-        if(this.phase % 2 == 0) {
+        if(this.phase % 3 == 0) {
             let cursorDirection = this.user.getCursorDirection();
             
             let fireEffect = FireEffect.fromMiddle(Vector.addition(this.user.getPositionM(), cursorDirection.normalized(4)), [8, 8]);
@@ -74,7 +81,7 @@ class Flamethrower extends BusyAction {
             fireEffect.addInteraction(new DragActor(Vector.from(fireEffect.speed).normalize(0.03125)));
             
             if(this.phase % 24 === 0) {
-                fireEffect.addInteraction(this.typeDamager);
+                fireEffect.addInteraction(customState.typeDamager);
             }
             
             addEntity(fireEffect);
@@ -97,8 +104,9 @@ class BurningHitbox extends Hitbox {
         this.setTypeOffense(FX_FIRE, 4);
         this.addInteraction(new TypeDamager());
         
-        this.events["hit"].push(function(recipient) {
-            let actor = this;
+        this.addEventListener("hit", function(event) {
+            const actor = event.actor;
+            const recipient = event.recipient;
             
             setGameTimeout(function() {
                 typeImpacts[FX_FIRE](actor, recipient);

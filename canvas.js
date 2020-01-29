@@ -56,3 +56,209 @@ function makeRadialGradientCanvas(color1, color2, width = 256, height = 256) {
     
     return canvas;
 }
+
+function canvas_screenshot(canvas = CANVAS) {
+    try {
+        let dataURL = canvas.toDataURL();
+        let a = document.createElement("a");
+        a.href = dataURL;
+        a.download = (new Date()).toJSON().replace(/:/g, "'");
+        a.click();
+    } catch(error) {
+        console.log(error);
+    }
+}
+
+function font_getSize(font) {
+    let matches = font.match(/(\d+)px/);
+    
+    if(matches[1]) {
+        return Number(matches[1]);
+    }
+    
+    return NaN;
+}
+
+function makeGradientCTilesCanvas(horizontalCount, verticalCount, bgTransition, shTransition) {
+    let width = horizontalCount * CTILE_WIDTH;
+    let height = verticalCount * CTILE_WIDTH;
+    
+    let c = document.createElement("canvas");
+    c.width = width, c.height = height;
+    let ctx = c.getContext("2d");
+    
+    let n = c.width + c.height - CTILE_WIDTH;
+    
+    bgTransition.duration = shTransition.duration = n / CTILE_WIDTH;
+    
+    for(let i = 0; i < n; i += CTILE_WIDTH) {
+        var a = i / CTILE_WIDTH, b = n / CTILE_WIDTH;
+        ctx.fillStyle = makeCTile(bgTransition.getNextStyle(), shTransition.getNextStyle());
+        
+        for(let x = i, y = 0; x > i - c.height && y < c.height; x -= CTILE_WIDTH, y += CTILE_WIDTH) {
+            ctx.translate(x, y);
+            ctx.fillRect(0, 0, CTILE_WIDTH, CTILE_WIDTH); 
+            ctx.translate(-x, -y);
+        }
+    }
+    
+    return c;
+}
+
+function makeGradientCTilesPattern(horizontalCount, verticalCount, bgTransition, shTransition) {
+    // return CANVAS.makePattern(makeGradientCTilesCanvas(horizontalCount, verticalCount, bgTransition, shTransition), width / 2 * wprop, height / 2 * hprop, "repeat");
+    return CANVAS.makePattern(makeGradientCTilesCanvas(horizontalCount, verticalCount, bgTransition, shTransition), horizontalCount * CTILE_WIDTH, verticalCount * CTILE_WIDTH, "repeat");
+}
+
+// makeGradientCTiles(64, 64, new ColorTransition([255, 0, 0, 1], [0, 255, 255, 1], 7), new ColorTransition([255, 255, 255, 1], [0, 0, 0, 1], 7));
+// makeGradientCTiles(16, 256, new ColorTransition([255, 0, 0, 1], [0, 255, 255, 1]), new ColorTransition([255, 255, 255, 1], [0, 0, 0, 1]));
+
+function makeTextCanvas(content, fontHeight = 75, fontFamily = "Luckiest Guy", fillStyle = "black", strokeStyle) {
+    let canvas = document.createElement("canvas");
+    let ctx = canvas.getContext("2d");
+    
+    canvas.height = fontHeight;
+    
+    ctx.font = fontHeight + "px " + fontFamily;
+    canvas.width = ctx.measureText(content).width;
+    
+    ctx.textBaseline = "top";
+    ctx.font = fontHeight + "px " + fontFamily;
+    
+    let offset = 0;
+    if(window.module) {offset = -fontHeight/3;}
+    
+    ctx.fillStyle = fillStyle;
+    ctx.fillText(content, 0, offset);
+    
+    if(strokeStyle !== undefined) {
+        ctx.strokeStyle = strokeStyle;
+        ctx.strokeText(content, 0, 0);
+    }
+    
+    return canvas;
+}
+
+const tfparams = {
+    "positioning" : 0,
+    "padding-left" : 0,
+    "positioning-y" : 0,
+    "padding-top" : 0
+};
+
+function makeTextFit(content, width, height, fontFamily = "Luckiest Guy", fillStyle = "black", strokeStyle) {
+    let finalCanvas = document.createElement("canvas");
+    finalCanvas.width = width, finalCanvas.height = height;
+    let ctx = finalCanvas.getContext("2d");
+    
+    let textCanvas = makeTextCanvas(content, undefined, fontFamily, fillStyle, strokeStyle);
+    
+    if(textCanvas.width != 0) {
+        // ctx.drawImage(textCanvas, 0, 0, textCanvas.width * height / textCanvas.height, height);
+        ctx.drawImage(textCanvas, tfparams["padding-left"] + tfparams.positioning * (finalCanvas.width - textCanvas.width * height / textCanvas.height), tfparams["padding-top"], textCanvas.width * height / textCanvas.height, height);
+    }
+    
+    return finalCanvas;
+}
+
+function makeUnderwaterPattern(height) {
+    return makeGradientCTiles(1, height, new ColorTransition([0, 255, 255, 0.125], [0, 0, 255, 0.125]), new ColorTransition([0, 15, 239, 0.125], [0, 239, 239, 0.125]));
+}
+
+function makeStyledCanvas(style, width, height) {
+    let c = document.createElement("canvas");
+    c.width = width; c.height = height;
+    let ctx = c.getContext("2d");
+    ctx.fillStyle = style;
+    ctx.fillRect(0, 0, width, height);
+    
+    return c;
+}
+
+function makeCommandLabel(label, font = "Segoe UI", fillStyle = "#00007F", strokeStyle) {
+    let c = document.createElement("canvas");
+    c.width = CANVAS.width / 2, c.height = CANVAS.height / 9;
+    let ctx = c.getContext("2d");
+    
+    let oc = makeTextFit(label, CANVAS.width / 2 - 32, CANVAS.height / 9 - 32, font, fillStyle);
+    
+    ctx.fillStyle = "#FFFF1F";
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(oc, 16, 16);
+    
+    return c;
+}
+
+function makeCheckerPattern(style1, style2) {
+    let c = document.createElement("canvas");
+    c.width = 32, c.height = 16;
+    let ctx = c.getContext("2d");
+    
+    ctx.fillStyle = style1;
+    ctx.fillRect(0, 0, 16, 16);
+    ctx.fillStyle = style2;
+    ctx.fillRect(16, 0, 16, 16);
+    
+    return CANVAS.getContext("2d").createPattern(c, "repeat");
+}
+
+function makeGradientCanvas(ColorTransition, width = 16, height = 16) {
+    let c = document.createElement("canvas");
+    c.width = width, c.height = height;
+    let ctx = c.getContext("2d");
+    
+    let n = width + height - 1;
+    
+    ColorTransition.duration = n;
+    
+    for(let i = 0; i < n; ++i) {
+        ctx.fillStyle = ColorTransition.getNextStyle();
+        
+        for(let x = i, y = 0; x > i - height && y < height; --x, ++y) {
+            ctx.translate(x, y);
+            ctx.fillRect(0, 0, 1, 1);
+            ctx.translate(-x, -y);
+        }
+    }
+    
+    return c;
+}
+
+const CANVAS_WATER = makeGradientCanvas(new ColorTransition([0, 191, 255, 1], [64, 159, 191, 1]), 4, 4);
+
+function addBorder(c = document.createElement("canvas"), width = 8, height = 8) {
+    let ctx = c.getContext("2d");
+    
+    
+}
+
+function makeSelectCommandLabel(label, font = "Segoe UI", fillStyle = "#00FFFF", strokeStyle) {
+    let c = document.createElement("canvas");
+    c.width = CANVAS.width / 2, c.height = CANVAS.height / 9;
+    let ctx = c.getContext("2d");
+    
+    let oc = makeTextFit(label, CANVAS.width / 2 - 32, CANVAS.height / 9 - 32, font, fillStyle);
+    
+    ctx.fillStyle = "#FFEF3F";
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(oc, 16, 16);
+    
+    return c;
+}
+
+function canvas_clone(canvas) {
+    let clone = document.createElement("canvas");
+    
+    clone.width = canvas.width;
+    clone.height = canvas.height;
+    
+    clone.getContext("2d").drawImage(canvas, 0, 0);
+    
+    return clone;
+}
+
+function canvas_clear(canvas) {
+    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    
+    return canvas;
+}

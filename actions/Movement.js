@@ -320,3 +320,94 @@ class LinearMovement extends Action {
         return this;
     }
 }
+
+let movementCost = 0.09375;
+
+class MovementLeft extends Action {
+    constructor() {
+        super();
+        this.setId("movementLeft");
+    }
+    
+    use() {
+        this.user.addAction(new TmprRoute([-BIG, 0]));
+        this.user.addAction(new MoveFocus());
+        this.user.addAction(new Movement().setUseCost(movementCost));
+        
+        return this;
+    }
+    
+    onend() {
+        this.user.removeActionsWithConstructor(Movement);
+        
+        return this;
+    }
+}
+
+class MovementUp extends Action {
+    constructor() {
+        super();
+        this.setId("movementUp");
+    }
+    
+    use() {
+        this.user.addAction(new TmprRoute([0, -BIG]));
+        this.user.addAction(new MoveFocus());
+        this.user.addAction(new Movement().setUseCost(movementCost));
+        
+        return this;
+    }
+    
+    onend() {
+        this.user.removeActionsWithConstructor(Movement);
+        
+        return this;
+    }
+}
+
+class MovementRight extends Action {
+    constructor() {
+        super();
+        this.setId("movementRight");
+    }
+    
+    use() {
+        this.user.addAction(new TmprRoute([+BIG, 0]));
+        this.user.addAction(new MoveFocus());
+        this.user.addAction(new Movement().setUseCost(movementCost));
+        
+        return this;
+    }
+    
+    onend() {
+        this.user.removeActionsWithConstructor(Movement);
+        
+        return this;
+    }
+}
+
+class MovementDown extends Action {
+    constructor() {
+        super();
+        this.setId("movementDown");
+    }
+    
+    use() {
+        this.user.addAction(new TmprRoute([0, +BIG]));
+        this.user.addAction(new MoveFocus());
+        this.user.addAction(new Movement().setUseCost(movementCost));
+        
+        return this;
+    }
+    
+    onend() {
+        this.user.removeActionsWithConstructor(Movement);
+        
+        return this;
+    }
+}
+
+AC["movementLeft"] = MovementLeft;
+AC["movementUp"] = MovementUp;
+AC["movementRight"] = MovementRight;
+AC["movementDown"] = MovementDown;

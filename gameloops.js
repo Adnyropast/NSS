@@ -2,6 +2,8 @@
 class GameLoop {
     constructor() {
         this.drawables = new SetArray();
+        this.entities = new SetArray();
+        this.collidables = new SetArray();
         this.camera = null;
         
         this.counter = 0; -1;
@@ -20,7 +22,13 @@ class GameLoop {
         return this;
     }
     
-    setCamera(camera) {this.camera = camera; return this;}
+    setCamera(camera) {
+        this.camera = camera;
+        this.addEntity(camera);
+        
+        return this;
+    }
+    
     getCamera() {return this.camera;}
     
     getDrawables() {return this.drawables;}
@@ -40,28 +48,11 @@ class GameLoop {
         
         return this;
     }
-}
-
-class WorldLoop extends GameLoop {
-    constructor() {
-        super();
-        
-        this.entities = new SetArray();
-        this.collidables = new SetArray();
-    }
-    
-    setCamera(camera) {
-        CAMERA = camera;
-        this.camera = camera;
-        this.addEntity(camera);
-        
-        return this;
-    }
     
     getCollidables() {return this.collidables;}
     
     addEntity(entity) {
-        entity.worldLoop = this;
+        entity.gameLoop = this;
         entity.onadd();
         
         this.entities.add(entity);
@@ -91,10 +82,6 @@ class WorldLoop extends GameLoop {
         this.entities.remove(entity);
         this.collidables.remove(entity);
         
-        if(entity == PLAYER) {
-            PLAYER = null;
-        }
-        
         return this;
     }
     
@@ -103,14 +90,68 @@ class WorldLoop extends GameLoop {
         this.collidables.clear();
         this.drawables.clear();
         
+        return this;
+    }
+    
+    draw(drawables = this.drawables) {
+        const context = CANVAS.getContext("2d");
+        
+        for(let i = 0; i < drawables.length; ++i) {
+            const drawable = drawables[i];
+            
+            /**
+            if(i < drawables.length - 1 && drawables[i].getZIndex() < drawables[i + 1].getZIndex()) {
+                var drawable = drawables[i + 1];
+                drawables[i + 1] = drawables[i];
+                drawables[i] = drawable;
+            }
+            /**/
+            
+            drawable.update();
+            drawable.draw(context);
+        }
+        
+        return this;
+    }
+}
+
+class WorldLoop extends GameLoop {
+    constructor() {
+        super();
+    }
+    
+    setCamera(camera) {
+        CAMERA = camera;
+        return super.setCamera(camera);
+    }
+    
+    removeEntity(entity) {
+        super.removeEntity(entity);
+        
+        if(entity == PLAYER) {
+            PLAYER = null;
+        }
+        
+        return this;
+    }
+    
+    clearSets() {
+        super.clearSets();
+        
         ALLIES_.clear();
         OPPONENTS_.clear();
+        
+        return this;
     }
+}
+
+class BattleLoop extends GameLoop {
+    
 }
 
 const GAMELOOP = new GameLoop();
 const WORLDLOOP = new WorldLoop();
-const BATTLELOOP = new GameLoop();
+const BATTLELOOP = new BattleLoop();
 const ESCAPELOOP = new GameLoop();
 
 const NOENTITY = new SetArray();
@@ -130,15 +171,33 @@ let OBSTACLES = new SetArray();
 let NONOBSTACLES = new SetArray();
 
 function addEntity(entity) {
-    WORLDLOOP.addEntity(entity);
+    if(gamePhase === WORLDLOOP) {
+        WORLDLOOP.addEntity(entity);
+    } else if(gamePhase === BATTLELOOP) {
+        BATTLELOOP.addEntity(entity);
+    } else if(gamePhase === ESCAPELOOP) {
+        WORLDLOOP.addEntity(entity);
+    }
 }
 
 function removeEntity(entity) {
-    WORLDLOOP.removeEntity(entity);
+    if(gamePhase === WORLDLOOP) {
+        WORLDLOOP.removeEntity(entity);
+    } else if(gamePhase === BATTLELOOP) {
+        BATTLELOOP.removeEntity(entity);
+    } else if(gamePhase === ESCAPELOOP) {
+        WORLDLOOP.removeEntity(entity);
+    }
 }
 
 function addDrawable(drawable) {
-    WORLDLOOP.addDrawable(drawable);
+    if(gamePhase === WORLDLOOP) {
+        WORLDLOOP.addDrawable(drawable);
+    } else if(gamePhase === BATTLELOOP) {
+        BATTLELOOP.addDrawable(drawable);
+    } else if(gamePhase === ESCAPELOOP) {
+        WORLDLOOP.addDrawable(drawable);
+    }
 }
 
 function removeDrawable(drawable) {
@@ -236,18 +295,14 @@ function removeInterrecipient(interrecipient) {
 }
 
 function setPlayer(entity) {
-    if(PLAYER instanceof Entity) {
-        // PLAYER.controller = noController;
-    }
-    
     PLAYER = entity;
     PLAYERS[0].entity = entity;
     entity.addInteraction(new MapWarpable);
     entity.battler.setPlayable(true);
-    CAMERA.target = entity;
+    // CAMERA.target = entity;
     CAMERA.targets.clear().add(entity);
     
-    entity.events["defeat"].push(function() {
+    entity.addEventListener("defeat", function() {
         setGameTimeout(function() {
             transitionIn();
         }, 48);
@@ -259,7 +314,7 @@ function setPlayer(entity) {
     
     entity.addInteraction(new ItemPicker());
     
-    entity.events["hurt"].push(function() {
+    entity.addEventListener("hurt", function() {
         ++hitsCount;
     });
     
@@ -288,6 +343,8 @@ function worldUpdate() {
     });
     
     let entities = this.entities.filter(function(entity) {
+        if(entity.alwaysLoad) return true;
+        
         return loadZone.collides(entity) && !entity.isFrozen();
     });
     
@@ -381,116 +438,45 @@ function worldUpdate() {
         entity.update();
     }
     
-    for(var i = 0; i < entities.length; ++i) {
-        var entity = entities[i];
+    for(var i = 0; i < this.entities.length; ++i) {
+        var entity = this.entities[i];
         entity.updateReset();
     }
     
     /**/
     
-    for(var i = 0; i < collidables.length; ++i) {
-        let collidable1 = collidables[i];
+    for(let i = 0; i < collidables.length; ++i) {
+        const collidable1 = collidables[i];
         
         /**/
         
-        for(var j = i + 1; j < collidables.length; ++j) {
-            if(collidables[i].collides(collidables[j])) {
-                collidables[i].oncollision(collidables[j]);
-                collidables[j].oncollision(collidables[i]);
-            }
+        for(let j = i + 1; j < collidables.length; ++j) {
+            const collidable2 = collidables[j];
             
+            if(collidable1.collides(collidable2)) {
+                collidable1.oncollision(collidable2);
+                collidable2.oncollision(collidable1);
+            }
+        }
+        
         /*/
         
         for(var j = 0; j < collidable1.whitelist.length; ++j) {
             if(collidable1.collides(collidable1.whitelist[j])) {
                 collidable1.oncollision(collidable1.whitelist[j])
             }
-            
-            /**/
         }
-    }
-    
-    /**
-    
-    for(var id in INTERACTORS) {
-        for(var i = 0; i < INTERACTORS[id].length; ++i) {
-            if(INTERRECIPIENTS.hasOwnProperty(id)) {
-                for(var j = 0; j < INTERRECIPIENTS[id].length; ++j) {
-                    if(INTERACTORS[id][i].collides(INTERRECIPIENTS[id][j])) {
-                        INTERACTORS[id][i].interact(INTERRECIPIENTS[id][j]);
-                        INTERRECIPIENTS[id][j].oninteraction(INTERACTORS[id][i]);
-                    }
-                }
-            }
-        }
-    }
-    
-    /**
-    
-    INTERACTORS.sort(function(a, b) {
-        let a_priority = interactionPriorities.hasOwnProperty(a.id) ? interactionPriorities[a.id] : 0;
-        let b_priority = interactionPriorities.hasOwnProperty(b.id) ? interactionPriorities[b.id] : 0;
         
-        if(a_priority < b_priority) return -1;
-        if(a_priority > b_priority) return +1;
-        return 0;
-    });
-    
-    for(let i = 0; i < INTERRECIPIENTS.length; ++i) {
-        for(let ii = 0; ii < INTERRECIPIENTS[i].array.length; ++ii) {
-            INTERRECIPIENTS[i].array[ii].recipient.collidedWith.clear();
-        }
-    }
-    
-    for(let i = 0; i < INTERACTORS.length; ++i) {
-        for(let ii = 0; ii < INTERACTORS[i].array.length; ++ii) {
-            INTERACTORS[i].array[ii].actor.collidedWith.clear();
-            
-            for(let j = 0; j < INTERRECIPIENTS.length; ++j) {
-                if(INTERRECIPIENTS[j].id == INTERACTORS[i].id) {
-                    for(var jj = 0; jj < INTERRECIPIENTS[j].array.length; ++jj) {
-                        if(INTERACTORS[i].array[ii].collides(INTERRECIPIENTS[j].array[jj])) {
-                            INTERACTORS[i].array[ii].interact(INTERRECIPIENTS[j].array[jj]);
-                            INTERRECIPIENTS[j].array[jj].oninteraction(INTERACTORS[i].array[ii]);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    /**/
-    
-    
-    
-    /**/
-    
-    var context = CANVAS.getContext("2d");
-    
-    /** DRAWING UPDATE **/
-    
-    context.fillStyle = "#FFFFFF3F";
-    context.fillRect(0, 0, CANVAS.width, CANVAS.height);
-    context.clearRect(0, 0, CANVAS.width, CANVAS.height);
-    
-    /**/
-    
-    for(var i = 0; i < drawables.length; ++i) {
-        let drawable = drawables[i];
-        
-        /**
-        if(i < drawables.length - 1 && drawables[i].getZIndex() < drawables[i + 1].getZIndex()) {
-            var drawable = drawables[i + 1];
-            drawables[i + 1] = drawables[i];
-            drawables[i] = drawable;
-        }
         /**/
-        
-        drawable.update();
-        drawable.draw(context);
     }
     
     /**/
+    
+    
+    
+    // DRAWING UPDATE
+    
+    this.draw(drawables);
 }
 
 WORLDLOOP.controllers.add(worldUpdate);
@@ -668,7 +654,7 @@ function battleUpdate() {
             lastPage.update();
         }
         
-        /**/
+        /**
         
         for(var i = 0; i < battlers.length; ++i) {
             if(!battlers[i].isPlayable()) {
@@ -676,11 +662,11 @@ function battleUpdate() {
             }
         }
         
-        // 
+        /**/ 
         
         if(BATTLERS.length == 0) {
             transitionIn();
-            switchPhase("world");
+            switchPhase(WORLDLOOP);
             battlePhase = "act";
             transitionOut();
         } else {
@@ -695,11 +681,7 @@ function battleUpdate() {
             }
             
             if(allReady) {
-                for(let i = 0; i < battlers.length; ++i) {
-                    battlers[i].setReady(false);
-                }
-                
-                battlePhase = "act"
+                battlePhase = "act";
             }
         }
     }
@@ -723,6 +705,10 @@ function battleUpdate() {
             ++actorIndex;
             actorIndex %= BATTLERS.length;
             battlePhase = "strategy";
+            
+            for(let i = 0; i < BATTLERS.length; ++i) {
+                BATTLERS[i].setReady(false);
+            }
             
             if(MAINBATTLER == null) {
                 let battlers;
@@ -752,13 +738,14 @@ function battleUpdate() {
         }
     }
     
-    // 
+    // Remove battlers without an opponent.
     
     for(let i = BATTLERS.length - 1; i >= 0; --i) {
-        let opponents = BATTLERS[i].getOpponents();
+        const battler = BATTLERS[i];
+        const opponents = battler.getOpponents();
         
         if(opponents.length == 0) {
-            removeBattler(BATTLERS[i]);
+            removeBattler(battler);
         }
     }
     
@@ -768,24 +755,39 @@ function battleUpdate() {
         BATTLERS[i].update();
     }
     
-    // 
+    for(let i = 0; i < this.entities.length; ++i) {
+        const entity = this.entities[i];
+        entity.update();
+    }
     
-    var context = CANVAS.getContext("2d");
-    context.clearRect(0, 0, CANVAS.width, CANVAS.height);
+    for(let i = 0; i < this.entities.length; ++i) {
+        const entity = this.entities[i];
+        entity.updateReset();
+    }
     
-    // 
+    // Draw battle things.
     
-    for(let i = 0; i < BATTLEDRAWABLES.length; ++i) {
-        let drawable = BATTLEDRAWABLES[i];
+    array_bubbleSort(this.drawables, function(a, b) {
+        if(a.getZIndex() > b.getZIndex()) {return -1;}
+        if(a.getZIndex() < b.getZIndex()) {return +1;}
+        return 0;
+    });
+    
+    const context = CANVAS.getContext("2d");
+    
+    this.draw();
+    
+    for(let i = 0; i < SKILLS_QUEUE.length; ++i) {
+        const skill = SKILLS_QUEUE[i];
+        const drawable = new RectangleDrawable([i*16, 0], [16, 16]);
+        drawable.setStyle((new ColorTransition([255, 255, 0, 1], [255, 255, 255, 0], 32)).setLoop(true));
+        drawable.setCameraMode("reproportion");
         
-        drawable.update();
         drawable.draw(context);
     }
-    /*
-    for(let i = 0; i < commands.length; ++i) {
-        commands[i].draw(context);
-    }*/
 }
+
+BATTLELOOP.controllers.add(battleUpdate);
 
 let escapeCounter = 0;
 
@@ -1003,22 +1005,22 @@ let gameControllers = new SetArray();
 gameControllers.add(gameEventController);
 
 function gameUpdate() {
-    if(gamePhase == "world") {
+    if(gamePhase == WORLDLOOP) {
         WORLDLOOP.update();
         // worldUpdate();
         
         if(keyList.value(K_ESC) == 1 || gamepadRec.value(BUTTON_START) === 1) {
             backupPhase = gamePhase;
-            switchPhase("escapeMenu");
+            switchPhase(ESCAPELOOP);
         }
-    } else if(gamePhase == "battle") {
-        battleUpdate();
-    } else if(gamePhase == "escapeMenu") {
+    } else if(gamePhase == BATTLELOOP) {
+        BATTLELOOP.update();
+    } else if(gamePhase == ESCAPELOOP) {
         escapeMenu();
         ++escapeCounter;
     }
     
-    if(gamePhase !== "escapeMenu") {
+    if(gamePhase !== ESCAPELOOP) {
         escapeCounter = 0;
     }
     
@@ -1045,6 +1047,8 @@ function gameUpdate() {
     
     eventsRecordersUpdate();
     
+    // 
+    
     for(let i = 0; i < GLOBALDRAWABLES.length; ++i) {
         let drawable = GLOBALDRAWABLES[i];
         
@@ -1057,8 +1061,10 @@ function gameUpdate() {
     }
 }
 
+GAMELOOP.controllers.add(gameUpdate);
+
 var gameInterval;
-var gamePhase = "world";
+var gamePhase = WORLDLOOP;
 var gamePace = WORLD_PACE;
 
 function switchPhase(phase) {
@@ -1080,21 +1086,26 @@ function loadCheck() {
     if(loadCounter == 0) {
         for(var i = 0; i < IMGS.length; ++i) {
             if(!IMGS[i].complete || IMGS[i].naturalWidth === 0) {
-                return;
+                return false;
             }
         }
         
         loadMap(getCurrentSave().lastMap);
         transitionIn(), transitionOut();
         
-        switchLoop(gameUpdate, WORLD_PACE);
+        switchLoop(main, WORLD_PACE);
+        
+        return true;
     }
+    
+    return false;
 }
 
 function engageBattle(battlers = NOENTITY) {
     transitionIn();
     addBattlers(battlers);
-    switchPhase("battle");
+    switchPhase(BATTLELOOP);
+    addEntity(new EC["skyDecoration"]([0, 0], [640, 360]));
     transitionOut();
 }
 
@@ -1109,4 +1120,26 @@ function gamePause() {
 function gameResumeFor(duration = 1) {
     gameResume();
     setGameTimeout(gamePause, duration);
+}
+
+const DEBUG = {
+    clear: function clear() {
+        for(let i = 0; i < this.array.length; ++i) {
+            removeDrawable(this.array[i]);
+        }
+        
+        this.array.length = 0;
+    },
+    log: function log(data) {
+        const rectangleDrawable = (new TextRectangleDrawable([0, this.array.length * 16], [640, 16])).setContent(data);
+        rectangleDrawable.setCameraMode("reproportion");
+        
+        this.array.push(rectangleDrawable);
+        addDrawable(rectangleDrawable);
+    },
+    array: []
+};
+
+function main() {
+    GAMELOOP.update();
 }

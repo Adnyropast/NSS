@@ -248,8 +248,6 @@ class SniperEnemy extends Enemy {
             }
             
             if(this.cursor.target != null) {
-                this.addAction(new PositionCursorTarget());
-                
                 // this.route = this.cursor.getPositionM();
                 // this.addAction(new Movement());
                 // this.addAction(new EnemyCharge());

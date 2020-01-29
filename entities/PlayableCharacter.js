@@ -5,14 +5,14 @@ class PlayableCharacter extends Character {
         this.resetEnergy(50);
         // this.setEffectFactor("default", 1);
         
-        this.cursor = PlayerCursor.fromMiddle(this.getPositionM(), [16, 16]);
+        this.cursor = PlayerCursor.fromMiddle(this.getPositionM(), [256, 256]);
         
         this.anim = null;
         this.lastAnim = "";
         
         this.defaultAnimStyle = "cyan";
         
-        this.events["defeat"]["vanish"] = function() {
+        this.setEventListener("defeat", "vanish", function() {
             let spd = rectangle_averageSize(this) / 16;
             
             for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 4) {
@@ -30,7 +30,9 @@ class PlayableCharacter extends Character {
             particle.setStyle(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1], 32));
             particle.setSizeTransition(new ColorTransition(this.size, [0, 0], 32));
             addEntity(particle);
-        };
+        });
+        
+        this.cursorDistance = 1024;
     }
     
     onadd() {
@@ -226,8 +228,13 @@ class PlayableCharacter extends Character {
         
         if((this.drawable.style.iindex % 2) == 0 && this.drawable.style.icount == 0) {
             let offsetX = -Math.sign(this.speed[0]) * this.getWidth()/2;
+            const position = [this.getXM() + offsetX, this.getY2()];
+            
             
             let avgsz = rectangle_averageSize(this);
+            
+            let avgsz2 = avgsz/2;
+            let smokeSize = [avgsz2, avgsz2];
             
             /**
             
@@ -239,10 +246,7 @@ class PlayableCharacter extends Character {
                 addEntity(particle);
             }
             
-            /**/
-            
-            let avgsz2 = avgsz/2;
-            let smokeSize = [avgsz2, avgsz2];
+            /**
             
             var particle = SmokeParticle.fromMiddle(this.getPositionM(), smokeSize);
             particle.setSpeed(this.speed.normalized(1.5).rotated(Math.PI));
@@ -262,11 +266,20 @@ class PlayableCharacter extends Character {
             
             /**/
             
-            var particle = SpikeSmokeParticle.fromMiddle([this.getXM() + offsetX, this.getY2()], [avgsz, avgsz]);
+            var particle = SpikeSmokeParticle.fromMiddle(position, [avgsz, avgsz]);
             
             particle.setSpeed(this.speed.rotated(Math.PI).normalize(2));
             
             addEntity(particle);
+            
+            /**/
+            
+            directionSparks.randomAngleVariation = 0.75;
+            directionSparks(5, SmokeParticle, position, smokeSize, this.speed.normalized(-1))
+            .forEach(function(entity) {
+                entity.speed.multiply(random(1.25, 1.5));
+            });
+            directionSparks.randomAngleVariation = 0;
             
             /**/
         }
@@ -322,97 +335,6 @@ class ComposedAction extends Action {
     }
 }
 
-let movementCost = 0.09375;
-
-class MovementLeft extends Action {
-    constructor() {
-        super();
-        this.setId("movementLeft");
-    }
-    
-    use() {
-        this.user.addAction(new TmprRoute([-BIG, 0]));
-        this.user.addAction(new MoveFocus());
-        this.user.addAction(new Movement().setUseCost(movementCost));
-        
-        return this;
-    }
-    
-    onend() {
-        this.user.removeActionsWithConstructor(Movement);
-        
-        return this;
-    }
-}
-
-class MovementUp extends Action {
-    constructor() {
-        super();
-        this.setId("movementUp");
-    }
-    
-    use() {
-        this.user.addAction(new TmprRoute([0, -BIG]));
-        this.user.addAction(new MoveFocus());
-        this.user.addAction(new Movement().setUseCost(movementCost));
-        
-        return this;
-    }
-    
-    onend() {
-        this.user.removeActionsWithConstructor(Movement);
-        
-        return this;
-    }
-}
-
-class MovementRight extends Action {
-    constructor() {
-        super();
-        this.setId("movementRight");
-    }
-    
-    use() {
-        this.user.addAction(new TmprRoute([+BIG, 0]));
-        this.user.addAction(new MoveFocus());
-        this.user.addAction(new Movement().setUseCost(movementCost));
-        
-        return this;
-    }
-    
-    onend() {
-        this.user.removeActionsWithConstructor(Movement);
-        
-        return this;
-    }
-}
-
-class MovementDown extends Action {
-    constructor() {
-        super();
-        this.setId("movementDown");
-    }
-    
-    use() {
-        this.user.addAction(new TmprRoute([0, +BIG]));
-        this.user.addAction(new MoveFocus());
-        this.user.addAction(new Movement().setUseCost(movementCost));
-        
-        return this;
-    }
-    
-    onend() {
-        this.user.removeActionsWithConstructor(Movement);
-        
-        return this;
-    }
-}
-
-AC["movementLeft"] = MovementLeft;
-AC["movementUp"] = MovementUp;
-AC["movementRight"] = MovementRight;
-AC["movementDown"] = MovementDown;
-
 class CursorSmoke extends Entity {
     constructor() {
         super(...arguments);
@@ -429,6 +351,8 @@ class CursorSmoke extends Entity {
         drawable.initImaginarySize(avgsz);
         
         this.setDrawable(drawable);
+        
+        this.setSelfBrake(1.0625);
     }
     
     updateDrawable() {
@@ -464,18 +388,28 @@ class PlayerCursor extends Cursor {
         circle.setZIndex(-1000);
         circle.setStyle(CT_RAINBOW.copy().setDuration(1024));
         circle.shadowBlur = 16;
-        this.drawables[1] = circle;
+        // this.drawables[1] = circle;
+        this.drawables[0].push(circle);
         
         this.controllers.add(function() {
-            if(this.lifeCounter % 2 === 0) {
-                let smoke = CursorSmoke.fromMiddle(Vector.addition(this.getPositionM(), [random(-4, 4), random(-4, 4)]), [8, 8]);
-                let cv = this.drawables[1].style.getCurrent();
-                let cv_start = colorVector_brighten(cv, 128);
+            if(this.speed.getNorm() > 1.5 && this.lifeCounter % 1 === 0) {
+                let vector = (new Vector(random(0, 4), 0)).rotate(Math.random() * 2*Math.PI);
+                
+                let smoke = CursorSmoke.fromMiddle(Vector.addition(this.getPositionM(), vector), [8, 8]);
+                
+                smoke.setSpeed(vector.normalize(random(0, 0.5)));
+                
+                let cv = this.drawables[0][0].style.getCurrent();
+                let cv_start = colorVector_brighten(cv, 192);
                 let cv_end = colorVector_alterAlpha(cv, -0.5);
-                smoke.drawable.setStyle(new ColorTransition(cv_start, cv_end, smoke.lifespan, powt(2)));
+                smoke.drawable.setStyle(new ColorTransition(cv_start, cv_end, smoke.lifespan));
+                
+                smoke.alwaysLoad = true;
                 
                 addEntity(smoke);
             }
         });
+        
+        this.alwaysLoad = true;
     }
 }

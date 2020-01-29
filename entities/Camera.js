@@ -29,7 +29,7 @@ class Camera extends Entity {
         
         this.movementTo = (new MovementTo(this.accVal)).setUseCost(0);
         
-        this.cursorDistance = this.range = Math.pow(2, 9) + Math.pow(2, 8);
+        this.range = Math.pow(2, 10.15);// Math.pow(2, 9) + Math.pow(2, 8);
         this.direction = new Vector(0, 0, this.range);
         this.vx = new Vector(-this.range, 0, 0);
         this.vy = new Vector(0, -this.range, 0);
@@ -144,7 +144,16 @@ class Camera extends Entity {
         
         let rect = makeEncompassingRectangle(this.targets, {left:16, right:16, up:16, down:16});
         
-        if(Vector.normOf(rect.size) > Vector.normOf(this.originalSize)) {
+        let willUpdate = false;
+        let minDim = Math.min(rect.size.length, this.originalSize.length);
+        
+        for(let dim = 0; dim < minDim; ++dim) {
+            if(rect.size[dim] > this.originalSize[dim]) {
+                willUpdate = true;
+            }
+        }
+        
+        if(willUpdate) {
             const dimension = Math.min(rect.size.length, 3);
             const proportions = [16, 9, 16];
             let biggestRatio = 0;
@@ -165,8 +174,6 @@ class Camera extends Entity {
         } else {
             this.setSizeM(this.originalSize);
         }
-        
-        if(keyList.value(13)) console.log(this.originalSize);
         
         if(this.targets.length > 0) {
             // this.setPositionM(rect.getPositionM());

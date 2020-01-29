@@ -105,8 +105,6 @@ EC["adnyropast"] = class Adnyropast extends PlayableCharacter {
         // this.setRegeneration(0.0625);
         // this.addAction(new Regeneration(0.0625));
         
-        this.cursorDistance = 32;
-        
         this.stats["midairJump-count"] = "Infinity";
     }
     

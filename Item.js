@@ -61,7 +61,7 @@ class ConsumableItem extends Item {
         let consumable = this;
         
         this.commands[0] = function consume() {
-            consumable.consumeBy(PLAYER);
+            consumable.consumeBy(PLAYERS[0].entity);
             save_getCurrentInventory().items.remove(consumable);
         };
     }
@@ -275,10 +275,10 @@ IC["characterIdentifier"] = class CharacterIdentifier extends Item {
         this.commands[0] = function() {
             updateCurrentCharacter();
             
-            let positionM = PLAYER.getPositionM();
-            let faceSave = PLAYER.faceSave;
+            let positionM = PLAYERS[0].entity.getPositionM();
+            let faceSave = PLAYERS[0].entity.faceSave;
             
-            removeEntity(PLAYER);
+            removeEntity(PLAYERS[0].entity);
             
             let characterData = characterIdentifier.characterData;
             let character = EC[characterData.classId].fromData(characterData);
@@ -286,8 +286,8 @@ IC["characterIdentifier"] = class CharacterIdentifier extends Item {
             getCurrentSave().playerIdPath = getCurrentSave().inventoryPath + characterIdentifier.id + "/";
             setPlayer(character);
             
-            PLAYER.initPositionM(positionM);
-            PLAYER.setFace(faceSave);
+            PLAYERS[0].entity.initPositionM(positionM);
+            PLAYERS[0].entity.setFace(faceSave);
         };
         
         this.commands[1] = function() {
@@ -364,6 +364,66 @@ IC["saveIdentifier"] = class SaveIdentifier extends Item {
         data.maps = this.maps;
         data.inventoryPath = this.inventoryPath;
         data.playerIdPath = this.playerIdPath;
+        
+        return data;
+    }
+};
+
+IC["controlsIdentifier"] = class ControlsIdentifier extends Item {
+    constructor() {
+        super();
+        
+        this.keyOnce = [];
+        this.keyRepeat = [];
+        this.keyToggle = [];
+        this.mouseOnce = [];
+        this.mouseRepeat = [];
+        this.mouseToggle = [];
+        this.buttonOnce = [];
+        this.buttonRepeat = [];
+        this.buttonToggle = [];
+        
+        let controlsIdentifier = this;
+        
+        this.commands[0] = function() {
+            updateEventAction(controlsIdentifier);
+        };
+    }
+    
+    setProperties(data) {
+        if(Array.isArray(data.keyOnce)) this.keyOnce = Array.from(data.keyOnce);
+        if(Array.isArray(data.keyRepeat)) this.keyRepeat = Array.from(data.keyRepeat);
+        if(Array.isArray(data.keyToggle)) this.keyToggle = Array.from(data.keyToggle);
+        if(Array.isArray(data.mouseOnce)) this.mouseOnce = Array.from(data.mouseOnce);
+        if(Array.isArray(data.mouseRepeat)) this.mouseRepeat = Array.from(data.mouseRepeat);
+        if(Array.isArray(data.mouseToggle)) this.mouseToggle = Array.from(data.mouseToggle);
+        if(Array.isArray(data.buttonOnce)) this.buttonOnce = Array.from(data.buttonOnce);
+        if(Array.isArray(data.buttonRepeat)) this.buttonRepeat = Array.from(data.buttonRepeat);
+        if(Array.isArray(data.buttonToggle)) this.buttonToggle = Array.from(data.buttonToggle);
+        
+        return this;
+    }
+    
+    static fromData(data) {
+        let controlsIdentifier = super.fromData(data);
+        
+        controlsIdentifier.setProperties(data);
+        
+        return controlsIdentifier;
+    }
+    
+    getData() {
+        let data = super.getData();
+        
+        data.keyOnce = Array.from(this.keyOnce);
+        data.keyRepeat = Array.from(this.keyRepeat);
+        data.keyToggle = Array.from(this.keyToggle);
+        data.mouseOnce = Array.from(this.mouseOnce);
+        data.mouseRepeat = Array.from(this.mouseRepeat);
+        data.mouseToggle = Array.from(this.mouseToggle);
+        data.buttonOnce = Array.from(this.buttonOnce);
+        data.buttonRepeat = Array.from(this.buttonRepeat);
+        data.buttonToggle = Array.from(this.buttonToggle);
         
         return data;
     }

@@ -111,7 +111,7 @@ class Entity extends Rectangle {
         
         this.stats = {};
         
-        this.events = {
+        this.eventListeners = {
             "defeat" : [],
             "hit" : [],
             "hurt" : []
@@ -131,9 +131,15 @@ class Entity extends Rectangle {
         
         this.freeze = 0;
         
-        this.worldLoop = null;
+        this.gameLoop = null;
         
         this.order = 0;
+        
+        this.alwaysLoad = false;
+        
+        this.cursorDistance = 256;
+        
+        this.stateimg = {};
     }
     
     static fromData(data) {
@@ -352,6 +358,10 @@ class Entity extends Rectangle {
         /**/
         
         return this;
+    }
+    
+    getLifespan() {
+        return this.lifespan;
     }
     
     setTypeResistance(type, factor) {
@@ -678,6 +688,8 @@ class Entity extends Rectangle {
             type >>= 1;
         }
         
+        Vector.add(other.position, Vector.subtraction(this.position, this.preposition));
+        
         return this;
     }
     
@@ -699,14 +711,14 @@ class Entity extends Rectangle {
         // this.updateReset();
         
         if(this.energy <= 0) {
-            this.ondefeat();
+            this.triggerEvent("defeat", new EntityEvent());
             removeEntity(this);
         }
         
         ++this.lifeCounter;
         
         if(this.lifeCounter == this.lifespan) {
-            this.ondefeat();
+            // this.triggerEvent("defeat", new EntityEvent());
             removeEntity(this);
         }
         
@@ -716,7 +728,7 @@ class Entity extends Rectangle {
     updateReset() {
         this.updateState();
         // this.gravityDirection.fill(0);
-        this.collidedWith.splice(0, this.collidedWith.length);
+        this.collidedWith.clear();
         // this.thrust = 0;
         this.route = null;
         this.collidesWith.clear();
@@ -1099,7 +1111,7 @@ class Entity extends Rectangle {
     }
     
     ondefeat() {
-        return this.triggerEvents("defeat");
+        return this;
     }
     
     getCursorDirection() {
@@ -1118,8 +1130,10 @@ class Entity extends Rectangle {
         return null;
     }
     
-    onland(obstacle) {
-        return this.triggerEvents("land", [obstacle]);
+    onland(event) {
+        const obstacle = event.obstacle;
+        
+        return this;
     }
     
     replaceStateObject(object) {
@@ -1155,15 +1169,19 @@ class Entity extends Rectangle {
         return this;
     }
     
-    triggerEvents(eventName, params = []) {
-        if(Array.isArray(this.events[eventName])) {
-            // for(let i = 0; i < this.events[eventName].length; ++i) {
-            for(let i in this.events[eventName]) {
-                let eventFunction = this.events[eventName][i].bind(this);
-                eventFunction.apply(eventFunction, params);
+    triggerEvent(eventName, entityEvent) {
+        if(typeof this["on" + eventName] === "function") {
+            this["on" + eventName](entityEvent);
+        }
+        
+        if(typeof this.eventListeners[eventName] === "object") {
+            for(let i in this.eventListeners[eventName]) {
+                let eventFunction = this.eventListeners[eventName][i].bind(this);
+                eventFunction(entityEvent);
             }
-        } else if(typeof this.events[eventName] === "function") {
-            this.events[eventName].bind(this).apply(this.events[eventName], params);
+        } else if(typeof this.eventListeners[eventName] === "function") {
+            const eventFunction = this.eventListeners[eventName].bind(this);
+            eventFunction(entityEvent);
         }
         
         return this;
@@ -1173,18 +1191,22 @@ class Entity extends Rectangle {
         return {position : this.position, size : this.size};
     }
     
-    onhit(recipient) {
-        return this.triggerEvents("hit", [recipient]);
+    onhit(event) {
+        const recipient = event.recipient;
+        
+        return this;
     }
     
-    onhurt(actor) {
+    onhurt(recipient) {
+        const actor = recipient.actor;
+        
         if(!this.stats["count-hurt"]) {
             this.stats["count-hurt"] = 1;
         } else {
             ++this.stats["count-hurt"];
         }
         
-        return this.triggerEvents("hurt", [actor]);
+        return this;
     }
     
     setSizeTransition(sizeTransition) {
@@ -1262,19 +1284,35 @@ class Entity extends Rectangle {
     }
     
     addEntity(entity) {
-        if(this.worldLoop != null) {
-            this.worldLoop.addEntity(entity);
+        if(this.gameLoop != null) {
+            this.gameLoop.addEntity(entity);
         }
         
         return this;
     }
     
-    getWorldEntities() {
-        if(this.worldLoop != null) {
-            return this.worldLoop.getEntities();
+    getGameEntities() {
+        if(this.gameLoop != null) {
+            return this.gameLoop.getEntities();
         }
         
         return new SetArray();
+    }
+    
+    getCollidable() {
+        return this;
+    }
+    
+    addEventListener(eventName, listener) {
+        this.eventListeners[eventName].push(listener);
+        
+        return this;
+    }
+    
+    setEventListener(eventName, listenerName, listener) {
+        this.eventListeners[eventName][listenerName] = listener;
+        
+        return this;
     }
 }
 
@@ -1284,7 +1322,10 @@ class Hitbox extends Entity {
         
         this.addInteraction(new StunActor());
         this.launchDirection = [0, 0, 0];
-        this.events["hit"].push(function(recipient) {
+        
+        this.addEventListener("hit", function(event) {
+            const recipient = event.recipient;
+            
             if(Array.isArray(this.launchDirection)) {
                 let dragInterrecipient = recipient.findInterrecipientWithId("drag");
                 
@@ -1300,6 +1341,7 @@ class Hitbox extends Entity {
 class EntityAround extends Entity {
     constructor() {
         super(...arguments);
+        this.collidable = false;
         
         this.entityClass = Entity;
     }
@@ -1315,7 +1357,7 @@ class EntityAround extends Entity {
     }
     
     update() {
-        removeEntity(this);
+        // removeEntity(this);
         
         return this;
     }

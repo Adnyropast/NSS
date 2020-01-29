@@ -20,6 +20,8 @@ class Jump extends Action {
             let averagesize = rectangle_averageSize(this.user);
             let positionM = this.user.getPositionM();
             
+            let feetPositionM = Vector.addition(positionM, this.direction.normalized(-averagesize/2));
+            
             /**
             if(this.grounded) {
                 for(let i = -0.5; i < 1; i += 0.25) {
@@ -41,7 +43,7 @@ class Jump extends Action {
                 }
             }
             
-            /**/
+            /**
             
             let count = irandom(2, 3);
             
@@ -50,7 +52,7 @@ class Jump extends Action {
                 
                 let direction = this.direction.rotated(Math.PI + angle);
                 
-                let particle = SmokeParticle.fromMiddle(Vector.addition(positionM, this.direction.normalized(-averagesize/2)));
+                let particle = SmokeParticle.fromMiddle(feetPositionM);
                 particle.setSpeed(direction.normalized(Math.random()+0.5));
                 // particle.removeInterrecipientWithId("replace");
                 
@@ -62,7 +64,7 @@ class Jump extends Action {
                 
                 let direction = this.direction.rotated(-Math.PI/2 + angle);
                 
-                let particle = SmokeParticle.fromMiddle(Vector.addition(positionM, this.direction.normalized(-averagesize/2)));
+                let particle = SmokeParticle.fromMiddle(feetPositionM);
                 particle.setSpeed(direction.normalized(Math.random()+0.5));
                 // particle.removeInterrecipientWithId("replace");
                 
@@ -74,7 +76,7 @@ class Jump extends Action {
                 
                 let direction = this.direction.rotated(+Math.PI/2 + angle);
                 
-                let particle = SmokeParticle.fromMiddle(Vector.addition(positionM, this.direction.normalized(-averagesize/2)));
+                let particle = SmokeParticle.fromMiddle(feetPositionM);
                 particle.setSpeed(direction.normalized(Math.random()+0.5));
                 // particle.removeInterrecipientWithId("replace");
                 
@@ -83,7 +85,18 @@ class Jump extends Action {
             
             /**/
             
-            let feetPositionM = Vector.addition(this.user.getPositionM(), this.direction.normalized(-averagesize/2));
+            entityExplode.xRadius = 0.375;
+            entityExplode.initialAngle = Math.PI / 7;
+            entityExplode.radiusRotate = this.direction.getAngle();
+            entityExplode(6, SmokeParticle, feetPositionM, [8, 8], 1)
+            .forEach(function(entity) {
+                entity.speed.multiply(random(1.0, 1.25));
+            });
+            entityExplode.xRadius = 1;
+            entityExplode.initialAngle = 0;
+            entityExplode.radiusRotate = 0;
+            
+            /**
             
             let direction1 = this.direction.rotated(-Math.PI/2).normalize();
             
@@ -104,6 +117,15 @@ class Jump extends Action {
             particle2.resetSpikeDrawable(irandom(4, 6), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
             
             addEntity(particle2);
+            
+            /**/
+            
+            entityExplode.initialAngle = this.direction.getAngle() + Math.PI/2;
+            entityExplode(2, SpikeSmokeParticle, feetPositionM, [averagesize, averagesize], 2)
+            .forEach(function(entity) {
+                
+            });
+            entityExplode.initialAngle = 0;
             
             /**/
         }

@@ -1,7 +1,10 @@
 
+function addition_(a, b) {return a + b;}
+function subtraction_(a, b) {return a - b;}
+function multiplication_(a, b) {return a * b;}
+function division_(a, b) {return a / b;}
+
 /**
- * 28/08/2018
- * 08/10/2018 11:59
  * The Vector class represents a multi-dimensional vector, also used for points in a space, sizes, ...
  */
 
@@ -9,77 +12,127 @@ class Vector extends Array {
     
     /***/
     
-    static add(v1, v2) {
-        for(var i = 0; i < v1.length; i++)
-            v1[i] += v2[i];
+    static apply(setFn, vector) {
+        if(Array.isArray(arguments[2])) {
+            const vector2 = arguments[2];
+            const minDim = Math.min(vector.length, vector2.length);
+            
+            for(let dim = 0; dim < minDim; ++dim) {
+                vector[dim] = setFn(vector[dim], vector2[dim]);
+            }
+        } else if(arguments.length === 3) {
+            const k = arguments[2];
+            
+            for(let dim = 0; dim < vector.length; ++dim) {
+                vector[dim] = setFn(vector[dim], k);
+            }
+        } else if(arguments.length === 4) {
+            const dimension = arguments[2], k = arguments[3];
+            
+            vector[dimension] = setFn(vector[dimension], k);
+        }
         
-        return v1;
-    }
-    static subtract(v1, v2) {
-        for(var i = 0; i < v1.length; i++)
-            v1[i] -= v2[i];
-        
-        return v1;
-    }
-    static multiply(v, k) {
-        for(var i = 0; i < v.length; i++)
-            v[i] *= k;
-        
-        return v;
+        return vector;
     }
     
     /***/
     
-    static addition(v1, v2) {
-        var res = new this(v1.length);
-        
-        for(var i = 0; i < v1.length; i++)
-            res[i] = v1[i] + v2[i];
-        
-        return res;
-    }
-    static subtraction(v1, v2) {
-        let minDim = Math.min(v1.length, v2.length);
-        
-        var res = new this(minDim);
-        
-        for(var dim = 0; dim < minDim; ++dim)
-            res[dim] = v1[dim] - v2[dim];
-        
-        return res;
-    }
-    static multiplication(v, k) {
-        if(Array.isArray(arguments[1])) {
-            var v2 = arguments[1];
-            var res = new this(v.length);
+    static combine(setFn, vector) {
+        if(Array.isArray(arguments[2])) {
+            const vector2 = arguments[2];
+            const minDim = Math.min(vector.length, vector2.length);
+            const res = new this(minDim);
             
-            for(var i = 0; i < res.length; ++i) {
-                res.set(i, v[i] * v2[i]);
+            for(let dim = 0; dim < minDim; ++dim) {
+                res.set(dim, setFn(vector[dim], vector2[dim]));
+            }
+            
+            return res;
+        } else if(arguments.length === 3) {
+            const k = arguments[2];
+            const res = new this(vector.length);
+            
+            for(let dim = 0; dim < vector.length; ++dim) {
+                res.set(dim, setFn(vector[dim], k));
+            }
+            
+            return res;
+        } else if(arguments.length === 4) {
+            const dimension = arguments[2], k = arguments[3];
+            const res = new this(vector.length);
+            
+            for(let dim = 0; dim < vector.length; ++dim) {
+                if(dim == dimension) {
+                    res.set(dim, setFn(vector[dim], k));
+                } else {
+                    res.set(dim, vector[dim]);
+                }
             }
             
             return res;
         }
         
-        var res = new this(v.length);
-        
-        for(var i = 0; i < v.length; i++)
-            res[i] = v[i] * k;
-        
-        return res;
+        return null;
     }
     
+    /***/
+    
+    static add(vector) {
+        return this.apply(addition_, ...arguments);
+    }
+    
+    /***/
+    
+    static subtract(vector) {
+        return this.apply(subtraction_, ...arguments);
+    }
+    
+    /***/
+    
+    static multiply(vector) {
+        return this.apply(multiplication_, ...arguments);
+    }
+    
+    /***/
+    
+    static divide(vector) {
+        return this.apply(division_, ...arguments);
+    }
+    
+    /***/
+    
+    static addition(vector) {
+        return this.combine(addition_, ...arguments);
+    }
+    
+    /***/
+    
+    static subtraction(vector) {
+        return this.combine(subtraction_, ...arguments);
+    }
+    
+    /***/
+    
+    static multiplication(vector) {
+        return this.combine(multiplication_, ...arguments);
+    }
+    
+    /***/
+    
+    static division(vector) {
+        return this.combine(division_, ...arguments);
+    }
+    
+    /***/
+    
     static normOf() {
-        if(arguments[0] instanceof this) {
-            return arguments[0].getNorm();
-        }
-        
         if(Array.isArray(arguments[0])) {
-            var array = arguments[0];
+            const vector = arguments[0];
             
-            var norm = 0;
+            let norm = 0;
             
-            for(var i = 0; i < array.length; ++i) {
-                norm += Math.pow(array[i], 2);
+            for(let dim = 0; dim < vector.length; ++dim) {
+                norm += Math.pow(vector[dim], 2);
             }
             
             return norm = Math.sqrt(norm);
@@ -88,43 +141,20 @@ class Vector extends Array {
         return -1;
     }
     
+    /***/
+    
     static distance(vector1, vector2) {
         if(vector1.length != vector2.length) {
             return Infinity;
         }
         
-        var dist = 0;
+        let distance = 0;
         
-        for(var i = 0; i < vector1.length; ++i) {
-            dist += Math.pow(vector2[i] - vector1[i], 2);
+        for(let dim = 0; dim < vector1.length; ++dim) {
+            distance += Math.pow(vector2[dim] - vector1[dim], 2);
         }
         
-        return Math.sqrt(dist);
-    }
-    
-    
-    
-    
-    
-    /**
-     * 06/03/2019
-     * Constructs a new Vector copied from an array of values.
-     * @param array the array that should be copied.
-     * @return a new Vector instance.
-     */
-    
-    static fromArray(array) {
-        if(!Array.isArray(array)) {
-            throw "Error : parameter is not an array";
-        }
-        
-        var vector = new this();
-        
-        for(var i = 0; i < array.length; ++i) {
-            vector[i] = array[i];
-        }
-        
-        return vector;
+        return distance = Math.sqrt(distance);
     }
     
     /**
@@ -137,9 +167,9 @@ class Vector extends Array {
      */
     
     static filled(dimension, fillValue) {
-        var vector = new this();
+        const vector = new this(dimension);
         
-        for(var dim = 0; dim < dimension; ++dim) {
+        for(let dim = 0; dim < dimension; ++dim) {
             vector.set(dim, fillValue);
         }
         
@@ -147,93 +177,34 @@ class Vector extends Array {
     }
     
     /**
-     * 24/04/2019
-     * Constructs a new Vector copied from another vector.
-     * @param vector the vector that should be copied.
-     * @return a new Vector instance.
-     */
-    
-    static fromVector(vector) {
-        if(!(vector instanceof this)) {
-            throw "Error : parameter not an instance of the Vector class";
-        }
-        
-        var copy = new this();
-        
-        for(var dim = 0; dim < vector.getDimension(); ++dim) {
-            copy.set(dim, vector.get(dim));
-        }
-        
-        return copy;
-    }
-    
-    /**
-     * 24/04/2019
      * Constructs a new Vector filled with the given parameters.
-     * @param the values the vector should be filled with.
-     * @return a new Vector instance.
+     * @param the coordinates of the vector.
+     * @return a vector with the coordinates.
      */
     
     static fromParameters() {
-        var vector = new this();
+        const vector = new this(arguments.length);
         
-        for(var dim = 0; dim < arguments.length; ++dim) {
+        for(let dim = 0; dim < arguments.length; ++dim) {
             vector.set(dim, arguments[dim]);
         }
         
         return vector;
     }
     
-    /* 23/07/2019 */
+    /**
+     * Constructs a normalized 2D Vector from the angle given as a parameter.
+     * @param the angle of the vector.
+     * @return the vector.
+     */
     
     static fromAngle(angle) {
         return new this(Math.cos(angle), Math.sin(angle));
     }
     
-    
-    
-    
-    /**
-     * Constructs a new Vector
-     */
-    
-    constructor() {
-        super(...arguments);
-        
-        /**
-        
-        if(arguments.length == 1 && typeof arguments[0] == "number") {
-            this.length = arguments[0];
-        } else for(var i = 0; i < arguments.length; ++i) {
-            this[i] = arguments[i];
-        }
-        
-        /**/
-    }
-    
-    /* 01/03/2019 */
-    
-    toArray() {
-        return this;
-    }
-    
-    getDimension() {
-        return this.length;
-    } setDimension(dim) {
-        this.length = dim;
-        
-        return this;
-    }
-    
-    /* 23/01/2019 */
-    
-    size() {
-        return this.toArray().length;
-    }
-    
-    isZero() {
-        for(var i = 0; i < this.size(); ++i) {
-            if(this.get(i) != 0) {
+    static isZero(vector) {
+        for(let dim = 0; dim < vector.length; ++dim) {
+            if(vector[dim] != 0) {
                 return false;
             }
         }
@@ -241,185 +212,105 @@ class Vector extends Array {
         return true;
     }
     
+    /**
+     * Constructs a new Vector.
+     * Same as an Array.
+     */
+    
+    constructor() {
+        super(...arguments);
+    }
+    
+    toArray() {
+        return this;
+    }
+    
+    getDimension() {return this.length;}
+    
+    setDimension(dimension) {this.length = dimension; return this;}
+    
+    size() {return this.length;}
+    
+    isZero() {return Vector.isZero(this);}
+    
     copy() {
-        var copy = new Vector();
+        const copy = new Vector(this.getDimension());
         
-        for(var i = 0; i < this.length; ++i) {
-            copy[i] = this[i];
+        for(let dim = 0; dim < this.getDimension(); ++dim) {
+            copy.set(dim, this.get(dim));
         }
         
         return copy;
     }
     
-    /* 01/03/2019 */
-    
     get() {
-        if(arguments.length == 0) {
-            return this.toArray();
+        if(arguments.length === 1) {
+            return this[arguments[0]];
         }
         
-        else if(arguments.length == 1) {
-            return this.toArray()[arguments[0]];
-        }
-        
-        return undefined;
+        return this;
     }
     
     set() {
         if(arguments.length == 2) {
-            var i = arguments[0], x = arguments[1];
+            this[arguments[0]] = arguments[1];
+        }
+        
+        else if(arguments.length == 1 && Array.isArray(arguments[0])) {
+            const vector = arguments[0];
             
-            this[i] = x;
-        } else if(arguments.length == 1 && arguments[0] instanceof Array) {
-            var array = arguments[0];
+            this.setDimension(vector.length);
             
-            this.setDimension(0);
-            
-            for(var i = 0; i < array.length; ++i) {
-                this[i] = array[i];
+            for(let dim = 0; dim < vector.length; ++dim) {
+                this.set(dim, vector[dim]);
             }
-        } else if(arguments.length == 1) {
-            var x = arguments[0];
+        }
+        
+        else if(arguments.length == 1) {
+            const value = arguments[0];
             
-            for(var i = 0; i < this.size(); ++i) {
-                this[i] = x;
+            for(let dim = 0; dim < this.getDimension(); ++dim) {
+                this.set(dim, value);
             }
         }
         
         return this;
     }
     
-    translate(array) {
-        if(Array.isArray(array) && array.length == this.size()) {
-            this.add.apply(this, arguments);
-        }
-        
-        return this;
+    translate() {
+        return Vector.add(this, ...arguments);
     }
     
     add() {
-        if(arguments.length == 1 && arguments[0] instanceof Array) {
-            var array = arguments[0];
-            
-            for(var i = 0; i < this.size(); ++i) {
-                this[i] += array[i];
-            }
-        } else if(arguments.length == 1) {
-            var x = arguments[0];
-            
-            for(var i = 0; i < this.size(); ++i) {
-                this[i] += x;
-            }
-        } else if(arguments.length == 2) {
-            var i = arguments[0], x = arguments[1];
-            
-            this[i] += x;
-        }
-        
-        return this;
-    } plus() {
-        var copy = new Vector();
-        
-        if(arguments.length == 1 && arguments[0] instanceof Array) {
-            var array = arguments[0];
-            var minDim = Math.min(this.getDimension(), array.length);
-            
-            for(var dim = 0; dim < minDim; ++dim) {
-                copy[dim] = this[dim] + array[dim];
-            }
-        } else if(arguments.length == 1) {
-            var x = arguments[0];
-            
-            for(var i = 0; i < this.size(); ++i) {
-                copy[i] = this[i] + x;
-            }
-        } else if(arguments.length == 2) {
-            var i = arguments[0], x = arguments[1];
-            
-            for(var j = 0; j < this.size(); ++j) {
-                copy[j] = (i == j) ? this[j] + x : this[j];
-            }
-        }
-        
-        return copy;
+        return Vector.add(this, ...arguments);
+    }
+    
+    plus() {
+        return Vector.addition(this, ...arguments);
     }
     
     subtract() {
-        if(arguments.length == 1 && arguments[0] instanceof Array) {
-            var array = arguments[0];
-            
-            for(var i = 0; i < this.size(); ++i) {
-                this[i] -= array[i];
-            }
-        } else if(arguments.length == 1) {
-            var x = arguments[0];
-            
-            for(var i = 0; i < this.size(); ++i) {
-                this[i] -= x;
-            }
-        } else if(arguments.length == 2) {
-            var i = arguments[0], x = arguments[1];
-            
-            this[i] -= x;
-        }
-        
-        return this;
-    } minus() {
-        var res = this.copy();
-        
-        return res.subtract.apply(res, arguments);
+        return Vector.subtract(this, ...arguments);
+    }
+    
+    minus() {
+        return Vector.subtraction(this, ...arguments);
     }
     
     multiply() {
-        if(arguments.length == 1 && arguments[0] instanceof Array) {
-            var array = arguments[0];
-            
-            for(var i = 0; i < this.size(); ++i) {
-                this[i] *= array[i];
-            }
-        } else if(arguments.length == 1) {
-            var x = arguments[0];
-            
-            for(var i = 0; i < this.size(); ++i) {
-                this[i] *= x;
-            }
-        } else if(arguments.length == 2) {
-            var i = arguments[0], x = arguments[1];
-            
-            this[i] *= x;
-        }
-        
-        return this;
-    } times() {
-        var res = this.copy();
-        
-        return res.multiply.apply(res, arguments);
+        return Vector.multiply(this, ...arguments);
+    }
+    
+    times() {
+        return Vector.multiplication(this, ...arguments);
     }
     
     divide() {
-        if(arguments.length == 1 && arguments[0] instanceof Array) {
-            var array = arguments[0];
-            
-            for(var i = 0; i < this.size(); ++i) {
-                this[i] /= array[i];
-            }
-        } else if(arguments.length == 1) {
-            var x = arguments[0];
-            
-            for(var i = 0; i < this.size(); ++i) {
-                this[i] /= x;
-            }
-        } else if(arguments.length == 2) {
-            var i = arguments[0], x = arguments[1];
-            
-            this[i] /= x;
-        }
-        
-        return this;
-    } divided() {
-        var res = this.copy();
-        
-        return res.divide.apply(res, arguments);
+        return Vector.divide(this, ...arguments);
+    }
+    
+    divided() {
+        return Vector.division(this, ...arguments);
     }
     
     opposite() {
@@ -498,18 +389,8 @@ class Vector extends Array {
         return this.scalar(...arguments);
     }
     
-    dist(array) {
-        if(this.size() != array.length) {
-            return Infinity;
-        }
-        
-        var res = 0;
-        
-        for(var i = 0; i < this.length; i++) {
-            res += Math.pow(array[i] - this[i], 2);
-        }
-        
-        return Math.sqrt(res);
+    dist() {
+        return Vector(this, ...arguments);
     }
     
     sum() {
@@ -724,8 +605,8 @@ var vector = new Vector(1, 0, 0);
 var vector0 = vector;
 var vector1 = new Vector(-1, -1, 0);
 var vector2 = Vector.from({"0" : 2, "1" : 2, "2" : 2, "length" : 3});
-var vector3 = Vector.fromArray([3, 3, 3]);
-var vector4 = Vector.fromVector(new Vector(4, 4, 4));
+var vector3 = Vector.from([3, 3, 3]);
+var vector4 = Vector.from(new Vector(4, 4, 4));
 var vector5 = Vector.fromParameters(5, 5, 5);
 var vector6 = Vector.filled(3, 6);
 var vector7 = Vector.subtraction([32, 64, 96], [-10, 21, 52]);
