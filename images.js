@@ -154,6 +154,7 @@ IMGCHAR["adnyropast"] = {
 // 
 
 const CTILE_WIDTH = 16;
+const TILEWIDTH = 16;
 
 const IMGBG = {};
 

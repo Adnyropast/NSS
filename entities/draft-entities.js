@@ -96,7 +96,9 @@ class Ground extends EC["obstacle"] {
         
         this.addInteraction(new GroundActor());
         
+        makeRepeatedTileFrom.multiplier = 8;
         this.setStyle(makeRepeatedTileFrom(IMG_DEFBLOCK, this.getWidth(), this.getHeight()));
+        makeRepeatedTileFrom.multiplier = 2;
         
         this.addInteraction(new WallActor());
     }
@@ -612,24 +614,11 @@ EC["skyDecoration"] = class SkyDecoration extends Entity {
         
         this.clouds = new SetArray();
         
-        // this.setStyle(makeGradientCanvas(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1]), 1, this.getHeight() / CTILE_WIDTH));
-        // this.getDrawable().setCameraMode("advanced");
-        
-        /*  *
-        
-        let c = makeRepeatedTileFrom(IMG_SKYTILE, this.getWidth(), this.getHeight());
-        
-        c.getContext("2d").drawImage(makeGradientCanvas(new ColorTransition([0, 0, 255, 0.75], [0, 255, 255, 0.75]), 1, this.getHeight()), 0, 0, c.width, c.height);
-        
-        this.setStyle(c);
-        
         /* MAKE SKY BACKGROUND *
         
-        let m = 4;
-        
-        this.drawable.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_SKYTILE, CANVAS.width/40*m), this.getWidth()*m, this.getHeight()*m));
-        
-        // this.drawable.style.getContext("2d").drawImage(makeGradientCanvas(new ColorTransition([0, 0, 255, 0.75], [0, 255, 255, 0.75]), 1, this.getHeight()), 0, 0, this.drawable.style.width, this.drawable.style.height);
+        makeRepeatedTileFrom.multiplier = 4;
+        this.drawable.setStyle(makeRepeatedTileFrom(IMG_SKYTILE, this.getWidth(), this.getHeight(), 2*TILEWIDTH));
+        makeRepeatedTileFrom.multiplier = 2;
         
         let canvas = this.drawable.style;
         let ctx = canvas.getContext("2d");
@@ -772,7 +761,7 @@ EC["treeTrunk"] = class TreeTrunk extends EC["ground"] {
     constructor() {
         super(...arguments);
         
-        this.drawable.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_TREETRUNK, this.getWidth(), this.getWidth(), "repeat"), this.getWidth(), this.getHeight()));
+        this.drawable.setStyle(makeRepeatedTileFrom(IMG_TREETRUNK, this.getWidth(), this.getHeight()));
     }
 };
 
@@ -780,7 +769,7 @@ EC["treeBackground"] = class TreeBackground extends Entity {
     constructor() {
         super(...arguments);
         
-        this.drawable.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_TREEBACKGROUND, CTILE_WIDTH/2, 4.5/2 * CTILE_WIDTH, "repeat"), this.getWidth(), this.getHeight()));
+        this.drawable.setStyle(makeRepeatedTileFrom(IMG_TREEBACKGROUND, this.getWidth(), this.getHeight(), TILEWIDTH/2, 4.5/2*TILEWIDTH));
         this.drawable.setZIndex(+16);
     }
 };
@@ -789,7 +778,7 @@ EC["treePlatform"] = class TreePlatform extends EC["softPlatform"] {
     constructor(position, size = [64, 2]) {
         super(position, size);
         
-        this.drawable.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_TREETRUNK, this.getWidth(), this.getWidth(), "repeat"), this.getWidth(), this.getHeight()));
+        this.drawable.setStyle(makeRepeatedTileFrom(IMG_TREETRUNK, this.getWidth(), this.getHeight()));
     }
 };
 
@@ -847,19 +836,13 @@ class OvalParticle extends Entity {
     }
 }
 
+const mazeWallCanvas = makeGradientCanvas(new ColorTransition(CV_WHITE, [127, 127, 127, 1]), 2, 2);
+
 class MazeWall extends EC["ground"] {
     constructor() {
         super(...arguments);
         
-        var wallPattern = makeCTile("#7F7F8F", "#3F3F7F", "#8F8F9F");
-        
-        wallPattern = CANVAS.makePattern(makeGradientCTilesCanvas(4, 4, new ColorTransition([0, 0, 0, 1], [255, 255, 255, 1]), new ColorTransition([0, 0, 0, 1], [0, 0, 0, 1])), 64, 64, "repeat");
-        wallPattern = CANVAS.makePattern(makeGradientCanvas(new ColorTransition(CV_WHITE, [127, 127, 127, 1]), 2, 2), CTILE_WIDTH*4, CTILE_WIDTH*4, "repeat");
-
-        // wallPattern = makeGradientCTiles(4, 4, new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1]), new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1]));
-        
-        this.setStyle(makeStyledCanvas(wallPattern, this.getWidth()*4, this.getHeight()*4));
-        this.setStyle(makeRepeatedTileFrom(makeGradientCanvas(new ColorTransition(CV_WHITE, [127, 127, 127, 1]), 2, 2), this.getWidth(), this.getHeight()));
+        this.setStyle(makeRepeatedTileFrom(mazeWallCanvas, this.getWidth(), this.getHeight()));
     }
 }
 
@@ -1091,9 +1074,9 @@ EC["nightSkyDecoration"] = class NightSkyDecoration extends EC["skyDecoration"] 
         
         /**/
         
-        let m = 4;
-        
-        this.drawable.setStyle(makeStyledCanvas(CANVAS.makePattern(IMG_SKYTILE, CANVAS.width/40*m), this.getWidth()*m, this.getHeight()*m));
+        makeRepeatedTileFrom.multiplier = 4;
+        this.drawable.setStyle(makeRepeatedTileFrom(IMG_SKYTILE, this.getWidth(), this.getHeight(), 2*TILEWIDTH));
+        makeRepeatedTileFrom.multiplier = 2;
         
         // this.drawable.style.getContext("2d").drawImage(makeGradientCanvas(new ColorTransition([0, 0, 255, 0.75], [0, 255, 255, 0.75]), 1, this.getHeight()), 0, 0, this.drawable.style.width, this.drawable.style.height);
         

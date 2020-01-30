@@ -8,13 +8,14 @@ var hprop = CANVAS.height / BASEHEIGHT;
 CTX.textBaseline = "top";
 CTX.font = (16 * hprop) + "px Luckiest Guy, Consolas";
 
-CANVAS.makePattern = function makePattern(image, width = CTILE_WIDTH, height = width, repetition = "repeat") {
-    var tmpr = document.createElement("canvas");
-    tmpr.width = width; tmpr.height = height;
+function canvas_makePattern(canvas, image, width, height, repetitionType) {
+    const tmpr = document.createElement("canvas");
+    tmpr.width = width;
+    tmpr.height = height;
     tmpr.getContext("2d").drawImage(image, 0, 0, width, height);
     
-    return this.getContext("2d").createPattern(tmpr, repetition);
-};
+    return canvas.getContext("2d").createPattern(tmpr, repetitionType);
+}
 
 function makeCTile(bgcolor, shcolor, shcolor2 = bgcolor) {
     var ctile = document.createElement("canvas");
@@ -31,14 +32,16 @@ function makeCTile(bgcolor, shcolor, shcolor2 = bgcolor) {
     ctx.fillRect(ctile.width - cb, 0, cb, ctile.height);
     ctx.fillRect(0, ctile.height - cb, ctile.width, cb);
     
-    return CANVAS.makePattern(ctile, CTILE_WIDTH, CTILE_WIDTH, "repeat");
+    return canvas_makePattern(CANVAS, ctile, CTILE_WIDTH, CTILE_WIDTH, "repeat");
 }
 
-function makeRepeatedTileFrom(image, width, height) {
-    let m = 2;
+function makeRepeatedTileFrom(image, width, height, tileWidth = TILEWIDTH, tileHeight = tileWidth) {
+    const m = makeRepeatedTileFrom.multiplier;
     
-    return makeStyledCanvas(CANVAS.makePattern(image, CTILE_WIDTH*m), width*m, height*m);
+    return makeStyledCanvas(canvas_makePattern(CANVAS, image, tileWidth*m, tileHeight*m, "repeat"), width*m, height*m);
 }
+
+makeRepeatedTileFrom.multiplier = 2;
 
 function makeRadialGradientCanvas(color1, color2, width = 256, height = 256) {
     let canvas = document.createElement("canvas");
@@ -106,8 +109,8 @@ function makeGradientCTilesCanvas(horizontalCount, verticalCount, bgTransition, 
 }
 
 function makeGradientCTilesPattern(horizontalCount, verticalCount, bgTransition, shTransition) {
-    // return CANVAS.makePattern(makeGradientCTilesCanvas(horizontalCount, verticalCount, bgTransition, shTransition), width / 2 * wprop, height / 2 * hprop, "repeat");
-    return CANVAS.makePattern(makeGradientCTilesCanvas(horizontalCount, verticalCount, bgTransition, shTransition), horizontalCount * CTILE_WIDTH, verticalCount * CTILE_WIDTH, "repeat");
+    // return canvas_makePattern(CANVAS, makeGradientCTilesCanvas(horizontalCount, verticalCount, bgTransition, shTransition), width / 2 * wprop, height / 2 * hprop, "repeat");
+    return canvas_makePattern(CANVAS, makeGradientCTilesCanvas(horizontalCount, verticalCount, bgTransition, shTransition), horizontalCount * CTILE_WIDTH, verticalCount * CTILE_WIDTH, "repeat");
 }
 
 // makeGradientCTiles(64, 64, new ColorTransition([255, 0, 0, 1], [0, 255, 255, 1], 7), new ColorTransition([255, 255, 255, 1], [0, 0, 0, 1], 7));
@@ -166,13 +169,13 @@ function makeUnderwaterPattern(height) {
 }
 
 function makeStyledCanvas(style, width, height) {
-    let c = document.createElement("canvas");
-    c.width = width; c.height = height;
-    let ctx = c.getContext("2d");
-    ctx.fillStyle = style;
-    ctx.fillRect(0, 0, width, height);
+    const canvas = document.createElement("canvas");
+    canvas.width = width; canvas.height = height;
+    const context = canvas.getContext("2d");
+    context.fillStyle = style;
+    context.fillRect(0, 0, width, height);
     
-    return c;
+    return canvas;
 }
 
 function makeCommandLabel(label, font = "Segoe UI", fillStyle = "#00007F", strokeStyle) {
