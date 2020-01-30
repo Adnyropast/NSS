@@ -52,7 +52,7 @@ class GameLoop {
     getCollidables() {return this.collidables;}
     
     addEntity(entity) {
-        entity.gameLoop = this;
+        entity.setGameLoop(this);
         entity.onadd();
         
         this.entities.add(entity);
@@ -113,11 +113,64 @@ class GameLoop {
         
         return this;
     }
+    
+    sortEntities() {
+        array_bubbleSort(this.entities, function(a, b) {
+            if(a.order > b.order) {return +1;}
+            if(a.order < b.order) {return -1;}
+            return 0;
+        });
+        
+        return this;
+    }
+    
+    sortDrawables() {
+        /**
+        
+        this.drawables.sort(function(a, b) {
+            /*  *
+            
+            let distA = Vector.subtraction(a.getPositionM(), CAMERA.position).getNorm();
+            let distB = Vector.subtraction(b.getPositionM(), CAMERA.position).getNorm();
+            
+            if(distA < distB) {
+                return -1;
+            } if(distA > distB) {
+                return +1;
+            }
+            
+            /*
+            
+            if(a.getZIndex() > b.getZIndex()) {
+                return -1;
+            } if(a.getZIndex() < b.getZIndex()) {
+                return +1;
+            }
+            
+            /*  *
+            
+            return 0;
+        });
+        
+        /**/
+        
+        array_bubbleSort(this.drawables, function(a, b) {
+            if(a.getZIndex() > b.getZIndex()) {return -1;}
+            if(a.getZIndex() < b.getZIndex()) {return +1;}
+            return 0;
+        });
+        
+        return this;
+    }
 }
 
 class WorldLoop extends GameLoop {
     constructor() {
         super();
+        
+        this.loadZone = new Entity([NaN, NaN, NaN], [896, 504, 896]);
+        this.loadedEntities = this.entities;
+        this.loadedDrawables = this.drawables;
     }
     
     setCamera(camera) {
@@ -143,6 +196,78 @@ class WorldLoop extends GameLoop {
         
         return this;
     }
+    
+    getLoadedEntities() {
+        const loadZone = this.loadZone;
+        
+        return this.loadedEntities = this.entities.filter(function(entity) {
+            if(entity.alwaysLoad) return true;
+            
+            return loadZone.collides(entity) && !entity.isFrozen();
+        });
+    }
+    
+    sortCollidables() {
+        /**
+        
+        this.collidables.sort(function(a, b) {
+            if(a.collide_priority < b.collide_priority) {return -1;}
+            if(a.collide_priority > b.collide_priority) {return +1;}
+            return 0;
+        });
+        
+        /**/
+        
+        return this;
+    }
+    
+    getCollidables() {
+        /**
+        
+        let collidables = this.collidables.filter(function(collidable) {
+            return loadZone.collides(collidable) && !collidable.isFrozen();
+        });
+        
+        /**/
+        
+        return this.loadedEntities.filter(function(entity) {
+            return entity.isCollidable();
+        });
+    }
+    
+    getLoadedDrawables() {
+        const loadZone = this.loadZone;
+        
+        return this.loadedDrawables = this.drawables.filter(function(drawable) {
+            if(drawable.cameraMode === "none" || drawable.cameraMode === "reproportion") {return true;}
+            
+            if(typeof drawable.getPositionM === "undefined") {return true;}
+            
+            if(drawable instanceof Rectangle) {
+                for(let dim = 0; dim < 2; ++dim) {
+                    if(loadZone.getPosition1(dim) >= drawable.getPosition2(dim) || loadZone.getPosition2(dim) <= drawable.getPosition1(dim)) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            }
+            
+            let drawablePositionM = drawable.getPositionM();
+            
+            for(let dim = 0; dim < 2; ++dim) {
+                if(loadZone.getPosition1() >= drawablePositionM[dim] || loadZone.getPosition2(dim) <= drawablePositionM[dim]) {
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+    }
+    
+    draw() {
+        return super.draw(this.loadedDrawables);
+    }
 }
 
 class BattleLoop extends GameLoop {
@@ -155,9 +280,9 @@ const BATTLELOOP = new BattleLoop();
 const ESCAPELOOP = new GameLoop();
 
 const NOENTITY = new SetArray();
-// const ENTITIES = new SetArray();
+const ENTITIES = WORLDLOOP.entities;
 // const COLLIDABLES = new SetArray();
-// const DRAWABLES = new SetArray();
+const DRAWABLES = WORLDLOOP.drawables;
 // const PLAYABLES = new SetArray();
 var CAMERA = null;
 var PLAYER = null;
@@ -325,125 +450,34 @@ function setCamera(camera) {
     WORLDLOOP.setCamera(camera);
 }
 
-addEventListener("blur", gamePause);
-addEventListener("focus", gameResume);
-
-/**/
-
-let loadZone = new Entity([NaN, NaN, NaN], [896, 504, 896]);
+// 
 
 function worldUpdate() {
+    const loadZone = this.loadZone;
     loadZone.setPositionM(this.camera.getPositionM());
     loadZone.updateReset();
     
-    array_bubbleSort(this.entities, function(a, b) {
-        if(a.order > b.order) {return +1;}
-        if(a.order < b.order) {return -1;}
-        return 0;
-    });
+    this.sortEntities();
+    const entities = this.getLoadedEntities();
     
-    let entities = this.entities.filter(function(entity) {
-        if(entity.alwaysLoad) return true;
-        
-        return loadZone.collides(entity) && !entity.isFrozen();
-    });
+    this.sortCollidables();
+    const collidables = this.getCollidables();
     
-    /**
+    this.sortDrawables();
+    const drawables = this.getLoadedDrawables();
     
-    this.collidables.sort(function(a, b) {
-        if(a.collide_priority < b.collide_priority) {return -1;}
-        if(a.collide_priority > b.collide_priority) {return +1;}
-        return 0;
-    });
+    // Entities updates
     
-    let collidables = this.collidables.filter(function(collidable) {
-        return loadZone.collides(collidable) && !collidable.isFrozen();
-    });
-    
-    /*/
-    
-    let collidables = entities.filter(function(entity) {
-        return entity.isCollidable();
-    });
-    
-    /**
-    
-    this.drawables.sort(function(a, b) {
-        /*  *
-        
-        let distA = Vector.subtraction(a.getPositionM(), CAMERA.position).getNorm();
-        let distB = Vector.subtraction(b.getPositionM(), CAMERA.position).getNorm();
-        
-        if(distA < distB) {
-            return -1;
-        } if(distA > distB) {
-            return +1;
-        }
-        
-        /*
-        
-        if(a.getZIndex() > b.getZIndex()) {
-            return -1;
-        } if(a.getZIndex() < b.getZIndex()) {
-            return +1;
-        }
-        
-        /*  *
-        
-        return 0;
-    });
-    
-    /**/
-    
-    array_bubbleSort(this.drawables, function(a, b) {
-        if(a.getZIndex() > b.getZIndex()) {return -1;}
-        if(a.getZIndex() < b.getZIndex()) {return +1;}
-        return 0;
-    });
-    
-    let drawables = this.drawables.filter(function(drawable) {
-        if(drawable.cameraMode === "none" || drawable.cameraMode === "reproportion") {return true;}
-        
-        if(typeof drawable.getPositionM == "undefined") {return true;}
-        
-        if(drawable instanceof Rectangle) {
-            for(let dim = 0; dim < 2; ++dim) {
-                if(loadZone.getPosition1(dim) >= drawable.getPosition2(dim) || loadZone.getPosition2(dim) <= drawable.getPosition1(dim)) {
-                    return false;
-                }
-            }
-            
-            return true;
-        }
-        
-        let drawablePositionM = drawable.getPositionM();
-        
-        for(let dim = 0; dim < 2; ++dim) {
-            if(loadZone.getPosition1() >= drawablePositionM[dim] || loadZone.getPosition2(dim) <= drawablePositionM[dim]) {
-                return false;
-            }
-        }
-        
-        return true;
+    entities.forEach(function(entity) {
+        entity.update();
     });
     
     this.entities.forEach(function(entity) {
         entity.thaw();
+        entity.updateReset();
     });
     
-    for(var i = 0; i < entities.length; ++i) {
-        var entity = entities[i];
-        
-        // entity.controller(entity);
-        entity.update();
-    }
-    
-    for(var i = 0; i < this.entities.length; ++i) {
-        var entity = this.entities[i];
-        entity.updateReset();
-    }
-    
-    /**/
+    // Collisions
     
     for(let i = 0; i < collidables.length; ++i) {
         const collidable1 = collidables[i];
@@ -470,13 +504,9 @@ function worldUpdate() {
         /**/
     }
     
-    /**/
+    // Drawing
     
-    
-    
-    // DRAWING UPDATE
-    
-    this.draw(drawables);
+    this.draw();
 }
 
 WORLDLOOP.controllers.add(worldUpdate);
@@ -789,8 +819,6 @@ function battleUpdate() {
 
 BATTLELOOP.controllers.add(battleUpdate);
 
-let escapeCounter = 0;
-
 let itemIndex = 0;
 let itemY = 0;
 let displayHeight = 9;
@@ -973,6 +1001,8 @@ function escapeMenu() {
     }
 }
 
+ESCAPELOOP.controllers.add(escapeMenu);
+
 const GLOBALDRAWABLES = new SetArray();
 let COVERDRAWABLE = null;
 
@@ -1000,14 +1030,11 @@ function setGameTimeout(f, timeout) {
     gameTimeouts.push({"function" : f, "timeout" : timeout});
 }
 
-let gameControllers = new SetArray();
-
-gameControllers.add(gameEventController);
+GAMELOOP.controllers.add(gameEventController);
 
 function gameUpdate() {
     if(gamePhase == WORLDLOOP) {
         WORLDLOOP.update();
-        // worldUpdate();
         
         if(keyList.value(K_ESC) == 1 || gamepadRec.value(BUTTON_START) === 1) {
             backupPhase = gamePhase;
@@ -1016,12 +1043,11 @@ function gameUpdate() {
     } else if(gamePhase == BATTLELOOP) {
         BATTLELOOP.update();
     } else if(gamePhase == ESCAPELOOP) {
-        escapeMenu();
-        ++escapeCounter;
+        ESCAPELOOP.update();
     }
     
     if(gamePhase !== ESCAPELOOP) {
-        escapeCounter = 0;
+        // escapeCounter = 0;
     }
     
     // 
@@ -1037,10 +1063,6 @@ function gameUpdate() {
             gameTimeouts[i].function();
             gameTimeouts.splice(i, 1);
         }
-    }
-    
-    for(let i = 0; i < gameControllers.length; ++i) {
-        gameControllers[i]();
     }
     
     // 
@@ -1121,6 +1143,9 @@ function gameResumeFor(duration = 1) {
     gameResume();
     setGameTimeout(gamePause, duration);
 }
+
+addEventListener("blur", gamePause);
+addEventListener("focus", gameResume);
 
 const DEBUG = {
     clear: function clear() {

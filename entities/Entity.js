@@ -39,7 +39,7 @@ class Entity extends Rectangle {
         
         // this.solid = false;
         // this.crusher = false;
-        this.whitelist = WORLDLOOP.getCollidables();
+        this.whitelist = null;
         this.blacklist = new SetArray(this);
         
         this.collidedWith = new SetArray();
@@ -976,6 +976,8 @@ class Entity extends Rectangle {
         
         this.added = true;
         
+        /*  *
+        
         for(var i = 0; i < this.interactors.length; ++i) {
             addInteractor(this.interactors[i]);
         }
@@ -983,6 +985,8 @@ class Entity extends Rectangle {
         for(var i = 0; i < this.interrecipients.length; ++i) {
             addInterrecipient(this.interrecipients[i]);
         }
+        
+        /*  */
         
         return this;
     }
@@ -1017,7 +1021,7 @@ class Entity extends Rectangle {
     addInteraction(interaction) {
         if(interaction instanceof Interactor) {
             interaction.setActor(this);
-            if(this.added) addInteractor(interaction);
+            // if(this.added) addInteractor(interaction);
             
             for(var i = 0; i < this.interactors.length; ++i) {
                 var interactor = this.interactors[i];
@@ -1033,7 +1037,7 @@ class Entity extends Rectangle {
             this.interactors.push(interaction);
         } else if(interaction instanceof Interrecipient) {
             interaction.setRecipient(this);
-            if(this.added) addInterrecipient(interaction);
+            // if(this.added) addInterrecipient(interaction);
             
             for(var i = 0; i < this.interrecipients.length; ++i) {
                 var interrecipient = this.interrecipients[i];
@@ -1311,6 +1315,16 @@ class Entity extends Rectangle {
     
     setEventListener(eventName, listenerName, listener) {
         this.eventListeners[eventName][listenerName] = listener;
+        
+        return this;
+    }
+    
+    setGameLoop(gameLoop) {
+        this.gameLoop = gameLoop;
+        
+        if(this.whitelist === null) {
+            this.whitelist = gameLoop.getCollidables();
+        }
         
         return this;
     }
