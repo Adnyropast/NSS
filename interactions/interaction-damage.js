@@ -672,11 +672,13 @@ function directionSparks(count, entityClass, position, size, direction) {
     const entities = new SetArray();
     
     for(let i = 0; i < count; ++i) {
-        const entity = entityClass.fromMiddle(position, size);
-        
         const angle = random(-Math.abs(directionSparks.randomAngleVariation), Math.abs(directionSparks.randomAngleVariation));
         
-        entity.setSpeed(direction.rotated(angle));
+        const d = direction.rotated(angle);
+        
+        const entity = entityClass.fromMiddle(Vector.addition(position, d.normalized(directionSparks.initialDistance)), size);
+        
+        entity.setSpeed(d);
         
         entities.add(entity);
         addEntity(entity);
@@ -699,6 +701,27 @@ function makeShockwave(position, radius, style) {
 makeShockwave.precision = 64;
 makeShockwave.lifespan = 24;
 makeShockwave.timingFunction = powt(1/2);
+
+function angledSparks(count, entityClass, position, size, angleTransition) {
+    const entities = new SetArray();
+    
+    for(let i = 0; i < count; ++i) {
+        const entity = entityClass.fromMiddle(position, size);
+        const angle = angleTransition.at(i/(count-1));
+        
+        const direction = Vector.fromAngle(angledSparks.initialAngle);
+        direction.rotate(angle);
+        
+        entity.setSpeed(direction);
+        
+        entities.add(entity);
+        addEntity(entity);
+    }
+    
+    return entities;
+}
+
+angledSparks.initialAngle = 0;
 
 function drawableExplode() {
     
