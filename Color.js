@@ -232,7 +232,7 @@ class ColorTransition extends VectorTransition {
     }
     
     getCurrentStyle() {
-        let vector = this.at(this.getProgress());
+        let vector = this.getCurrent();
         
         return rgba(vector);
     }
@@ -244,7 +244,7 @@ class MultiColorTransition extends ColorTransition {
         
         this.vectors = Vector.from(colorVectors);
         this.duration = duration;
-        this.step = -1;
+        this.step = 0;
         this.timing = timing;
         this.stepDirection = +1;
         this.loopType = ["none", "alternate", "repeat"][0];
@@ -283,9 +283,9 @@ class MultiColorTransition extends ColorTransition {
         return vector;
     }
     
-    getProgress() {return this.step / this.duration;}
-    
     getNext() {
+        const vector = this.getCurrent();
+        
         this.step += this.stepDirection;
         
         if(this.step > this.duration) {
@@ -306,37 +306,10 @@ class MultiColorTransition extends ColorTransition {
             }
         }
         
-        return this.at(this.getProgress());
+        return vector;
     }
-    
-    setDuration(duration) {
-        this.duration = duration;
-        this.step = -1;
-        this.stepDirection = +1;
-        
-        return this;
-    }
-    
-    getDuration() {return this.duration;}
     
     setLoopType(loopType) {this.loopType = loopType; return this;}
-    
-    copy() {return this.constructor.from(this);}
-    
-    setStep(step) {this.step = step; return this;}
-    getStep() {return this.step;}
-    
-    getStyleAt(t) {
-        return rgba(this.at(t));
-    }
-    
-    getNextStyle() {
-        return rgba(this.getNext());
-    }
-    
-    getCurrentStyle() {
-        return rgba(this.at(this.getProgress()));
-    }
 }
 
 const CT_RAINBOW = (new MultiColorTransition([[255, 0, 0, 1], [255, 127, 0, 1], [255, 255, 0, 1], [127, 255, 0, 1], [0, 255, 0, 1], [0, 255, 127, 1], [0, 255, 255, 1], [0, 127, 255, 1], [0, 0, 255, 1], [127, 0, 255, 1], [255, 0, 255, 1], [255, 0, 127, 1], [255, 0, 0, 1]])).setLoopType("repeat");

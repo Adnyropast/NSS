@@ -621,7 +621,7 @@ class VectorTransition {
         this.vector1 = vector1;
         this.vector2 = vector2;
         this.duration = duration;
-        this.step = -1;
+        this.step = 0;
         this.timing = timing;
         
         this.stepDirection = +1;
@@ -646,6 +646,8 @@ class VectorTransition {
     getProgress() {return this.step / this.duration;}
     
     getNext() {
+        const vector = this.getCurrent();
+        
         this.step += this.stepDirection;
         
         if(this.step > this.duration) {
@@ -662,12 +664,12 @@ class VectorTransition {
             }
         }
         
-        return this.at(this.getProgress());
+        return vector;
     }
     
     setDuration(duration) {
         this.duration = duration;
-        this.step = -1;
+        this.step = 0;
         this.stepDirection = +1;
         
         return this;
@@ -685,6 +687,20 @@ class VectorTransition {
     getStep() {return this.step;}
     
     getCurrent() {return this.at(this.getProgress());}
+}
+
+class NumberTransition extends VectorTransition {
+    constructor(number1, number2, duration = 1, timing = function timing(x) {return x;}) {
+        super([number1], [number2], duration, timing);
+    }
+    
+    static from(numberTransition) {
+        return new this(vectorTransition.vector1[0], vectorTransition.vector2[0], vectorTransition.duration, vectorTransition.timing).setLoop(vectorTransition.loop);
+    }
+    
+    at() {
+        return super.at(...arguments)[0];
+    }
 }
 
 function toDegree(angle) {
