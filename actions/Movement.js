@@ -24,6 +24,14 @@ class Movement extends Action {
     }
     
     use() {
+        const isHanging = this.user.hasState("ladder");
+        const isGrounded = this.user.hasState("actuallyGrounded");
+        const isUnderwater = this.user.hasState("water");
+        const isWallClinging = this.user.hasState("wall");
+        const isAirborne = !isHanging && !isGrounded && !isUnderwater;
+        
+        // 
+        
         let thrust = this.user.findState("thrust");
         
         if(typeof thrust == "undefined") {thrust = 0;}
@@ -34,66 +42,75 @@ class Movement extends Action {
         if(typeof thrustFactor == "undefined") {thrustFactor = 0;}
         else {thrustFactor = thrustFactor.value;}
         
-        var vector = null;
+        let direction = null;
         
-        if(this.user.route != null) {
-            vector = Vector.subtraction(this.user.route, this.user.getPositionM());
-        }
+        if(this.user.route != null) {direction = Vector.subtraction(this.user.route, this.user.getPositionM());}
         
-        if(vector != null) {
+        if(direction != null) {
             var power = this.power;
             
             if(typeof power == "undefined") {
                 power = thrust;
             }
             
-            vector.normalize(power);
+            direction.normalize(power);
             
             let gravityDirection = this.user.getGravityDirection();
             
-            if(this.user.hasState("ladder")) {gravityDirection = new Vector(0, 0);}
+            if(isHanging || isUnderwater) {
+                gravityDirection = new Vector(0, 0);
+            }
             
             /**/
             
             for(var dim = 0; dim < gravityDirection.length; ++dim) {
-                if(gravityDirection[dim] != 0 && vector[dim] != 0) {
-                    if(Math.sign(gravityDirection[dim]) == Math.sign(vector[dim])) {
-                        if(Math.abs(vector.angleBetween(gravityDirection)) < Math.PI/4) {
+                if(gravityDirection[dim] != 0 && direction[dim] != 0) {
+                    if(Math.sign(gravityDirection[dim]) == Math.sign(direction[dim])) {
+                        if(Math.abs(direction.angleBetween(gravityDirection)) < Math.PI/4) {
                             this.user.addAction(this.crouch);
                         }
-                        
-                        vector[dim] = 0;
                     } else {
-                        if(Math.abs(vector.angleBetween(gravityDirection.times(-1))) < Math.PI/4) {
+                        if(Math.abs(direction.angleBetween(gravityDirection.times(-1))) < Math.PI/4) {
                             this.user.addAction(this.lookup);
                         }
-                        
-                        vector[dim] = 0;
                     }
+                    
+                    direction[dim] = 0;
                 }
             }
             
             /**
             
-            if(Math.abs(vector.angleBetween(gravityDirection)) < Math.PI/4) {
+            if(Math.abs(direction.angleBetween(gravityDirection)) < Math.PI/4) {
                 this.user.addAction(this.crouch);
-            } else if(Math.abs(vector.angleBetween(gravityDirection.times(-1))) < Math.PI/4) {
+            } else if(Math.abs(direction.angleBetween(gravityDirection.times(-1))) < Math.PI/4) {
                 this.user.addAction(this.lookup);
             }
             
             /**/
             
-            let grounded = this.user.hasState("actuallyGrounded");
-            let wallState = this.user.findState("wall");
-            
-            if(typeof wallState != "undefined") {this.user.addAction(this.wallCling);}
+            if(isWallClinging) {this.user.addAction(this.wallCling);}
             // else {this.user.removeAction(this.wallCling);}
             
-            this.user.drag(vector);
+            this.user.drag(direction);
             
-            if(!vector.isZero()) {
-                if(grounded || typeof wallState == "undefined") {
-                    this.user.addState("moving");
+            if(!direction.isZero()) {
+                this.user.addState("moving");
+                
+                if(isHanging) {
+                    this.user.triggerEvent("climb", {action: this});
+                } else if(isGrounded) {
+                    this.user.triggerEvent("walk", {action: this});
+                    
+                    if(this.phase === 0) {
+                        this.user.triggerEvent("walkstart", {action: this});
+                    }
+                } else if(isUnderwater) {
+                    this.user.triggerEvent("swim", {action: this});
+                } else if(isWallClinging) {
+                    this.user.triggerEvent("cling", {action: this});
+                } else {
+                    this.user.triggerEvent("drift", {action: this});
                 }
                 
                 if(this.getUseCost() < this.user.getEnergy()) {
@@ -120,9 +137,12 @@ class Movement extends Action {
         this.user.removeAction(this.wallCling);
         this.user.removeAction(this.crouch);
         this.user.removeAction(this.lookup);
+        this.user.triggerEvent("movementend", {action: this});
         
         return super.onend();
     }
+    
+    
 }
 
 busyBannedActions.add(Movement);
@@ -259,13 +279,8 @@ class Crouch extends Action {
     }
     
     use() {
-        let state = this.user.findState("crouch");
-        
-        if(typeof state == "undefined") {
-            this.user.addStateObject({"name" : "crouch", "countdown" : 8});
-        } else {
-            state.countdown = 8;
-        }
+        this.user.replaceStateObject({"name" : "crouch", "countdown" : 8});
+        this.user.triggerEvent("crouch");
         
         return this;
     }
@@ -300,7 +315,8 @@ class LookUp extends Action {
     }
     
     use() {
-        this.user.addStateObject({"name" : "lookup", "countdown" : 5});
+        this.user.replaceStateObject({"name" : "lookup", "countdown" : 5});
+        this.user.triggerEvent("lookup");
         
         return this;
     }

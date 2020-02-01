@@ -131,7 +131,7 @@ class Jump extends Action {
         }
         /**/
         
-        this.user.addState("jumping");
+        this.user.triggerEvent("jump", {action: this});
         
         for(var i = 0; i < this.user.getDimension(); ++i) {
             this.user.drag(i, this.direction[i]);
@@ -162,8 +162,6 @@ class Jump extends Action {
     
     onend() {
         // console.log(this.endid);
-        
-        this.user.removeState("jumping");
         
         return this;
     }
@@ -200,6 +198,8 @@ class MidairJump extends Jump {
             ovalWave.controllers.add(function() {this.direction[1] /= 2;});
             
             addEntity(ovalWave);
+            
+            this.user.triggerEvent("jump", {action: this});
         }
         
         if(this.phase > 30) {
@@ -356,53 +356,39 @@ class WallJump extends Action {
         if(this.phase === 0) {
             this.user.removeState("wall");
             
-            let avgsz = rectangle_averageSize(this.user);
-            let positionM = Vector.addition(this.user.getPositionM(), this.direction.normalized(-avgsz/2));
+            const avgsz = rectangle_averageSize(this.user);
+            const positionM = Vector.addition(this.user.getPositionM(), this.direction.normalized(-avgsz/2));
             
-            let direction1 = this.direction.rotated(-3*Math.PI/4).normalize();
+            // 
             
-            let particle1 = SpikeSmokeParticle.fromMiddle(Vector.addition(positionM, direction1.normalized(0)), [avgsz, avgsz]);
+            angledSparks.initialAngle = this.direction.getAngle() + Math.PI;
+            angledSparks(2, SpikeSmokeParticle, positionM, [avgsz, avgsz], new NumberTransition(-Math.PI/4, +Math.PI/4))
+            .forEach(function(entity) {
+                entity.speed.multiply(2);
+                removeDrawable(entity.drawable);
+                // entity.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), 8, 16, 6);
+                entity.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
+                addDrawable(entity.drawable);
+            });
+            angledSparks.initialAngle = 0;
             
-            particle1.setSpeed(direction1.normalized(2));
-            // particle1.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), 8, 16, 6);
-            particle1.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
+            // 
             
-            addEntity(particle1);
-            
-            let direction2 = this.direction.rotated(+3*Math.PI/4).normalize();
-            
-            let particle2 = SpikeSmokeParticle.fromMiddle(Vector.addition(positionM, direction2.normalized(0)), [avgsz, avgsz]);
-            
-            particle2.setSpeed(direction2.normalized(2));
-            // particle2.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), 8, 16, 6);
-            particle2.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
-            
-            addEntity(particle2);
-            
-            let smokeCount = irandom(2, 3);
-            
-            for(let i = 0; i < smokeCount; ++i) {
-                let d = direction1.rotated(random(-0.5, +0.5));
-                
-                let smokeParticle = SmokeParticle.fromMiddle(Vector.addition(positionM, d.normalize(avgsz/2)));
-                
-                smokeParticle.setSpeed(d.normalize(random(0.75, 1.75)));
-                
-                addEntity(smokeParticle);
-            }
-            
-            for(let i = 0; i < smokeCount; ++i) {
-                let d = direction2.rotated(random(-0.5, +0.5));
-                
-                let smokeParticle = SmokeParticle.fromMiddle(Vector.addition(positionM, d.normalize(avgsz/2)));
-                
-                smokeParticle.setSpeed(d.normalize(random(0.75, 1.75)));
-                
-                addEntity(smokeParticle);
-            }
+            directionSparks.initialDistance = avgsz/2;
+            directionSparks.randomAngleVariation = 0.5;
+            directionSparks(irandom(2, 3), SmokeParticle, positionM, undefined, this.direction.rotated(-3*Math.PI/4).normalize())
+            .forEach(function(entity) {
+                entity.speed.multiply(random(0.75, 1.75));
+            });
+            directionSparks(irandom(2, 3), SmokeParticle, positionM, undefined, this.direction.rotated(+3*Math.PI/4).normalize())
+            .forEach(function(entity) {
+                entity.speed.multiply(random(0.75, 1.75));
+            });
+            directionSparks.initialDistance = 0;
+            directionSparks.randomAngleVariation = 0;
         }
         
-        this.user.addState("jumping");
+        this.user.triggerEvent("jump", {action: this});
         
         for(var i = 0; i < this.user.getDimension(); ++i) {
             this.user.drag(i, this.direction[i]);

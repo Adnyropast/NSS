@@ -249,10 +249,15 @@ maps["hub"] = {
         {"classId" : "tree2", "position" : [4, 64-56], "size" : [56, 56]},
         {"classId" : "tree2", "position" : [68, 64-56], "size" : [56, 56]},
         
+        {"classId" : "ground", "position" : [-128, -96], "size" : [16, 80]},
+        {"classId" : "ground", "position" : [-112, -32], "size" : [224, 16]},
+        {"classId" : "ground", "position" : [112, -96], "size" : [16, 128]},
+        {"classId" : "waterArea", "position" : [-112, -96], "size" : [224, 64]},
+        
         {"classId" : "sidewaysSetter", "position" : [-640, -360], "size" : [1280, 720]},
         
-        {"classId" : "skyDecoration"/*, "position" : [-240, -135], "size" : [480, 270]*/},
-        {"classId" : "sunlightDecoration", "position" : [0, 0]}
+        {"classId" : "nightSkyDecoration"/*, "position" : [-240, -135], "size" : [480, 270]*/},
+        // {"classId" : "sunlightDecoration", "position" : [0, 0]}
     ],
     "variable_entities": [
         {"classId" : "dummy", "position" : [144, 32], "size" : [16, 32]},
@@ -1030,11 +1035,6 @@ function buildMazeLevel(mazeSize, cellSize, wallSize, mode) {
         entities : [],
         drawables : []
     };
-    
-    /**/
-    
-    // skyStyle = makeGradientCTilesPattern(1, actualMazeSize[1] * 2 / 16, new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1]), new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1]));
-    // mazeStyle = makeStyledCanvas(makeGradientCTiles(actualMazeSize[0] * 2, actualMazeSize[1] * 2, new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1]), new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1])), actualMazeSize[0] * 2, actualMazeSize[1] * 2);
     
     /**/
     

@@ -290,6 +290,10 @@ class Character extends Entity {
         
         return this;
     }
+    
+    getViewType() {
+        return this.getGravityDirection().isZero() ? "topdown" : "side";
+    }
 }
 
 

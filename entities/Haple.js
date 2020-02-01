@@ -77,12 +77,67 @@ EC["haple"] = class Haple extends PlayableCharacter {
             
             for(let i = 0; i < this.actions.length; ++i) {
                 try {
-                    DEBUG.log(JSON.stringify(this.actions[i].id));
+                    // DEBUG.log(JSON.stringify(this.actions[i].id));
                 } catch(e) {
                     
                 }
             }
         }
+        
+        return this;
+    }
+    
+    onwalk(event) {
+        console.log(this.getViewType() + " walk", event);
+        
+        return this;
+    }
+    
+    onwalkstart(event) {
+        // console.log("walkstart", event);
+        
+        return this;
+    }
+    
+    onmovementend(event) {
+        // console.log("movementend", event);
+        
+        return this;
+    }
+    
+    onjump(event) {
+        // console.log("jump", event);
+        this.addState("jumping");
+        
+        return this;
+    }
+    
+    onswim(event) {
+        console.log(this.getViewType() + " swim", event);
+        
+        return this;
+    }
+    
+    ondrift(event) {
+        console.log(this.getViewType() + " drift", event);
+        
+        return this;
+    }
+    
+    onclimb(event) {
+        console.log(this.getViewType() + " climb", event);
+        
+        return this;
+    }
+    
+    oncrouch(event) {
+        console.log("crouch", event);
+        
+        return this;
+    }
+    
+    onlookup(event) {
+        console.log("lookup", event);
         
         return this;
     }

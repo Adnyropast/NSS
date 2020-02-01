@@ -551,16 +551,18 @@ EC["mazeGenerator"] = class MazeGenerator extends Entity {
         if(this.mode === "test") {
             let maze = buildMazeLevel([10, 4], [2*16, 3*16], [8, 8], array_random(["topdown", "sideways", "sideways-water"]));
             
+            const entities = maze.variable_entities;
+            
             // loadFromData(maze);
             
-            let cba = maze.entities.find(function(entity) {
+            let cba = entities.find(function(entity) {
                 return entity.classId === "cameraBoundaryAround";
             });
             
             cba.position = [+16, +16];
             
-            for(let i = 0; i < maze.entities.length; ++i) {
-                addEntity(makeEntityFromData(maze.entities[i]));
+            for(let i = 0; i < entities.length; ++i) {
+                addEntity(makeEntityFromData(entities[i]));
             }
             
             PLAYERS[0].entity.initPositionM(getCurrentSave().playerPositionM);

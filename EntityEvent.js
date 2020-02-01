@@ -46,11 +46,11 @@ EntityEvent["walk"] = EntityEvent;
 
 // 
 
-EntityEvent["walkStart"] = EntityEvent;
+EntityEvent["walkstart"] = EntityEvent;
 
 // 
 
-EntityEvent["walkEnd"] = EntityEvent;
+EntityEvent["walkend"] = EntityEvent;
 
 // ??
 
@@ -63,5 +63,16 @@ EntityEvent["remove"] = EntityEvent;
 // ??
 
 EntityEvent["collision"] = EntityEvent;
+
+// 
+
+EntityEvent["drift"] = EntityEvent;
+EntityEvent["swim"] = EntityEvent;
+EntityEvent["climb"] = EntityEvent;
+
+// 
+
+EntityEvent["crouch"] = EntityEvent;
+EntityEvent["lookup"] = EntityEvent;
 
 // 

@@ -141,7 +141,7 @@ class BurningAttack extends BusyAction {
             if(this.user.getEnergy() > this.getUseCost()) {
                 this.hitbox = BurningHitbox.shared(this.user);
                 this.hitbox.shareBlacklist(this.user.getBlacklist());
-                this.hitbox.collide_priority = this.user.collide_priority - 1;
+                this.hitbox.order = this.user.order - 1;
                 addEntity(this.hitbox);
                 this.user.hurt(this.getUseCost());
                 this.saveTypeDamageable = this.user.findInterrecipientWithId("damage");

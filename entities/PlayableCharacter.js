@@ -236,34 +236,6 @@ class PlayableCharacter extends Character {
             let avgsz2 = avgsz/2;
             let smokeSize = [avgsz2, avgsz2];
             
-            /**
-            
-            for(let i = -1; i < +1; i += 0.125) {
-                let particle = SmokeParticle.fromMiddle([this.getXM() + offsetX, this.getY2()]);
-                
-                particle.setSpeed(this.speed.normalized(Math.random()).rotated(Math.PI + i));
-                
-                addEntity(particle);
-            }
-            
-            /**
-            
-            var particle = SmokeParticle.fromMiddle(this.getPositionM(), smokeSize);
-            particle.setSpeed(this.speed.normalized(1.5).rotated(Math.PI));
-            addEntity(particle);
-            var particle = SmokeParticle.fromMiddle(this.getPositionM(), smokeSize);
-            particle.setSpeed(this.speed.normalized(1.25).rotated(Math.PI - 0.5));
-            addEntity(particle);
-            var particle = SmokeParticle.fromMiddle(this.getPositionM(), smokeSize);
-            particle.setSpeed(this.speed.normalized(1.25).rotated(Math.PI + 0.5));
-            addEntity(particle);
-            var particle = SmokeParticle.fromMiddle(this.getPositionM(), smokeSize);
-            particle.setSpeed(this.speed.normalized(1.375).rotated(Math.PI - 0.625));
-            addEntity(particle);
-            var particle = SmokeParticle.fromMiddle(this.getPositionM(), smokeSize);
-            particle.setSpeed(this.speed.normalized(1.375).rotated(Math.PI + 0.625));
-            addEntity(particle);
-            
             /**/
             
             var particle = SpikeSmokeParticle.fromMiddle(position, [avgsz, avgsz]);
@@ -274,12 +246,14 @@ class PlayableCharacter extends Character {
             
             /**/
             
-            directionSparks.randomAngleVariation = 0.75;
-            directionSparks(5, SmokeParticle, position, smokeSize, this.speed.normalized(-1))
-            .forEach(function(entity) {
-                entity.speed.multiply(random(1.25, 1.5));
+            angledSparks.initialAngle = this.speed.getAngle() + Math.PI;
+            angledSparks(5, SmokeParticle, position, smokeSize, new NumberTransition(-0.625, 0.625))
+            .forEach(function(entity, index) {
+                let speedNorm = 1.5 - Math.abs(index - 2) * 0.125;
+                
+                entity.speed.multiply(speedNorm);
             });
-            directionSparks.randomAngleVariation = 0;
+            angledSparks.initialAngle = 0;
             
             /**/
         }
