@@ -1,4 +1,34 @@
 
+const KEY_SPACE = 32;
+const KEY_TAB = 9;
+const KEY_CTRL = 17;
+const KEY_NUMPAD0 = 96;
+const KEY_NUMPAD1 = 97;
+const KEY_NUMPAD2 = 98;
+const KEY_NUMPAD3 = 99;
+const KEY_NUMPAD4 = 100;
+const KEY_NUMPAD5 = 101;
+const KEY_NUMPAD6 = 102;
+const KEY_NUMPAD7 = 103;
+const KEY_NUMPAD8 = 104;
+const KEY_NUMPAD9 = 105;
+const KEY_ENTER = 13;
+const KEY_ESCAPE = 27;
+const KEY_ARROWLEFT = 37;
+const KEY_ARROWUP = 38;
+const KEY_ARROWRIGHT = 39;
+const KEY_ARROWDOWN = 40;
+const KEY_DIGIT0 = 48;
+const KEY_DIGIT1 = 49;
+const KEY_DIGIT2 = 50;
+const KEY_DIGIT3 = 51;
+const KEY_DIGIT4 = 52;
+const KEY_DIGIT5 = 53;
+const KEY_DIGIT6 = 54;
+const KEY_DIGIT7 = 55;
+const KEY_DIGIT8 = 56;
+const KEY_DIGIT9 = 57;
+
 /**/
 const K_ESC = [27];
 const K_CONFIRM = [13];
@@ -22,10 +52,6 @@ var K_CDIRECTION = K_CLEFT.concat(K_CUP).concat(K_CDOWN).concat(K_CRIGHT);
 
 var K_FLURRY = [70];
 /**/
-
-const KEY_SPACE = 32;
-const KEY_TAB = 9;
-const KEY_CTRL = 17;
 
 class KeyboardEventsRecorder {
     constructor() {
