@@ -85,11 +85,8 @@ function saveInventoryFile() {
     };
 }
 
-let saveOnQuit = false;
-let saveOnWarp = true;
-
 addEventListener("beforeunload", function() {
-    if(saveOnQuit) {
+    if(getCurrentSave().saveOnQuit) {
         updateCurrentCharacter();
         saveInventoryFile();
         updateSaveState({savePath : currentSavePath});

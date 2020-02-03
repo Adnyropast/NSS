@@ -9,7 +9,8 @@ class Item {
         
         this.description = "";
         this.date = null;
-        this.commands = [function() {}];
+        this.mainCommand = function() {};
+        this.commands = {};
         this.stats = {};
     }
     
@@ -52,6 +53,26 @@ class Item {
     getImage() {
         return IMGITEM[item_getClassId(this)];
     }
+    
+    useCommand(commandName) {
+        if(arguments.length === 0) {
+            this.mainCommand.bind(this)();
+        }
+        
+        else if(typeof this.commands[commandName] === "function") {
+            this.commands[commandName].bind(this)();
+        }
+        
+        return this;
+    }
+    
+    static destroySimple() {
+        save_getCurrentInventory().items.remove(this);
+    }
+    
+    static destroyComplicated() {
+        
+    }
 }
 
 class ConsumableItem extends Item {
@@ -60,10 +81,14 @@ class ConsumableItem extends Item {
         
         let consumable = this;
         
-        this.commands[0] = function consume() {
+        this.mainCommand = this.commands["consume"] = function consume() {
             consumable.consumeBy(PLAYERS[0].entity);
             save_getCurrentInventory().items.remove(consumable);
         };
+        this.commands["destroy"] = Item.destroySimple;
+        for(let i = 0; i < 0; ++i) {
+            this.commands[i] = function() {};
+        }
     }
 }
 
@@ -168,10 +193,10 @@ IC["inventory"] = class InventoryItem extends Item {
         
         let inventory = this;
         
-        this.commands[0] = function cd() {
+        this.mainCommand = this.commands["open"] = function open() {
             getCurrentSave().inventoryPath += inventory.id + "/";
-            itemIndex = 0;
         };
+        this.commands["destroy"] = Item.destroyComplicated;
     }
     
     static fromData(data) {
@@ -272,7 +297,7 @@ IC["characterIdentifier"] = class CharacterIdentifier extends Item {
         
         let characterIdentifier = this;
         
-        this.commands[0] = function() {
+        this.mainCommand = this.commands["use"] = function() {
             updateCurrentCharacter();
             
             let positionM = PLAYERS[0].entity.getPositionM();
@@ -290,9 +315,15 @@ IC["characterIdentifier"] = class CharacterIdentifier extends Item {
             PLAYERS[0].entity.setFace(faceSave);
         };
         
-        this.commands[1] = function() {
+        this.commands["hire"] = function() {
             
         };
+        
+        this.commands["stats"] = function() {
+            
+        };
+        
+        this.commands["destroy"] = Item.destroyComplicated;
     }
     
     static fromData(data) {
@@ -327,21 +358,27 @@ IC["saveIdentifier"] = class SaveIdentifier extends Item {
         this.inventoryPath = "";
         this.playerIdPath = "";
         
+        this.saveOnQuit = false;
+        this.saveOnWarp = true;
+        
         let saveIdentifier = this;
         
-        this.commands[0] = function() {
+        this.mainCommand = this.commands["load"] = function() {
+            ESCAPELOOP.pathsItemIndexes = {};
+            
             currentSavePath = getCurrentSave().inventoryPath + saveIdentifier.id + "/";
-            itemIndex = 0;
             loadMap(getCurrentSave().lastMap);
         };
         
-        this.commands[1] = function duplicate() {
+        this.commands["settings"] = function() {
             
         };
         
-        this.commands[2] = function erase() {
+        this.commands["duplicate"] = function duplicate() {
             
         };
+        
+        this.commands["destroy"] = Item.destroyComplicated;
     }
     
     static fromData(data) {
@@ -385,9 +422,11 @@ IC["controlsIdentifier"] = class ControlsIdentifier extends Item {
         
         let controlsIdentifier = this;
         
-        this.commands[0] = function() {
+        this.mainCommand = this.commands["use"] = function() {
             updateEventAction(controlsIdentifier);
         };
+        
+        this.commands["destroy"] = Item.destroyComplicated;
     }
     
     setProperties(data) {

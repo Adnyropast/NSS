@@ -198,7 +198,7 @@ class TextRectangleDrawable extends RectangleDrawable {
         this.setContent("");
         this.setStyle("white");
         
-        this.textEnhance = 1;
+        this.textEnhance = 2;
         
         this.fontFamily = "Segoe UI";
     }
@@ -216,7 +216,11 @@ class TextRectangleDrawable extends RectangleDrawable {
         
         context.translate(x, y);
         
-        context.drawImage(this.contentStyle, 0, 0, width, height);
+        try {
+            context.drawImage(this.contentStyle, 0, 0, width, height);
+        } catch(e) {
+            
+        }
         
         context.translate(-x, -y);
         

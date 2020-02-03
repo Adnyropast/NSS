@@ -96,7 +96,7 @@ class GameLoop {
     draw(drawables = this.drawables) {
         const context = CANVAS.getContext("2d");
         
-        for(let i = 0; i < drawables.length; ++i) {
+        for(let i in drawables) {
             const drawable = drawables[i];
             
             /**
@@ -274,10 +274,59 @@ class BattleLoop extends GameLoop {
     
 }
 
+class EscapeLoop extends GameLoop {
+    constructor() {
+        super();
+        
+        this.itemIndex = 0;
+        this.itemY = 0;
+        
+        this.menuDrawables = null;
+        this.menuIndex = 0;
+        
+        this.pathsItemIndexes = {};
+    }
+    
+    cancelMenu() {
+        if(this.menuOpen()) {
+            for(let i in this.menuDrawables) {
+                this.removeDrawable(this.menuDrawables[i]);
+            }
+            
+            this.menuDrawables = null;
+            this.menuIndex = 0;
+        }
+        
+        return this;
+    }
+    
+    menuOpen() {
+        return this.menuDrawables !== null;
+    }
+    
+    getItemIndex() {
+        const inventoryPath = save_getCurrentInventoryPath();
+        
+        if(this.pathsItemIndexes[inventoryPath] === undefined) {
+            this.pathsItemIndexes[inventoryPath] = 0;
+        }
+        
+        return this.pathsItemIndexes[inventoryPath];
+    }
+    
+    setItemIndex(itemIndex) {
+        const inventoryPath = save_getCurrentInventoryPath();
+        
+        this.pathsItemIndexes[inventoryPath] = itemIndex;
+        
+        return this;
+    }
+}
+
 const GAMELOOP = new GameLoop();
 const WORLDLOOP = new WorldLoop();
 const BATTLELOOP = new BattleLoop();
-const ESCAPELOOP = new GameLoop();
+const ESCAPELOOP = new EscapeLoop();
 
 const NOENTITY = new SetArray();
 const ENTITIES = WORLDLOOP.entities;
@@ -819,9 +868,9 @@ function battleUpdate() {
 
 BATTLELOOP.controllers.add(battleUpdate);
 
-let itemIndex = 0;
-let itemY = 0;
-let displayHeight = 9;
+// -------------- //
+//// ESCAPELOOP ////
+// -------------- //
 
 let gpdSave = [];
 
@@ -833,13 +882,16 @@ function escapeMenu() {
     const marginLR = 8, marginTB = 5;
     const spaceBetween = 4;
     const gridWidth = (640 - 2*marginLR);
-    const gridHeight = (120 - 2*marginTB);
+    const gridHeight = (360 - 2*marginTB);
     
     const cellWidth = (gridWidth - spaceBetween * (inventory.displayWidth-1)) / inventory.displayWidth;
     const cellHeight = cellWidth;
     
     const hProp = CANVAS.width / 640;
     const vProp = CANVAS.height / 360;
+    
+    const displayWidth = inventory.displayWidth;
+    const displayHeight = Math.floor(gridHeight / cellHeight);
     
     let gamepadDirection = gamepad_getDirection(getGamepad(0));
     
@@ -849,79 +901,173 @@ function escapeMenu() {
     if(Math.sign(gpdSave[1]) === Math.sign(gamepadDirection[1])) {gamepadDirection[1] = 0;}
     else {gpdSave[1] = gamepadDirection[1];}
     
+    // Moving the cursor
+    
     if(keyList.value(K_LEFT) === 1 || gamepadDirection[0] < 0) {
-        if(itemIndex > 0) {--itemIndex;}
+        if(this.getItemIndex() > 0) {
+            this.setItemIndex(this.getItemIndex() - 1);
+        }
+        
+        this.cancelMenu();
     } if(keyList.value(K_RIGHT) === 1 || gamepadDirection[0] > 0) {
-        if(itemIndex < inventory.items.length - 1) {++itemIndex;}
-    } if(keyList.value(K_CONFIRM) === 1 || gamepadRec.value(BUTTON_A) === 1) {
-        inventory.items[itemIndex].commands[0]();
-    } if(keyList.value(222) === 1 || gamepadRec.value(BUTTON_L) === 1 || gamepadRec.value(BUTTON_B) === 1) {
-        save_cdParentInventory();
-    } if(keyList.value(K_UP) === 1 || gamepadDirection[1] < 0) {
-        if(itemIndex >= inventory.displayWidth) {itemIndex -= inventory.displayWidth;}
-    } if(keyList.value(K_DOWN) === 1 || gamepadDirection[1] > 0) {
-        if(itemIndex < inventory.items.length - inventory.displayWidth) {itemIndex += inventory.displayWidth;}
-    }
-    
-    if(keyList.value(KEY_SPACE) === 1) {
-        let commands = inventory.items[itemIndex].commands;
-        
-        let commandsNames = [];
-        
-        for(let i = 0; i < commands.length; ++i) {
-            commandsNames.push(commands[i].name);
+        if(this.getItemIndex() < inventory.items.length - 1) {
+            this.setItemIndex(this.getItemIndex() + 1);
         }
         
-        let fontFamily = "Segoe UI";
-        let textColor = "black";
-        let strokeColor = "blue";
-        
-        let width = makeTextCanvas(longestText(commandsNames, fontFamily), 16, fontFamily, textColor, strokeColor).width;
-        let height = 8;
-        
-        let x = itemIndex % inventory.displayWidth;
-        let y = Math.floor(itemIndex / inventory.displayWidth) - itemY;
-        
-        x *= cellWidth + spaceBetween;
-        y *= cellHeight + spaceBetween;
-        
-        x += marginLR + cellWidth / 2;
-        y += marginTB + cellHeight / 2;
-        
-        x = Math.min(x, 640 - width);
-        y = Math.min(y, 360 - width);
-        
-        let menu = new RectangleDrawable([x, y], [width, height]);
-        
-        menu.setCameraMode("reproportion");
-        
-        menu.baseWidth = 640;
-        menu.baseHeight = 360;
-        
-        ESCDRAWABLES["menu"] = menu;
+        this.cancelMenu();
     }
     
-    if(keyList.value(105) === 1) {
-        let data = saveInventoryFile();
+    if((keyList.value(K_UP) === 1 || gamepadDirection[1] < 0) && !this.menuOpen()) {
+        if(this.getItemIndex() >= displayWidth) {
+            this.setItemIndex(this.getItemIndex() - displayWidth);
+        }
         
-        if(data.success) {
-            alert("Saved as \"" + data.filename + "\".");
+        this.cancelMenu();
+    } if((keyList.value(K_DOWN) === 1 || gamepadDirection[1] > 0) && !this.menuOpen()) {
+        if(this.getItemIndex() < inventory.items.length - displayWidth) {
+            this.setItemIndex(this.getItemIndex() + displayWidth);
+        }
+        
+        this.cancelMenu();
+    }
+    
+    if((keyList.value(K_UP) === 1 || gamepadDirection[1] < 0) && this.menuOpen()) {
+        this.menuDrawables[this.menuIndex].setStyle("white");
+        
+        if(this.menuIndex > 0) {--this.menuIndex;}
+        
+        this.menuDrawables[this.menuIndex].setStyle("yellow");
+    } if((keyList.value(K_DOWN) === 1 || gamepadDirection[1] > 0) && this.menuOpen()) {
+        this.menuDrawables[this.menuIndex].setStyle("white");
+        
+        if(this.menuIndex < this.menuDrawables.length - 1) {++this.menuIndex;}
+        
+        this.menuDrawables[this.menuIndex].setStyle("yellow");
+    }
+    
+    let item = inventory.items[this.getItemIndex()];
+    
+    // Use item (first command)
+    
+    if((keyList.value(K_CONFIRM) === 1 || gamepadRec.value(BUTTON_A) === 1) && !this.menuOpen()) {
+        if(item !== undefined) {
+            item.useCommand();
+        }
+        
+        this.cancelMenu();
+    }
+    
+    else if((keyList.value(K_CONFIRM) === 1 || gamepadRec.value(BUTTON_A) === 1) && this.menuOpen()) {
+        if(item !== undefined) {
+            let i = 0;
+            
+            for(let name in item.commands) {
+                if(i === this.menuIndex) {
+                    item.useCommand(name);
+                    break;
+                }
+                
+                ++i;
+            }
+            
+            this.cancelMenu();
+        }
+    }
+    
+    // Open commands list for selected item
+    
+    else if(keyList.value(KEY_SPACE) === 1 && !this.menuOpen()) {
+        if(item !== undefined) {
+            this.menuDrawables = new SetArray();
+            
+            let commands = item.commands;
+            
+            let commandsNames = [];
+            
+            for(let name in commands) {
+                commandsNames.push(name);
+            }
+            
+            let fontFamily = "Segoe UI";
+            let textColor = "black";
+            let strokeColor = "blue";
+            
+            let width = makeTextCanvas(longestText(commandsNames, fontFamily), 16, fontFamily, textColor, strokeColor).width;
+            let height = 16;
+            
+            let x = this.getItemIndex() % displayWidth;
+            let y = Math.floor(this.getItemIndex() / displayWidth) - this.itemY;
+            
+            x *= cellWidth + spaceBetween;
+            y *= cellHeight + spaceBetween;
+            
+            x += marginLR + cellWidth / 2;
+            y += marginTB + cellHeight / 2;
+            
+            x = Math.min(x, 640 - width);
+            y = Math.min(y, 360 - commandsNames.length * height);
+            
+            let i = 0;
+            
+            for(let name in commands) {
+                let menu = new TextRectangleDrawable([x, y + i * height], [width, height]);
+                menu.setContent(name);
+                
+                menu.setCameraMode("reproportion");
+                menu.baseWidth = 640;
+                menu.baseHeight = 360;
+                
+                if(i === 0) {
+                    menu.setStyle("yellow");
+                }
+                
+                this.addDrawable(menu);
+                this.menuDrawables.add(menu);
+                
+                ++i;
+            }
+        }
+    }
+    
+    else if(keyList.value(KEY_SPACE) === 1 && this.menuOpen()) {
+        this.cancelMenu();
+    }
+    
+    // If the selected item was the last and got removed, the new last item is selected.
+    
+    if(this.getItemIndex() >= inventory.items.length) {
+        this.setItemIndex(inventory.items.length - 1);
+        
+        if(inventory.items.length <= (this.itemY + displayHeight) * 16 - 16) {
+            --this.itemY;
+            
+            if(this.itemY < 0) {
+                this.itemY = 0;
+            }
+        }
+    }
+    
+    if(this.getItemIndex() / displayWidth < this.itemY) {
+        this.itemY = Math.max(0, Math.floor(this.getItemIndex() / displayWidth));
+    } else if(this.getItemIndex() / displayWidth >= this.itemY + displayHeight) {
+        this.itemY = Math.floor(this.getItemIndex() / displayWidth) - displayHeight + 1;
+    }
+    
+    // Go back to parent inventory
+    
+    if(keyList.value(222) === 1 || gamepadRec.value(BUTTON_L) === 1 || gamepadRec.value(BUTTON_B) === 1) {
+        if(!this.menuOpen()) {
+            save_cdParentInventory();
+            
+            this.cancelMenu();
         } else {
-            alert("Could not save the inventory state.");
+            this.cancelMenu();
         }
     }
     
-    if(itemIndex < 0) {itemIndex = 0;}
+    // Save inventory file
     
-    if(itemIndex >= inventory.items.length) {itemIndex = inventory.items.length - 1;}
-    
-    if(itemIndex / inventory.displayWidth < itemY) {
-        itemY = Math.max(0, Math.floor(itemIndex / inventory.displayWidth));
-    } else if(itemIndex / inventory.displayWidth >= itemY + displayHeight) {
-        itemY = Math.floor(itemIndex / inventory.displayWidth) - displayHeight + 1;
-    }
-    
-    if(keyList.value(97) === 1) {
+    if(keyList.value(KEY_NUMPAD1) === 1) {
         let b64 = window.btoa(unescape(encodeURIComponent(JSON.stringify(INVENTORY.getData()))));
         
         let a = document.createElement("a");
@@ -929,7 +1075,11 @@ function escapeMenu() {
         a.download = "inventory.json";
         
         a.click();
-    } if(keyList.value(98) === 1) {
+    }
+    
+    // Load inventory file
+    
+    if(keyList.value(KEY_NUMPAD2) === 1) {
         let input = document.createElement("input");
         input.type = "file";
         
@@ -956,24 +1106,38 @@ function escapeMenu() {
         input.click();
     }
     
+    // Save inventory file locally
+    
+    if(keyList.value(KEY_NUMPAD9) === 1) {
+        let data = saveInventoryFile();
+        
+        if(data.success) {
+            alert("Saved as \"" + data.filename + "\".");
+        } else {
+            alert("Could not save the inventory state.");
+        }
+    }
+    
+    // Exit escape menu
+    
     if(keyList.value(K_ESC) == 1 || gamepadRec.value(BUTTON_START) === 1) {
         switchPhase(backupPhase);
     }
+    
+    //// Drawing ////
     
     let context = CANVAS.getContext("2d");
     
     context.fillStyle = "#00003F";
     context.fillRect(0, 0, CANVAS.width, CANVAS.height);
     
-    /**/
-    
     for(let i = 0; i < inventory.items.length; ++i) {
         let width = cellWidth, height = cellHeight;
         
-        let x = i % inventory.displayWidth;
+        let x = i % displayWidth;
         x *= width + spaceBetween;
         x += marginLR;
-        let y = Math.floor(i / inventory.displayWidth) - itemY;
+        let y = Math.floor(i / displayWidth) - this.itemY;
         y *= height + spaceBetween;
         y += 0 + marginTB;
         
@@ -983,7 +1147,7 @@ function escapeMenu() {
         width *= hProp;
         height *= vProp;
         
-        if(i === itemIndex) {context.fillStyle = "yellow";}
+        if(i === this.getItemIndex()) {context.fillStyle = "yellow";}
         else {context.fillStyle = "cyan";}
         context.fillRect(x, y, width, height);
         
@@ -994,11 +1158,7 @@ function escapeMenu() {
         }
     }
     
-    for(let i in ESCDRAWABLES) {
-        let drawable = ESCDRAWABLES[i];
-        
-        drawable.draw(context);
-    }
+    this.draw();
 }
 
 ESCAPELOOP.controllers.add(escapeMenu);

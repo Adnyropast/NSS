@@ -48,19 +48,9 @@ function getCurrentSave() {
 function save_cdParentInventory(saveIdentifier = getCurrentSave()) {
     let inventories = saveIdentifier.inventoryPath.split("/");
     
-    let previousInventoryId;
-    
-    while((previousInventoryId = inventories.pop()) === "");
+    while(inventories.pop() === "");
     
     saveIdentifier.inventoryPath = inventories.join("/") + "/";
-    
-    let currentInventory = save_getCurrentInventory(saveIdentifier);
-    
-    for(let i = 0; i < currentInventory.items.length; ++i) {
-        if(currentInventory.items[i].id === previousInventoryId) {
-            itemIndex = i;
-        }
-    }
     
     return saveIdentifier;
 }
@@ -99,4 +89,8 @@ function updateSaveState(properties) {
         
         fs.writeFileSync("save-state.json", JSON.stringify(saveState));
     }
+}
+
+function save_getCurrentInventoryPath(saveIdentifier = getCurrentSave()) {
+    return saveIdentifier.inventoryPath;
 }
