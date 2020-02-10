@@ -410,7 +410,6 @@ class Projectile extends Hitbox {
         this.setStyle("#FF0000");
         // this.setBrakeExponent(0);
         // this.setForceFactor(0);
-        // this.setRegeneration(-1);
         this.setTypeOffense(FX_PIERCING, 1);
         
         this.setLifespan(16);
@@ -906,7 +905,17 @@ EC["breakableWood"] = class BreakableWood extends EC["treeTrunk"] {
         super(...arguments);
         
         this.addInteraction(new TypeDamageable());
-        // this.resetEnergy(20);
+        
+        this.setStats({
+            "energy": {
+                "real": 20,
+                "effective": 1,
+                "effectiveLock": false
+            }
+        });
+        
+        this.resetEnergy();
+        
         this.removeInteractorWithId("contactVanish");
     }
     

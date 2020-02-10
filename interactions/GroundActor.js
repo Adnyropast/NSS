@@ -17,7 +17,7 @@ class GroundActor extends Interactor {
         if(typeof recipient.getViewType === "function" && recipient.getViewType() === "side") {
             if(recipient.locate(this.getActor()) & 8) {
                 recipient.replaceStateObject({name:"actuallyGrounded", countdown:2});
-                recipient.replaceStateObject({name:"midairJump", count:recipient.stats["midairJump-count"]});
+                recipient.resetJumps();
             }
         }
         

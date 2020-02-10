@@ -335,6 +335,14 @@ IC["characterIdentifier"] = class CharacterIdentifier extends Item {
         return characterIdentifier;
     }
     
+    static fromCharacter(character) {
+        const characterIdentifier = new this();
+        
+        characterIdentifier.characterData = getCharacterData(character);
+        
+        return characterIdentifier;
+    }
+    
     getData() {
         let data = super.getData();
         
@@ -366,7 +374,7 @@ IC["saveIdentifier"] = class SaveIdentifier extends Item {
         this.mainCommand = this.commands["load"] = function() {
             ESCAPELOOP.pathsItemIndexes = {};
             
-            currentSavePath = getCurrentSave().inventoryPath + saveIdentifier.id + "/";
+            currentSave = saveIdentifier;
             loadMap(getCurrentSave().lastMap);
         };
         

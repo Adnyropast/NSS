@@ -17,22 +17,22 @@ let INVENTORY = IC["inventory"].fromData({"classId" : "inventory", "id" : "0", "
     {"classId" : "inventory", "id" : "2", "displayWidth" : 16, "items" : []}
 ]});
 
-INVENTORY.addItem(IC["characterIdentifier"].fromData({"character" : getCharacterData(new EC["adnyropast"]())}));
-INVENTORY.addItem(IC["characterIdentifier"].fromData({"character" : getCharacterData(new EC["haple"]())}));
-INVENTORY.addItem(IC["characterIdentifier"].fromData({"character" : getCharacterData((new EC["haple"]()).setStats({"regeneration" : 2}))}));
-INVENTORY.addItem(IC["characterIdentifier"].fromData({"character" : getCharacterData((new EC["haple"]()).resetEnergy(1).setStats({"action-costFactor" : 0}))}));
+INVENTORY.addItem(IC["characterIdentifier"].fromCharacter(new EC["adnyropast"]()));
+INVENTORY.addItem(IC["characterIdentifier"].fromCharacter(new EC["haple"]()));
+INVENTORY.addItem(IC["characterIdentifier"].fromCharacter((new EC["haple"]()).setStats({"regeneration" : 2})));
+INVENTORY.addItem(IC["characterIdentifier"].fromCharacter((new EC["haple"]()).setStats({"action-costFactor" : 0, "energy.effective": 1, "energy.effectiveLock": true}).resetEnergy()));
 
-INVENTORY.addItem(IC["characterIdentifier"].fromData({"character" : getCharacterData(new EC["ten"]())}));
+INVENTORY.addItem(IC["characterIdentifier"].fromCharacter(new EC["ten"]()));
 
-/**
+/**/
 
 for(let i = 3; i < 100; ++i) {
-    INVENTORY.addItem(IC["characterIdentifier"].fromData({"character" : getCharacterData(new EC["haple"])}));
+    INVENTORY.addItem(IC["characterIdentifier"].fromCharacter(new EC["haple"]));
 }
 
 /**/
 
-INVENTORY.addItem(IC["saveIdentifier"].fromData(makeNewGame()));
+INVENTORY.addItem(currentSave = IC["saveIdentifier"].fromData(makeNewGame()));
 INVENTORY.addItem(IC["saveIdentifier"].fromData(makeNewGame()));
 INVENTORY.items[0].addItem(IC["saveIdentifier"].fromData(makeNewGame()));
 
@@ -41,28 +41,52 @@ for(let i = 0; i < 16*9; ++i) {
 }
 
 function getInventoryFromPath(path) {
-    let inventory = INVENTORY;
-    let idList = path.split("/");
-    
-    for(let i = 0; i < idList.length; ++i) {
-        let items = inventory.items;
+    if(typeof path === "string") {
+        let inventory = INVENTORY;
+        let idList = path.split("/");
         
-        if(idList[i] !== "") {
-            if(Array.isArray(items)) {
-                let next = items.find(function(item) {return item.id === idList[i];});
-                
-                if(typeof next != "undefined") {
-                    inventory = next;
+        for(let i = 0; i < idList.length; ++i) {
+            let items = inventory.items;
+            
+            if(idList[i] !== "") {
+                if(Array.isArray(items)) {
+                    let next = items.find(function(item) {return item.id === idList[i];});
+                    
+                    if(typeof next != "undefined") {
+                        inventory = next;
+                    } else {
+                        return inventory;
+                    }
                 } else {
                     return inventory;
                 }
-            } else {
-                return inventory;
+            }
+        }
+        
+        return inventory;
+    }
+    
+    return null;
+}
+
+function getInventoryItemPath(searchItem, inventory = INVENTORY, path = "/") {
+    let res = null;
+    
+    for(let i = 0; i < inventory.items.length; ++i) {
+        const item = inventory.items[i];
+        
+        if(item === searchItem) {
+            return path + item.id;
+        } else if(item instanceof IC["inventory"]) {
+            let r = getInventoryFromPath(searchItem, item, path + item.id + "/");
+            
+            if(r) {
+                return r;
             }
         }
     }
     
-    return inventory;
+    return res;
 }
 
 function saveInventoryFile() {
@@ -74,7 +98,7 @@ function saveInventoryFile() {
     let success = false;
     
     if(fs) {
-        fs.writeFileSync(pathname, JSON.stringify(INVENTORY.getData()));
+        fs.writeFileSync(pathname, JSON.stringify(INVENTORY));
         success = true;
     }
     
@@ -89,7 +113,7 @@ addEventListener("beforeunload", function() {
     if(getCurrentSave().saveOnQuit) {
         updateCurrentCharacter();
         saveInventoryFile();
-        updateSaveState({savePath : currentSavePath});
+        updateSaveState({savePath : getInventoryItemPath(getCurrentSave())});
     }
 });
 
@@ -103,4 +127,6 @@ if(fs != undefined) {
     } catch(error) {
         
     }
+    
+    currentSave = getInventoryFromPath(getSaveState().savePath) || currentSave;
 }

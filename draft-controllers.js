@@ -50,5 +50,5 @@ function enemyController() {
 }
 
 function healController() {
-    this.heal(this.stats["regeneration"]);
+    this.regenerate();
 }

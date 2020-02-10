@@ -6,11 +6,16 @@ EC["ten"] = class Ten extends PlayableCharacter {
         this.addActset(AS_HEART);
         this.anim = IMGCHAR["ten"];
         
-        this.resetEnergy(200);
+        this.setStats({
+            "walk-speed.real": 0.375,
+            "walk-speed.effective": 0.375,
+            "walk-speed-tired.effective": 0.25,
+            "air-speed.effective": 0.375,
+            "air-speed-tired.effective": 0.25,
+            "energy.real": 200,
+            "energy-effective": 200
+        });
         
-        this.stats["walk-speed"] = 0.375;
-        this.stats["walk-speed-tired"] = 0.25;
-        this.stats["air-speed"] = 0.375;
-        this.stats["air-speed-tired"] = 0.25;
+        this.resetEnergy();
     }
 };

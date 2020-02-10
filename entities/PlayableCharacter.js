@@ -2,7 +2,17 @@
 class PlayableCharacter extends Character {
     constructor(position, size = [16, 16]) {
         super(position, size);
-        this.resetEnergy(50);
+        
+        this.setStats({
+            "energy": {
+                "real": 50,
+                "effective": 50,
+                "effectiveLock": false
+            }
+        });
+        
+        this.resetEnergy();
+        
         // this.setEffectFactor("default", 1);
         
         this.cursor = PlayerCursor.fromMiddle(this.getPositionM(), [256, 256]);

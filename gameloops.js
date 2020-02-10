@@ -488,10 +488,6 @@ function setPlayer(entity) {
     
     entity.addInteraction(new ItemPicker());
     
-    entity.addEventListener("hurt", function() {
-        ++hitsCount;
-    });
-    
     addEntity(entity);
 }
 
@@ -1068,7 +1064,7 @@ function escapeMenu() {
     // Save inventory file
     
     if(keyList.value(KEY_NUMPAD1) === 1) {
-        let b64 = window.btoa(unescape(encodeURIComponent(JSON.stringify(INVENTORY.getData()))));
+        let b64 = window.btoa(unescape(encodeURIComponent(JSON.stringify(INVENTORY))));
         
         let a = document.createElement("a");
         a.href = "data:text/json;base64," + b64;

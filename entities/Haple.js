@@ -2,8 +2,6 @@
 EC["haple"] = class Haple extends PlayableCharacter {
     constructor(position, size = [8, 16]) {
         super(position, size);
-        // this.setRegeneration(0.0625);
-        // this.addAction(new Regeneration(0.0625));
         
         this.addActset(AS_GOLD, AS_CUTTER, AS_SWORD, "zoneEngage", AS_FIRE, AS_PLASMA, AS_ARTIST, "speech");
         
@@ -15,14 +13,15 @@ EC["haple"] = class Haple extends PlayableCharacter {
         this.drawable.setSize([16, 16]);
         
         this.setStats({
-            "walk-speed" : 0.5,
-            "walk-speed-tired" : 0.375,
-            "air-speed" : 0.5,
-            "air-speed-tired" : 0.5-Math.pow(2, -7),
-            "swim-speed" : 0.5,
-            "swim-speed-tired" : 0.375,
+            "walk-speed.real" : 0.5,
+            "walk-speed.effective" : 0.5,
+            "walk-speed-tired.effective" : 0.375,
+            "air-speed.effective" : 0.5,
+            "air-speed-tired.effective" : 0.5-Math.pow(2, -7),
+            "swim-speed.effective" : 0.5,
+            "swim-speed-tired.effective" : 0.375,
             
-            "climb-speed" : 1,
+            "climb-speed.effective" : 1,
             "jump-force" : 1.5,
             "regeneration" : 0.0625,
             
@@ -88,7 +87,7 @@ EC["haple"] = class Haple extends PlayableCharacter {
     }
     
     onwalk(event) {
-        console.log(this.getViewType() + " walk", event);
+        // console.log(this.getViewType() + " walk", event);
         
         return this;
     }
@@ -113,31 +112,31 @@ EC["haple"] = class Haple extends PlayableCharacter {
     }
     
     onswim(event) {
-        console.log(this.getViewType() + " swim", event);
+        // console.log(this.getViewType() + " swim", event);
         
         return this;
     }
     
     ondrift(event) {
-        console.log(this.getViewType() + " drift", event);
+        // console.log(this.getViewType() + " drift", event);
         
         return this;
     }
     
     onclimb(event) {
-        console.log(this.getViewType() + " climb", event);
+        // console.log(this.getViewType() + " climb", event);
         
         return this;
     }
     
     oncrouch(event) {
-        console.log("crouch", event);
+        // console.log("crouch", event);
         
         return this;
     }
     
     onlookup(event) {
-        console.log("lookup", event);
+        // console.log("lookup", event);
         
         return this;
     }

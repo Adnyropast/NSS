@@ -26,23 +26,17 @@ function entitiesToData(entities) {
     let dataSet = [];
     
     for(let i = 0; i < entities.length; ++i) {
-        let entity = entities[i];
+        const entity = entities[i];
+        const data = entity.getData();
         
-        let classId = entity_getClassId(entity);
-        
-        if(classId !== "nf") {
-            let data = entity.getData();
-            data.classId = classId;
-            
-            dataSet.push(data);
-        }
+        dataSet.push(data);
     }
     
     return dataSet;
 }
 
 function getCurrentSave() {
-    return getInventoryFromPath(currentSavePath);
+    return currentSave;
 }
 
 function save_cdParentInventory(saveIdentifier = getCurrentSave()) {
@@ -59,7 +53,7 @@ function save_getCurrentInventory(saveIdentifier = getCurrentSave()) {
     return getInventoryFromPath(saveIdentifier.inventoryPath);
 }
 
-let currentSavePath = "/8/";
+let currentSave;
 
 function getSaveState() {
     if(fs != undefined) {
@@ -76,8 +70,6 @@ function getSaveState() {
     
     return {};
 }
-
-currentSavePath = getSaveState().savePath || currentSavePath;
 
 function updateSaveState(properties) {
     if(fs != undefined) {

@@ -97,7 +97,6 @@ class RocketPunchProjectile extends Projectile {
         this.setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 255, 0.5], this.lifespan));
         // this.setBrakeExponent(0);
         // this.setForceFactor(0);
-        // this.setRegeneration(-1);
         this.setTypeOffense(FX_GOLD_, 4);
         
         this.setZIndex(-97);

@@ -102,10 +102,11 @@ class BulletShot extends Action {
 EC["adnyropast"] = class Adnyropast extends PlayableCharacter {
     constructor(position, size) {
         super(position, size);
-        // this.setRegeneration(0.0625);
-        // this.addAction(new Regeneration(0.0625));
         
-        this.stats["midairJump-count"] = "Infinity";
+        this.setStats({
+            "midairJump-count": "Infinity",
+            "action-costFactor": 0
+        });
     }
     
     updateDrawable() {
@@ -116,11 +117,5 @@ EC["adnyropast"] = class Adnyropast extends PlayableCharacter {
     
     canUseAction() {
         return true;
-    }
-    
-    addAction(action) {
-        action.setUseCost(0);
-  
-        return super.addAction(action);
     }
 };

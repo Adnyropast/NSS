@@ -102,25 +102,56 @@ class Character extends Entity {
         
         this.faceSave = FRIGHT;
         
-        this.stats["walk-speed"] = 0.5;
-        // this.stats["walk-speed-tired"] = 0.25;
-        this.stats["walk-speed-tired"] = 0.5;
-        this.stats["air-speed"] = 0.5;
-        this.stats["swim-speed"] = 0.5;
+        this.setStats({
+            "walk-speed": {
+                "real": 0.5,
+                "effective": 0.5,
+                "effectiveLock": false
+            },
+            "walk-speed-tired": {
+                // "real": 0.25,
+                "real": 0.5,
+                "effective": 0.5,
+                "effectiveLock": false
+            },
+            "air-speed": {
+                "real": 0.5,
+                "effective": 0.5,
+                "effectiveLock": false
+            },
+            "swim-speed": {
+                "real": 0.5,
+                "effective": 0.5,
+                "effectiveLock": false
+            },
+            
+            "climb-speed": {
+                "real": 1,
+                "effective": 1,
+                "effectiveLock": false
+            },
+            // "jump-force": 1.875,
+            "jump-force": 1.5,
+            "regeneration": 0.0625,
+            
+            "walljump-angle": 0.39269908169872414,
+            // "walljump-force": 1.5,
+            "walljump-force": 1.9375,
+            "midairJump-count": 0,
+            
+            "jumps": [
+                {"force": 1.5}
+            ],
+            
+            "walljump": {
+                "force": 1.9375,
+                "angle": 0.39269908169872414
+            }
+        });
         
         this.addInteraction(new StunRecipient(1));
         
-        this.stats["climb-speed"] = 1;
-        // this.stats["jump-force"] = 1.875;
-        this.stats["jump-force"] = 1.5;
-        this.stats["regeneration"] = 0.0625;
-        
         this.controllers.add(healController);
-        
-        this.stats["walljump-angle"] = 0.39269908169872414;
-        // this.stats["walljump-force"] = 1.5;
-        this.stats["walljump-force"] = 1.9375;
-        this.stats["midairJump-count"] = 0;
         
         this.equipments = {
             "consumable" : null,
@@ -293,6 +324,12 @@ class Character extends Entity {
     
     getViewType() {
         return this.getGravityDirection().isZero() ? "topdown" : "side";
+    }
+    
+    resetJumps() {
+        this.replaceStateObject({name:"midairJump", count:this.stats["midairJump-count"]});
+        
+        return this;
     }
 }
 

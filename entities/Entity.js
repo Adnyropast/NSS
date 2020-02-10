@@ -75,7 +75,6 @@ class Entity extends Rectangle {
         this.cursor = null;// Entity
         
         this.energy = 1;
-        // this.regeneration = 0;
         // this.effects = [];
         
         this.actions = [];
@@ -109,25 +108,29 @@ class Entity extends Rectangle {
         this.preposition = Vector.from(this.position);
         this.presize = Vector.from(this.size);
         
-        this.stats = {};
-        
-        this.eventListeners = {
-            "defeat" : [],
-            "hit" : [],
-            "hurt" : []
+        this.stats = {
+            "energy": {
+                "effective": 1,
+                "real": 1,
+                "effectiveLock": false
+            },
+            
+            "regeneration": 0,
+            
+            "action-costFactor": 1,
+            
+            "count-hurt": 0,
+            "tiredRatio": 0.125
         };
+        
+        this.eventListeners = {};
         
         this.drawables = new SetArray();
         
         this.resistances = {};
         this.offenses = {};
         
-        this.stats["effectiveEnergy"] = 1;
-        this.stats["realEnergy"] = 1;
-        
         this.items = new SetArray();
-        
-        this.stats["action-costFactor"] = 1;
         
         this.freeze = 0;
         
@@ -295,18 +298,12 @@ class Entity extends Rectangle {
     
     // 
     
-    getRealEnergy() {
-        return this.stats["realEnergy"];
-    }
-    
-    setRealEnergy(realEnergy) {
-        this.stats["realEnergy"] = realEnergy;
-        
-        return this;
+    getMaxEnergy() {
+        return this.stats["energy"].effective;
     }
     
     getEnergyRatio() {
-        return this.energy / this.getRealEnergy();
+        return this.getEnergy() / this.getMaxEnergy();
     }
     
     getEnergy() {
@@ -316,46 +313,32 @@ class Entity extends Rectangle {
     setEnergy(energy) {
         this.energy = energy;
         
-        if(this.energy > this.getRealEnergy()) {
-            this.energy = this.getRealEnergy();
+        if(this.energy > this.getMaxEnergy()) {
+            this.energy = this.getMaxEnergy();
         }
         
         return this;
     }
     
-    resetEnergy(realEnergy) {
-        if(arguments.length == 0) {
-            this.setEnergy(this.getRealEnergy());
-        } else {
-            this.setRealEnergy(realEnergy);
-            this.setEnergy(this.getRealEnergy());
-        }
+    resetEnergy() {
+        this.setEnergy(this.getMaxEnergy());
         
         return this;
     }
     
-    regenerate(value = 1) {
+    regenerate(value = this.stats["regeneration"]) {
         return this.heal(value);
     }
-    /**
+    
     setRegeneration(regeneration) {
-        this.addAction(new Regeneration(regeneration));
+        this.setStats({"regeneration": regeneration});
         
         return this;
     }
-    /**/
+    
     setLifespan(lifespan) {
-        /**
-        this.resetEnergy(lifespan);
-        
-        this.removeActionsWithConstructor(Regeneration);
-        this.addActset("regeneration");
-        this.addAction(new Regeneration(-1));
-        /**/
         this.lifeCounter = 0;
         this.lifespan = lifespan;
-        
-        /**/
         
         return this;
     }
@@ -554,8 +537,8 @@ class Entity extends Rectangle {
     heal(value = 1) {
         this.energy += value;
         
-        if(this.energy > this.getRealEnergy()) {
-            this.energy = this.getRealEnergy();
+        if(this.energy > this.getMaxEnergy()) {
+            this.energy = this.getMaxEnergy();
         }
         
         return this;
@@ -1149,25 +1132,20 @@ class Entity extends Rectangle {
     
     setStats(stats) {
         for(let i in stats) {
-            this.stats[i] = stats[i];
-        }
-        
-        return this;
-    }
-    
-    clearStats() {
-        for(let i in this.stats) {
-            delete this.stats[i];
-        }
-        
-        return this;
-    }
-    
-    addStats(stats) {
-        for(let i in stats) {
-            if(!this.stats.hasOwnProperty(i)) {
-                this.stats[i] = stats[i];
+            const propnames = i.split(".");
+            let property = this.stats;
+            
+            for(let j = 0; j < propnames.length; ++j) {
+                if(j === propnames.length - 1) {
+                    property[propnames[j]] = stats[i];
+                } else if(!property.hasOwnProperty(propnames[j])) {
+                    property[propnames[j]] = {};
+                }
+                
+                property = property[propnames[j]];
             }
+            
+            // this.stats[i] = stats[i];
         }
         
         return this;
@@ -1192,7 +1170,7 @@ class Entity extends Rectangle {
     }
     
     getData() {
-        return {position : this.position, size : this.size};
+        return {classId: entity_getClassId(this), position : this.position, size : this.size};
     }
     
     onhit(event) {
@@ -1201,14 +1179,10 @@ class Entity extends Rectangle {
         return this;
     }
     
-    onhurt(recipient) {
-        const actor = recipient.actor;
+    onhurt(event) {
+        const actor = event.actor;
         
-        if(!this.stats["count-hurt"]) {
-            this.stats["count-hurt"] = 1;
-        } else {
-            ++this.stats["count-hurt"];
-        }
+        ++this.stats["count-hurt"];
         
         return this;
     }
@@ -1236,32 +1210,32 @@ class Entity extends Rectangle {
     }
     
     getThrust() {
-        let tiredRatio = 0.125;
+        const tiredRatio = this.stats["tiredRatio"];
         
         if(this.hasState("actuallyGrounded")) {
-            if(this.getEnergyRatio() < tiredRatio) {
-                return this.stats["walk-speed-tired"] || this.stats["walk-speed"] || 0;
+            if(this.getEnergyRatio() < tiredRatio && this.stats["walk-speed-tired"] != undefined) {
+                return this.stats["walk-speed-tired"].effective;
             }
             
-            return this.stats["walk-speed"] || 0;
+            return this.stats["walk-speed"].effective || 0;
         } if(this.hasState("ladder")) {
-            if(this.getEnergyRatio() < tiredRatio) {
-                return this.stats["climb-speed-tired"] || this.stats["climb-speed"] || 0;
+            if(this.getEnergyRatio() < tiredRatio && this.stats["climb-speed-tired"] != undefined) {
+                return this.stats["climb-speed-tired"].effective;
             }
             
-            return this.stats["climb-speed"] || 0;
+            return this.stats["climb-speed"].effective || 0;
         } if(this.hasState("water")) {
-            if(this.getEnergyRatio() < tiredRatio) {
-                return this.stats["swim-speed-tired"] || this.stats["swim-speed"] || 0;
+            if(this.getEnergyRatio() < tiredRatio && this.stats["swim-speed-tired"] != undefined) {
+                return this.stats["swim-speed-tired"].effective;
             }
             
-            return this.stats["swim-speed"] || 0;
+            return this.stats["swim-speed"].effective || 0;
         } else {
-            if(this.getEnergyRatio() < tiredRatio) {
-                return this.stats["air-speed-tired"] || this.stats["air-speed"] || 0;
+            if(this.getEnergyRatio() < tiredRatio && this.stats["air-speed-tired"] != undefined) {
+                return this.stats["air-speed-tired"].effective;
             }
             
-            return this.stats["air-speed"] || 0;
+            return this.stats["air-speed"].effective || 0;
         }
         
         return 0;
@@ -1308,12 +1282,20 @@ class Entity extends Rectangle {
     }
     
     addEventListener(eventName, listener) {
+        if(!this.eventListeners.hasOwnProperty(eventName)) {
+            this.eventListeners[eventName] = [];
+        }
+        
         this.eventListeners[eventName].push(listener);
         
         return this;
     }
     
     setEventListener(eventName, listenerName, listener) {
+        if(!this.eventListeners.hasOwnProperty(eventName)) {
+            this.eventListeners[eventName] = [];
+        }
+        
         this.eventListeners[eventName][listenerName] = listener;
         
         return this;
@@ -1327,6 +1309,10 @@ class Entity extends Rectangle {
         }
         
         return this;
+    }
+    
+    negotiateActionCost(cost, action) {
+        return cost * this.stats["action-costFactor"];
     }
 }
 

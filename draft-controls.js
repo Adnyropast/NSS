@@ -415,6 +415,7 @@ let ctrljson = {
         {"keyCode" : [66], "actionId" : "brushSlash"},
         {"keyCode" : [84], "actionId" : "fc3"},
         {"keyCode" : [223], "actionId" : "targetFocus"},
+        {"keyCode" : [76], "actionId" : "energyJump"},
     ],
     "keyToggle" : [
         // {"keyCode" : [67], "actionId" : "followMe"},

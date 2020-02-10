@@ -1,5 +1,8 @@
 
-let hitsCount = 0;
+/**
+ * Returns specific relevant data to save on playable characters.
+ * (Doesn't give the position or size, for example)
+ */
 
 function getCharacterData(character) {
     return {

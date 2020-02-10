@@ -1,7 +1,7 @@
 
 var jumps = [];
 
-const AS_JUMP = set_gather(ACT_JUMP, "autoJump", "wallJump", "midairJump");
+const AS_JUMP = set_gather(ACT_JUMP, "autoJump", "wallJump", "midairJump", "energyJump");
 
 class Jump extends Action {
     constructor() {
@@ -12,122 +12,45 @@ class Jump extends Action {
         this.initialForce = 3.75;
         this.initialForce = 1.75 + 0.125;
         this.reduct = 1.375;// 1.4375;
+        
+        this.normTransition;
     }
     
     use() {
         /**/
         if(this.phase == 0) {
-            let averagesize = rectangle_averageSize(this.user);
-            let positionM = this.user.getPositionM();
+            const averagesize = rectangle_averageSize(this.user);
+            const positionM = this.user.getPositionM();
+            const feetPositionM = Vector.addition(positionM, this.direction.normalized(-averagesize/2));
             
-            let feetPositionM = Vector.addition(positionM, this.direction.normalized(-averagesize/2));
+            // 
             
-            /**
-            if(this.grounded) {
-                for(let i = -0.5; i < 1; i += 0.25) {
-                    let left = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getY2()]);
-                    left.setSpeed((new Vector(-1, 0)).normalized(Math.random()).rotated(i));
-                    addEntity(left);
-                    let right = SmokeParticle.fromMiddle([this.user.getXM(), this.user.getY2()]);
-                    right.setSpeed((new Vector(+1, 0)).normalized(Math.random()).rotated(-i));
-                    addEntity(right);
-                }
-            } else {
-                for(let i = -0.5; i < 1; i += 0.25) {
-                    let left = SmokeParticle.fromMiddle([this.user.getXM() - this.wallSide * this.user.getWidth()/2, this.user.getYM()]);
-                    left.setSpeed((new Vector(0, -1)).normalized(Math.random()).rotated(this.wallSide*i));
-                    addEntity(left);
-                    let right = SmokeParticle.fromMiddle([this.user.getXM() - this.wallSide * this.user.getWidth()/2, this.user.getYM()]);
-                    right.setSpeed((new Vector(0, +1)).normalized(Math.random()).rotated(-this.wallSide*i));
-                    addEntity(right);
-                }
-            }
-            
-            /**
-            
-            let count = irandom(2, 3);
-            
-            for(let i = 0; i < count; ++i) {
-                let angle = (i - 1) * Math.PI / 8;
-                
-                let direction = this.direction.rotated(Math.PI + angle);
-                
-                let particle = SmokeParticle.fromMiddle(feetPositionM);
-                particle.setSpeed(direction.normalized(Math.random()+0.5));
-                // particle.removeInterrecipientWithId("replace");
-                
-                // addEntity(particle);
-            }
-            
-            for(let i = 0; i < count; ++i) {
-                let angle = (i - 1) * Math.PI / 8;
-                
-                let direction = this.direction.rotated(-Math.PI/2 + angle);
-                
-                let particle = SmokeParticle.fromMiddle(feetPositionM);
-                particle.setSpeed(direction.normalized(Math.random()+0.5));
-                // particle.removeInterrecipientWithId("replace");
-                
-                addEntity(particle);
-            }
-            
-            for(let i = 0; i < count; ++i) {
-                let angle = (i - 1) * Math.PI / 8;
-                
-                let direction = this.direction.rotated(+Math.PI/2 + angle);
-                
-                let particle = SmokeParticle.fromMiddle(feetPositionM);
-                particle.setSpeed(direction.normalized(Math.random()+0.5));
-                // particle.removeInterrecipientWithId("replace");
-                
-                addEntity(particle);
-            }
-            
-            /**/
+            let count = irandom(6, 9);
             
             entityExplode.xRadius = 0.375;
-            entityExplode.initialAngle = Math.PI / 7;
+            entityExplode.initialAngle = Math.PI / count;
             entityExplode.radiusRotate = this.direction.getAngle();
-            entityExplode(6, SmokeParticle, feetPositionM, [8, 8], 1)
+            entityExplode(count, SmokeParticle, feetPositionM, [8, 8], 1)
             .forEach(function(entity) {
-                entity.speed.multiply(random(1.0, 1.25));
+                // entity.speed.normalize(Math.random());
+                entity.speed.multiply(random(1.0, 1.5));
+                // entity.removeInterrecipientWithId("replace");
             });
             entityExplode.xRadius = 1;
             entityExplode.initialAngle = 0;
             entityExplode.radiusRotate = 0;
             
-            /**
-            
-            let direction1 = this.direction.rotated(-Math.PI/2).normalize();
-            
-            let particle1 = SpikeSmokeParticle.fromMiddle(Vector.addition(feetPositionM, direction1.normalized(0)), [averagesize, averagesize]);
-            
-            particle1.setSpeed(direction1.normalized(2));
-            // particle1.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), 8, 16, 6);
-            particle1.resetSpikeDrawable(irandom(4, 6), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
-            
-            addEntity(particle1);
-            
-            let direction2 = this.direction.rotated(+Math.PI/2).normalize();
-            
-            let particle2 = SpikeSmokeParticle.fromMiddle(Vector.addition(feetPositionM, direction2.normalized(0)), [averagesize, averagesize]);
-            
-            particle2.setSpeed(direction2.normalized(2));
-            // particle2.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), 8, 16, 6);
-            particle2.resetSpikeDrawable(irandom(4, 6), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
-            
-            addEntity(particle2);
-            
-            /**/
+            // 
             
             entityExplode.initialAngle = this.direction.getAngle() + Math.PI/2;
             entityExplode(2, SpikeSmokeParticle, feetPositionM, [averagesize, averagesize], 2)
             .forEach(function(entity) {
-                
+                removeDrawable(entity.drawable);
+                // entity.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), 8, 16, 6);
+                entity.resetSpikeDrawable(irandom(4, 6), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
+                addDrawable(entity.drawable);
             });
             entityExplode.initialAngle = 0;
-            
-            /**/
         }
         /**/
         
@@ -211,6 +134,13 @@ class MidairJump extends Jump {
 }
 
 class EnergyJump extends Jump {
+    constructor() {
+        super();
+        this.setId("energyJump");
+        
+        this.reduct = 1.375;
+    }
+    
     use() {
         if(this.phase == 0) {
             let state = this.user.findState("energyJump-stale");
@@ -220,18 +150,35 @@ class EnergyJump extends Jump {
                 stale = state.countdown;
             }
             
-            this.initialForce /= stale + 1;
-            this.direction = Vector.from(this.user.getGravityDirection()).normalize(-this.initialForce);
+            let force = this.user.stats["jump-force"];
+            
+            // force /= stale + 1;
+            this.direction = Vector.from(this.user.getGravityDirection()).normalize(-force);
+            
+            if(stale < this.user.getEnergy()) {
+                this.user.hurt(stale);
+            } else {
+                return this.end("not enough energy");
+            }
+            
+            entityExplode.xRadius = 0.125;
+            entityExplode.radiusRotate = this.direction.getAngle();
+            entityExplode(8, GoldSmokeParticle, [this.user.getXM(), this.user.getY2()], [8, 8], 1.5);
+            entityExplode.xRadius = 1;
+            entityExplode.radiusRotate = 0;
         }
         
         if(this.phase < 2) {
-            return this;
+            // return this;
         }
         
-        // this.user.addAction(this.backSmoke);
-        
         for(var i = 0; i < this.user.getDimension(); ++i) {
-            this.user.drag(i, this.direction[i]);
+            if(this.phase === 0) {
+                // this.user.speed.set(i, this.direction[i]);
+                this.user.drag(i, this.direction[i]);
+            } else {
+                this.user.drag(i, this.direction[i]);
+            }
             this.direction[i] /= (this.reduct);
             
             if(isAlmostZero(this.direction[i])) {
@@ -241,7 +188,7 @@ class EnergyJump extends Jump {
         
         for(var dim = 0; dim < this.direction.length; ++dim) {
             if(this.direction[dim] != 0) {
-                this.user.addAction(this.backSmoke);
+                
                 
                 return this;
             }
@@ -254,18 +201,21 @@ class EnergyJump extends Jump {
     }
     
     onend() {
-        let state = this.user.findState("energyJump-stale");
-        let stale = 0;
-        
-        if(typeof state != "undefined") {
-            stale = state.countdown;
+        if(this.phase > 0) {
+            let state = this.user.findState("energyJump-stale");
+            
+            if(typeof state === "undefined") {
+                this.user.addStateObject({name: "energyJump-stale", countdown: 16});
+            } else {
+                state.countdown += 16;
+            }
         }
-        
-        this.user.addStateObject("energyJump-stale", stale + 16);
         
         return super.onend();
     }
 }
+
+AC["energyJump"] = EnergyJump;
 
 class AutoJump extends Action {
     constructor() {
@@ -354,6 +304,7 @@ class WallJump extends Action {
     
     use() {
         if(this.phase === 0) {
+            const wallState = this.user.findState("wall");
             this.user.removeState("wall");
             
             const avgsz = rectangle_averageSize(this.user);

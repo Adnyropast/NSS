@@ -12,9 +12,6 @@ class Enemy extends Character {
         this.cursor.drawable.setStyle("#7F007F3F");
         this.cursorDistance = 256;
         
-        this.resetEnergy(10);
-        // this.setRegeneration(0.0625);
-        
         this.energyBar.setEnergyTransition(ENETRA_ENEMY);
         
         this.addActset("enemyCharge");
@@ -28,7 +25,21 @@ class Enemy extends Character {
         
         this.controllers.add(enemyController);
         
-        this.stats["regeneration"] = 0;
+        this.setStats({
+            "energy.real": 10,
+            "energy.effective": 10,
+            "regeneration": 0.0625,
+            "regeneration": 0,
+            "walk-speed-tired": 0.25,
+            "walk-speed.real": 0.25,
+            "walk-speed.effective": 0.25,
+            "swim-speed-tired.effective": 0.25,
+            "swim-speed.effective": 0.25,
+            "air-speed-tired.effective": 0.25,
+            "air-speed.effective": 0.25
+        });
+        
+        this.resetEnergy();
         
         this.items = [];
         
@@ -37,10 +48,6 @@ class Enemy extends Character {
         for(let i = 0; i < count; ++i) {
             this.items.push(new IC["apple"]());
         }
-        
-        this.stats["walk-speed-tired"] = this.stats["walk-speed"] = 0.25;
-        this.stats["swim-speed-tired"] = this.stats["swim-speed"] = 0.25;
-        this.stats["air-speed-tired"] = this.stats["air-speed"] = 0.25;
     }
     
     onadd() {
@@ -155,13 +162,19 @@ EC["dummy"] = class Dummy extends Character {
     constructor() {
         super(...arguments);
         
-        this.resetEnergy(1024);
+        this.setStats({
+            "energy": {
+                "real": 1024,
+                "effective": 1024,
+                "effectiveLock": false
+            },
+            "regeneration": 0.125
+        });
+        
+        this.resetEnergy();
         
         this.setStyle("#7F3F00");
         this.addInteraction(new DragRecipient(1));
-        // this.addActset("regeneration");
-        // this.addAction(new Regeneration(0.125));
-        this.stats["regeneration"] = 0.125;
     }
     
     onadd() {
