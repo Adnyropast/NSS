@@ -232,7 +232,7 @@ class Character extends Entity {
         return this;
     }
     
-    onland(event) {
+    onbump(event) {
         const obstacle = event.obstacle;
         
         let norm = this.speed.getNorm();

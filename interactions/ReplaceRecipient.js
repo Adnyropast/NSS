@@ -9,17 +9,15 @@ class ReplaceRecipient extends Interrecipient {
         let actor = interactor.getActor();
         let recipient = this.getRecipient();
         
-        let groundSave = recipient.findState("groundSave");
+        let bumpSave = recipient.findState("bumpSave");
         
-        if(typeof groundSave == "undefined") {
+        if(typeof bumpSave == "undefined") {
             if(recipient.lifeCounter > 2) {
-                recipient.addState("land");
-                recipient.triggerEvent("land", new EntityLandEvent(actor));
+                recipient.triggerEvent("bump", new BumpEntityEvent(actor));
             }
-            recipient.addStateObject({name:"groundSave", countdown:4});
-        } else {
-            groundSave.countdown = 4;
         }
+        
+        recipient.replaceStateObject({name: "bumpSave", countdown: 4});
         
         return this;
     }
