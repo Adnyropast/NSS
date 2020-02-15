@@ -80,7 +80,7 @@ class Entity extends Rectangle {
         this.actions = [];
         this.actset = [];
         
-        this.state = [];
+        this.state = {};
         
         // this.gravityDirection = Vector.filled(this.getDimension(), 0);
         // this.ground = false;
@@ -422,43 +422,35 @@ class Entity extends Rectangle {
     }
     
     addStateObject(object) {
-        for(let i = 0; i < this.state.length; ++i) {
-            if(this.state[i].name == object.name) {
-                return this;
-            }
+        if(!this.hasState()) {
+            this.state[object.name] = object;
         }
-        
-        this.state.push(object);
         
         return this;
     }
     
     removeState(statename) {
-        for(var i = this.state.length - 1; i >= 0; --i) {
-            if(this.state[i].name == statename) {
-                this.state.splice(i, 1);
-            }
-        }
+        delete this.state[statename];
         
         return this;
     }
     
     findState(statename) {
-        return this.state.find(function(state) {
-            return state.name == statename;
-        });
+        return this.state[statename];
     }
     
     hasState(statename) {
-        return this.findState(statename) != undefined;
+        return this.state.hasOwnProperty(statename);
     }
     
     updateState() {
-        for(var i = this.state.length - 1; i >= 0; --i) {
-            if(this.state[i].countdown > 0) {
-                --this.state[i].countdown;
-            } if(this.state[i].countdown == 0) {
-                this.state.splice(i, 1);
+        for(let name in this.state) {
+            const state = this.state[name];
+            
+            if(state.countdown > 0) {
+                --state.countdown;
+            } if(state.countdown === 0) {
+                delete this.state[name];
             }
         }
         
@@ -1139,8 +1131,7 @@ class Entity extends Rectangle {
     }
     
     replaceStateObject(object) {
-        this.removeState(object.name);
-        this.addStateObject(object);
+        this.state[object.name] = object;
         
         return this;
     }

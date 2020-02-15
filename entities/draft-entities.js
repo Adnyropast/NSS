@@ -174,6 +174,7 @@ class AirArea extends Area {
         
         this.addInteraction(new BrakeActor(BRK_AIR));
         this.addInteraction(new ThrustRecipient(THRUSTFACTOR_AIR));
+        this.addInteraction(new AirStateGranter());
     }
 }
 

@@ -30,6 +30,7 @@ class Character extends Entity {
         
         this.addInteraction(new WallRecipient());
         this.addInteraction(new LadderRecipient());
+        this.addInteraction(new AirStateReceiver());
         
         this.faceSave = FRIGHT;
         
