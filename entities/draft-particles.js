@@ -324,3 +324,140 @@ class WaterDroplet extends Entity {
         return this;
     }
 }
+
+class OvalWaveParticle extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        let avgsz = rectangle_averageSize(this);
+        
+        this.setDrawable(new PolygonDrawable(makePathPolygon(makeOvalPath(32, 64, 64), OvalWaveParticle.lineWidth)));
+        this.setLifespan(OvalWaveParticle.lifespan);
+        this.drawable.setStyle(new ColorTransition([255, 255, 255, 1], [255, 255, 255, 0], this.lifespan, powt(1/2)));
+        this.drawable.rotate(Math.random() * 2*Math.PI);
+        this.drawable.multiplySize(avgsz/64);
+        this.drawable.initImaginarySize(avgsz);
+        
+        this.setSizeTransition(new VectorTransition(Array.from(this.size), Vector.multiplication(this.size, 4), this.lifespan, powt(1/2)));
+        this.setSelfBrake(1.0625);
+    }
+    
+    updateDrawable() {
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
+        this.drawable.setPositionM(this.getPositionM());
+        
+        if(Vector.normOf(this.direction) > 0) {
+            this.drawable.stretchBase(this.direction);
+            this.drawable.setImaginaryAngle(this.speed.getAngle());
+        }
+        
+        return this;
+    }
+    
+    makeEllipse(direction = [0, 12]) {
+        this.direction = direction;
+        this.controllers.add(function() {
+            this.direction[1] /= 2;
+        });
+        
+        return this;
+    }
+}
+
+OvalWaveParticle.lineWidth = 1;
+OvalWaveParticle.lifespan = 24;
+
+class SparkSpark extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.setLifespan(8);
+        
+        this.setSizeTransition(new VectorTransition(Vector.division(this.size, 2), Vector.from(this.size), this.lifespan, powt(1)));
+        
+        const avgsz = rectangle_averageSize(this);
+        
+        const drawable = PolygonDrawable.from(makeBurstPolygon2(
+            new VectorTransition([2], [4], 16, Math.random),
+            new VectorTransition([0], [20], 16, Math.random),
+            4
+        ));
+        
+        drawable.setPositionM(this.getPositionM());
+        drawable.multiplySize(avgsz / polygon_averageSize(drawable));
+        drawable.initImaginarySize(avgsz);
+        drawable.setStyle(new ColorTransition([0, 255, 255, 1], [255, 0, 255, 0], this.lifespan, function(t) {return Math.pow(t, 5);}));
+        
+        this.setDrawable(drawable);
+    }
+    
+    updateDrawable() {
+        this.drawable.setPositionM(this.getPositionM());
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
+        
+        return this;
+    }
+}
+
+class BluntCrownParticle extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.drawable = PolygonDrawable.from(makeSpikePolygon(4, new VectorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(12, 24)}, function() {return irandom(32, 48)}, 16));
+        
+        // crownParticle.multiplySize(1/16);
+        
+        this.setLifespan(10);
+        
+        this.drawable.setZIndex(-Math.random()*16+15);
+        
+        this.setSizeTransition(new MultiColorTransition([Vector.multiplication(this.size, 1/2), Vector.from(this.size), Vector.multiplication(this.size, 1/2)], this.lifespan));
+        
+        this.setSelfBrake(1.125);
+    }
+    
+    updateDrawable() {
+        const drawable = this.getDrawable();
+        
+        drawable.stretchBase([0, 0.5]);
+        drawable.setImaginarySize(rectangle_averageSize(this));
+        drawable.setPositionM(this.getPositionM());
+        
+        drawable.setImaginaryAngle(this.speed.getAngle());
+        
+        return this;
+    }
+}
+
+class BluntOvalParticle extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.setLifespan(16);
+        
+        let avgsz = rectangle_averageSize(this);
+        
+        this.drawables[0] = PolygonDrawable.from(roundparticle);
+        this.drawables[0]
+        .multiplySize(avgsz/16)
+        .stretchM([16, 0])
+        .initImaginarySize(avgsz);
+        
+        this.setSelfBrake(1.0625);
+    }
+    
+    updateDrawable() {
+        let drawable = this.drawables[0];
+        
+        if(this.lifeCounter < 16) {
+            drawable.shrinkBase([-1, 0]);
+        }
+        
+        drawable.setImaginaryAngle(this.speed.getAngle());
+        
+        drawable.setPositionM(this.getPositionM());
+        drawable.setImaginarySize(rectangle_averageSize(this));
+        
+        return this;
+    }
+}
