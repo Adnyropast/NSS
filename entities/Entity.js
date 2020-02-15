@@ -120,7 +120,9 @@ class Entity extends Rectangle {
             "action-costFactor": 1,
             
             "count-hurt": 0,
-            "tiredRatio": 0.125
+            "tiredRatio": 0.125,
+            
+            "stun-timeoutFactor": 1
         };
         
         this.eventListeners = {};
@@ -143,6 +145,8 @@ class Entity extends Rectangle {
         this.cursorDistance = 256;
         
         this.stateimg = {};
+        
+        this.accelerators = new SetArray();
     }
     
     static fromData(data) {
@@ -368,6 +372,16 @@ class Entity extends Rectangle {
     
     setTypeOffense(type, offense) {
         this.offenses[type] = offense;
+        
+        const typeImpact = typeImpacts[type];
+        
+        if(typeImpact) {
+            this.setEventListener("hit", "auto-" + type, function(event) {
+                typeImpact(event.actor, event.recipient);
+                
+                return this;
+            });
+        }
         
         /**
         for(var i = 0; i < this.effects.length; ++i) {
@@ -688,6 +702,7 @@ class Entity extends Rectangle {
         // this.heal();
         this.updateActions();
         this.updateDrawable();
+        this.accelerate();
         this.advance();
         // this.thrust += this.selfThrust;
         
@@ -1157,8 +1172,8 @@ class Entity extends Rectangle {
         }
         
         if(typeof this.eventListeners[eventName] === "object") {
-            for(let i in this.eventListeners[eventName]) {
-                let eventFunction = this.eventListeners[eventName][i].bind(this);
+            for(let i in this.eventListeners[eventName]) if(typeof this.eventListeners[eventName][i] === "function") {
+                const eventFunction = this.eventListeners[eventName][i].bind(this);
                 eventFunction(entityEvent);
             }
         } else if(typeof this.eventListeners[eventName] === "function") {
@@ -1210,28 +1225,29 @@ class Entity extends Rectangle {
     }
     
     getThrust() {
+        const energyRatio = this.getEnergyRatio();
         const tiredRatio = this.stats["tiredRatio"];
         
         if(this.hasState("actuallyGrounded")) {
-            if(this.getEnergyRatio() < tiredRatio && this.stats["walk-speed-tired"] != undefined) {
+            if(energyRatio < tiredRatio && this.stats["walk-speed-tired"] != undefined) {
                 return this.stats["walk-speed-tired"].effective;
             }
             
             return this.stats["walk-speed"].effective || 0;
         } if(this.hasState("ladder")) {
-            if(this.getEnergyRatio() < tiredRatio && this.stats["climb-speed-tired"] != undefined) {
+            if(energyRatio < tiredRatio && this.stats["climb-speed-tired"] != undefined) {
                 return this.stats["climb-speed-tired"].effective;
             }
             
             return this.stats["climb-speed"].effective || 0;
         } if(this.hasState("water")) {
-            if(this.getEnergyRatio() < tiredRatio && this.stats["swim-speed-tired"] != undefined) {
+            if(energyRatio < tiredRatio && this.stats["swim-speed-tired"] != undefined) {
                 return this.stats["swim-speed-tired"].effective;
             }
             
             return this.stats["swim-speed"].effective || 0;
         } else {
-            if(this.getEnergyRatio() < tiredRatio && this.stats["air-speed-tired"] != undefined) {
+            if(energyRatio < tiredRatio && this.stats["air-speed-tired"] != undefined) {
                 return this.stats["air-speed-tired"].effective;
             }
             
@@ -1314,13 +1330,82 @@ class Entity extends Rectangle {
     negotiateActionCost(cost, action) {
         return cost * this.stats["action-costFactor"];
     }
+    
+    accelerate() {
+        for(let i = 0; i < this.accelerators.length; ++i) {
+            this.speed.add(this.accelerators[i]);
+        }
+        
+        return this;
+    }
+    
+    negotiateStunTimeout(timeout, actor) {
+        return timeout * this.stats["stun-timeoutFactor"];
+    }
+    
+    removeEventListener(eventName, listener) {
+        const eventListeners = this.eventListeners[eventName];
+        
+        let matchFn = function() {return false;};
+        
+        if(typeof listener === "function") {
+            matchFn = function(eventListener, eventName) {
+                return eventListener === listener;
+            };
+        } else if(typeof listener === "string") {
+            matchFn = function(eventListener, eventName) {
+                return eventName === listener;
+            };
+        } else if(listener instanceof RegExp) {
+            matchFn = function(eventListener, eventName) {
+                return eventName.match(listener);
+            };
+        }
+        
+        for(let i in eventListeners) {
+            if(matchFn(eventListeners[i], i)) {
+                delete eventListeners[i];
+            }
+        }
+        
+        return this;
+    }
+    
+    removeAutoHitListeners() {
+        return this.removeEventListener("hit", /^auto/);
+    }
+    
+    removeTypeOffense(type) {
+        delete this.offenses[type];
+        this.removeEventListener("hit", "auto-" + type);
+        
+        return this;
+    }
+    
+    clearTypeOffenses() {
+        for(let type in this.offenses) {
+            this.removeTypeOffense(type);
+        }
+        
+        return this;
+    }
+}
+
+function stunOnhit(event) {
+    const {actor, recipient} = event;
+    
+    const negotiatedTimeout = recipient.negotiateStunTimeout(actor.stats["stun-timeout"]);
+    
+    if(negotiatedTimeout > 0) {
+        recipient.addAction(new StunState(negotiatedTimeout));
+    }
 }
 
 class Hitbox extends Entity {
     constructor() {
         super(...arguments);
         
-        this.addInteraction(new StunActor());
+        this.addInteraction(new TypeDamager());
         this.launchDirection = [0, 0, 0];
         
         this.addEventListener("hit", function(event) {
@@ -1335,6 +1420,9 @@ class Hitbox extends Entity {
                 recipient.drag(Vector.multiplication(this.launchDirection, dragFactor));
             }
         });
+        
+        this.setStats({"stun-timeout": 16});
+        this.addEventListener("hit", stunOnhit);
     }
 }
 

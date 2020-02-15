@@ -124,3 +124,13 @@ function array_shuffle(array) {
     
     return array;
 }
+
+function array_average(array) {
+    let average = 0;
+    
+    for(let i = 0; i < array.length; ++i) {
+        average += array[i];
+    }
+    
+    return average /= array.length;
+}

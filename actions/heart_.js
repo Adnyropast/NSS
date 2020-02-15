@@ -1,28 +1,43 @@
 
 const AS_HEART = set_gather("bloodShot", "heartBlowout", "veinSweep");
 
-const FX_HEART_ = effectsCount++;
-
 class BloodProjectile extends Projectile {
     constructor() {
         super(...arguments);
         
-        this.setLifespan(100);
+        const avgsz = rectangle_averageSize(this);
+        
+        this.setLifespan(96);
         this.setDrawable(PolygonDrawable.from(roundparticle).multiplySize((this.getWidth() + this.getHeight())/64));
         this.drawable.setPositionM(this.getPositionM());
-        this.setStyle(new ColorTransition([0, 255, 255, 1], [0, 127, 255, 1], 8));
-        // this.setStyle(new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1], 8));
-        this.drawable.setStrokeStyle(new ColorTransition([0, 0, 255, 1], [0, 0, 127, 1], 8));
-        // this.drawable.setStrokeStyle(new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 1], 8));
+        this.drawable.setStyle("blue");
+        this.drawable.setStrokeStyle("darkBlue");
         
-        this.addInteraction(new TypeDamager());
-        this.addInteraction(new ContactVanishRecipient(3));
+        this.addInteraction(new ContactVanishRecipient(CVF_OBSTACLE | CVF_CHARACTER));
         
         this.setTypeOffense(FX_HEART_, 1);
     }
     
     updateDrawable() {
         this.drawable.setPositionM(this.getPositionM());
+        
+        return this;
+    }
+    
+    oncontactvanish(event) {
+        const cvFlags = event.flags;
+        
+        if(cvFlags & CVF_OBSTACLE) {
+            entityExplode.randomAngleVariation = 1;
+            entityExplode(irandom(2, 3), HeartBloodDroplet, this.getPositionM(), function() {
+                const sz = irandom(8, 12);
+                return [sz, sz];
+            }, 1)
+            .forEach(function(entity) {
+                entity.speed.multiply(random(1, 4));
+            });
+            entityExplode.randomAngleVariation = 0;
+        }
         
         return this;
     }
@@ -51,6 +66,8 @@ class BloodShot extends Action {
             projectile.shareBlacklist(this.user.getBlacklist());
             
             addEntity(projectile);
+            
+            // repaceLoop(1000);
         }
         
         if(this.phase >= 10) {
@@ -59,6 +76,8 @@ class BloodShot extends Action {
         
         return this;
     }
+    
+    onend() {repaceLoop(16)}
 }
 
 AC["bloodShot"] = BloodShot;
@@ -116,8 +135,6 @@ class VeinSweep extends SlashAction {
         this.det = 3;
         
         this.hitbox = new Hitbox([NaN, NaN], [1, 1]);
-        this.hitbox.removeInteractorWithId("damage");
-        this.hitbox.addInteraction(new TypeDamager());
         
         this.rct = new ColorTransition([rv(), rv(), rv(), 1], [rv(), rv(), rv(), 0], 8, bezierLinear);
         
@@ -175,3 +192,12 @@ class VeinSweep extends SlashAction {
 }
 
 AC["veinSweep"] = VeinSweep;
+
+class HeartBloodDroplet extends WaterDroplet {
+    constructor() {
+        super(...arguments);
+        
+        this.getDrawable().setStyle(new ColorTransition([0, 63, 255, 1], [0, 63, 255, 0], 16, powt(8)));
+        this.getDrawable().setStrokeStyle(new ColorTransition([0, 0, 191, 1], [0, 0, 191, 0], 16, powt(8)));
+    }
+}

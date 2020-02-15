@@ -167,6 +167,9 @@ const CV_RED = [255, 0, 0, 1];
 const CV_GREEN = [0, 255, 0, 1];
 const CV_BLUE = [0, 0, 255, 1];
 const CV_GRAY = [127, 127, 127, 1];
+const CV_CYAN = [0, 255, 255, 1];
+const CV_YELLOW = [255, 255, 0, 1];
+const CV_MAGENTA = [255, 0, 255, 1];
 
 function hexToColorVector(hex) {
     hex = hex.replace(/#/, "")

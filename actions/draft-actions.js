@@ -157,13 +157,14 @@ class ZoneEngage extends BusyAction {
     }
     
     use() {
-        if(this.phase == 0) {
-            this.zone = Entity.fromMiddle([this.user.getXM(), this.user.getYM()], [0, 0]).setZIndex(this.user.getZIndex() + ALMOST_ZERO/8);
+        if(this.phase === 0) {
+            const positionM = this.user.getPositionM();
+            
+            this.zone = Entity.fromMiddle(positionM, [0, 0]).setZIndex(this.user.getZIndex() + ALMOST_ZERO/8);
             addEntity(this.zone);
             this.wind = Hitbox.shared(this.zone);
             this.wind.shareBlacklist(this.user.getBlacklist());
             this.wind.addInteraction(new VacuumDragActor(-0.5));
-            this.wind.addInteraction(new TypeDamager());
             this.wind.setTypeOffense(FX_WIND, 0.5);
             addEntity(this.wind);
             
@@ -185,17 +186,33 @@ class ZoneEngage extends BusyAction {
             }
         }
         
-        if(this.phase == this.duration) {
+        if(this.phase === 32) {
             for(let i = 0; i < this.targets.length; ++i) {
                 if(this.user.opponents.includes(this.targets[i])) {
                     this.opponentFound = true;
                 }
             }
             
-            this.setRemovable(true);
-            this.end();
+            makeShockwave.lineWidth = 4;
+            makeShockwave(this.zone.getPositionM(), 24)
+            .getDrawable()
+            .setStyle(new ColorTransition([0, 255, 255, 0.5], [0, 255, 255, 0], 24, powt(1/2)));
+            makeShockwave.lineWidth = 0;
+            
+            removeEntity(this.zone);
+            removeEntity(this.wind);
+            
+            if(this.opponentFound) {
+                repaceLoop(64);
+            }
             
             // worldFreeze = 0;
+        }
+        
+        if(this.phase === 48) {
+            
+            this.setRemovable(true);
+            this.end();
         }
         
         return this;
@@ -206,6 +223,8 @@ class ZoneEngage extends BusyAction {
         
         removeEntity(this.zone);
         removeEntity(this.wind);
+        
+        repaceLoop(16);
         
         if(this.opponentFound) {
             engageBattle(this.targets);

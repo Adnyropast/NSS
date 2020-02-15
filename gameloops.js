@@ -488,6 +488,18 @@ function setPlayer(entity) {
     
     entity.addInteraction(new ItemPicker());
     
+    entity.addEventListener("hurt", function() {
+        const cover = new Entity([0, 0], [640, 360]);
+        cover.setLifespan(16);
+        cover.drawable.setZIndex(-Math.pow(2, 20));
+        cover.drawable.setCameraMode("reproportion");
+        cover.drawable.baseWidth = 640;
+        cover.drawable.baseHeight = 360;
+        cover.drawable.setStyle(new ColorTransition([255, 0, 0, 1], [255, 0, 0, 0], cover.lifespan, powt(1/2)));
+        
+        addEntity(cover);
+    });
+    
     addEntity(entity);
 }
 

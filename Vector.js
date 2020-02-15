@@ -157,6 +157,34 @@ class Vector extends Array {
         return distance = Math.sqrt(distance);
     }
     
+    /***/
+    
+    static sum(vectors_) {
+        const sum = new this();
+        
+        if(arguments.length > 0) {
+            sum.setDimension(arguments[0].length).fill(0);
+        }
+        
+        for(let i = 0; i < arguments.length; ++i) {
+            const vector = arguments[i];
+            
+            if(vector.length < sum.getDimension()) {
+                sum.setDimension(vector.length);
+            }
+            
+            sum.add(vector);
+        }
+        
+        return sum;
+    }
+    
+    /***/
+    
+    static average(vectors_) {
+        return this.sum(...arguments).divide(arguments.length);
+    }
+    
     /**
      * 
      * 24/04/2019

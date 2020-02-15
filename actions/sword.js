@@ -13,8 +13,6 @@ class SlashEffect extends Hitbox {
         this.setTypeOffense(FX_SHARP, 1);
         
         this.setStyle(INVISIBLE);
-        
-        this.addInteraction(new TypeDamager());
     }
 }
 

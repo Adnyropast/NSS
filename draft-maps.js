@@ -254,9 +254,11 @@ maps["hub"] = {
         {"classId" : "ground", "position" : [112, -96], "size" : [16, 128]},
         {"classId" : "waterArea", "position" : [-112, -96], "size" : [224, 64]},
         
+        {"classId": "hazard", "position": [-240, 24], "size": [16, 32]},
+        
         {"classId" : "sidewaysSetter", "position" : [-640, -360], "size" : [1280, 720]},
         
-        {"classId" : "nightSkyDecoration"/*, "position" : [-240, -135], "size" : [480, 270]*/},
+        {"classId" : "skyDecoration"/*, "position" : [-240, -135], "size" : [480, 270]*/},
         // {"classId" : "sunlightDecoration", "position" : [0, 0]}
     ],
     "variable_entities": [

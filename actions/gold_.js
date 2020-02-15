@@ -19,9 +19,6 @@ class GoldSolid extends Hitbox {
         this.setTypeOffense(FX_GOLD_, 0.25);
         this.setLifespan(16);
         this.setSelfBrake(1.1875);
-        
-        this.addInteraction(new TypeDamager());
-        // this.addInteraction(new ContactVanishRecipient(1));
     }
     
     updateDrawable() {
@@ -101,8 +98,6 @@ class RocketPunchProjectile extends Projectile {
         
         this.setZIndex(-97);
         
-        
-        this.addInteraction(new TypeDamager());
         let sizeTransition = new ColorTransition(Vector.multiplication(size, 1/2), size, this.lifespan, backForthTiming);
         
         this.controllers.add(function() {
@@ -132,6 +127,12 @@ class RocketPunchProjectile extends Projectile {
             
             addEntity(particle);
         }
+        
+        return this;
+    }
+    
+    oncontactvanish() {
+        typeImpacts[FX_GOLD_](this, this);
         
         return this;
     }
@@ -287,7 +288,6 @@ class GoldBurstHitbox extends Hitbox {
             this.setSizeM(sizeTransition.getNext());
         });
         
-        this.addInteraction(new TypeDamager());
         this.drawable.setZIndex(-1);
         
         this.setTypeOffense(FX_GOLD_, 1);

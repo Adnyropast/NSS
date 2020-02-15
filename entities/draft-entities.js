@@ -40,7 +40,7 @@ class Obstacle extends ActorCollidable {
         this.addInteraction(new ReplaceActor());
         this.addInteraction(new BrakeActor(BRK_OBST));
         this.addInteraction(new ThrustRecipient(THRUSTFACTOR_OBSTACLE));
-        this.addInteraction(new ContactVanishActor(1));
+        this.addInteraction(new ContactVanishActor(CVF_OBSTACLE));
     }
     
     onadd() {
@@ -138,10 +138,23 @@ EC["director"] = Director;
 class Hazard extends Ground {
     constructor(position, size) {
         super(position, size);
-        this.setTypeOffense("default", 1);
-        this.addInteraction(new TypeDamager());
+        this.setTypeOffense("default", Infinity);
+        this.addInteraction((new TypeDamager()).setRehit(16));
+        this.setStats({"stun-timeout": 16});
+        this.addEventListener("hit", function(event) {
+            const recipient = event.recipient;
+            const direction = Vector.subtraction(recipient.getPositionM(), this.getPositionM());
+            
+            recipient.drag(direction.normalize(8));
+            
+            stunOnhit(...arguments);
+        });
+        
+        this.drawable.setStyle("red");
     }
 }
+
+EC["hazard"] = Hazard;
 
 class GroundArea extends Area {
     constructor(position, size) {
@@ -263,7 +276,7 @@ class GoldSmokeParticle extends Particle {
         
         this.drawable.setImaginaryAngle(this.speed.getAngle());
         
-        this.drawable.shadowBlur = this.lifespan - this.lifeCounter;
+        // this.drawable.shadowBlur = this.lifespan - this.lifeCounter;
         
         return this;
     }
@@ -277,18 +290,9 @@ class SmokeParticle extends Particle {
         
         this.setLifespan(48);
         
-        let avgsz = rectangle_averageSize(this);
-        
-        this.setDrawable(PolygonDrawable.from(makeRandomPolygon(Math.max(4, avgsz*2), 12, 16)).setLifespan(this.lifespan).setPositionM(this.getPositionM()).multiplySize(8/16));
-        this.drawable.multiplySize(avgsz/16);
-        this.drawable.initImaginarySize(avgsz);
-        
         this.collidable = true;
         // this.forceFactor = 0.5;
         // this.setSelfBrake(1.0625);
-        
-        // this.setColorTransition([255, 255, 255, 191], [223, 223, 223, 31], 60);
-        this.setStyle(ColorTransition.from(smokeColorTransition));
         
         this.addInteraction(new ReplaceRecipient());
         this.addInteraction(new DragRecipient(0.03125));
@@ -298,8 +302,17 @@ class SmokeParticle extends Particle {
         this.setSizeTransition(new MultiColorTransition([Vector.multiplication(size, 1/2), size, Vector.multiplication(size, 1/2), [0, 0]], this.lifespan));
         this.setSelfBrake(1.03125);
         
+        const avgsz = rectangle_averageSize(this);
+        
+        this.setDrawable(PolygonDrawable.from(makeRandomPolygon(Math.min(Math.max(4, avgsz*2), 32), 12, 16)));
+        this.drawable.setLifespan(this.lifespan);
+        this.drawable.setPositionM(this.getPositionM());
+        this.drawable.multiplySize(avgsz/polygon_averageSize(this.drawable));
+        this.drawable.initImaginarySize(avgsz);
+        
         this.drawable.setZIndex(random(-1, +1));
         
+        this.drawable.setStyle(ColorTransition.from(smokeColorTransition));
         this.drawable.setStrokeStyle("lightGray");
     }
     
@@ -370,33 +383,40 @@ class FireParticle extends Particle {
         this.collidable = true;
         // this.forceFactor = 0.5;
         // this.setSelfBrake(1.0625);
-        this.setLifespan(64);
+        this.setLifespan(irandom(24, 64));
         // this.setColorTransition([255, 0, 0, 127], [0, 0, 0, 127], 60);
         // this.setStyle(new ColorTransition([255, 255, 0, 127], [255, 0, 0, 127], this.lifespan));
         this.setSizeTransition(new MultiColorTransition([Vector.multiplication(size, random(1/4, 1/2)), Vector.from(size), Vector.multiplication(size, random(1/4, 1/2)), [0, 0]], this.lifespan, powt(1/1.25)));
         
         this.addInteraction(new ReplaceRecipient());
-        this.addInteraction(new DragRecipient(-Math.pow(2, -2)));
+        // this.addInteraction(new DragRecipient(-Math.pow(2, -2)));
+        this.accelerators.add([0, -0.0625]);
         
         this.setSelfBrake(1.125);
         
         for(let i = 0; i < 3; ++i) {
-            let drawable = makeFireParticle();
-            drawable.multiplySize(random(1/2, 1));
-            drawable.setStyle(new ColorTransition([255, 255, 127, 1], [255, 0, 0, 0.375], this.lifespan, function(t) {return Math.pow(t, 1)}));
+            const drawable = makeFireParticle();
             drawable.setLifespan(-1);
-            drawable.initImaginarySize(rectangle_averageSize(this));
+            
             drawable.setZIndex(random(-1, 0.25));
+            
+            drawable.multiplySize(rectangle_averageSize(this) / polygon_averageSize(drawable));
+            
+            drawable.initImaginarySize(rectangle_averageSize(this));
+            
+            drawable.setStyle(new ColorTransition([255, 255, 127, 1], [255, 0, 0, 0.375], this.lifespan, powt(1/2)));
             
             this.drawables.push(drawable);
         }
     }
     
     updateDrawable() {
+        const positionM = this.getPositionM();
+        
         for(let i = 0; i < this.drawables.length; ++i) {
-            let drawable = this.drawables[i];
-            // this.drawable.multiplySize(1/1.015625);
-            drawable.setPositionM(this.getPositionM());
+            const drawable = this.drawables[i];
+            
+            drawable.setPositionM(positionM);
             drawable.setImaginarySize(rectangle_averageSize(this));
         }
         
@@ -408,15 +428,12 @@ class Projectile extends Hitbox {
     constructor(position, size) {
         super(position, size);
         this.setStyle("#FF0000");
-        // this.setBrakeExponent(0);
-        // this.setForceFactor(0);
-        this.setTypeOffense(FX_PIERCING, 1);
+        // this.setTypeOffense(FX_PIERCING, 1);
         
         this.setLifespan(16);
         
-        this.addInteraction(new TypeDamager());
-        // this.addInteraction(new ReplaceRecipient());
-        this.addInteraction(new ContactVanishRecipient(1));
+        this.addInteraction(new ReplaceRecipient());
+        this.addInteraction(new ContactVanishRecipient(CVF_OBSTACLE));
     }
 }
 
@@ -694,7 +711,7 @@ EC["invisibleWall"] = class InvisibleWall extends ActorCollidable {
         super(...arguments);
         
         this.addInteraction(new ReplaceActor());
-        this.addInteraction(new ContactVanishActor(1));
+        this.addInteraction(new ContactVanishActor(CVF_OBSTACLE));
     }
 };
 
@@ -787,16 +804,24 @@ class DiamondParticle extends Entity {
     constructor() {
         super(...arguments);
         
+        const avgsz = rectangle_averageSize(this);
+        
         this.setLifespan(24);
-        this.setDrawable(PolygonDrawable.from(diamondparticle).setStyle(new ColorTransition(CV_WHITE, [255, 255, 0, 1], this.lifespan, powt(1/2))));
+        this.setDrawable(PolygonDrawable.from(makePathPolygon([[0, -avgsz/2], [0, 0], [0, +avgsz/2]], avgsz/16)));
+        this.drawable.setStyle(new ColorTransition(CV_WHITE, CV_YELLOW, this.lifespan, powt(1/2)));
         this.drawable.rotate(Math.PI/2).setPositionM(this.getPositionM());
-        this.drawable.multiplySize(rectangle_averageSize(this))
+        
         this.setSelfBrake(1.0625);
+        
+        // this.drawable.setShadowBlur(8);
     }
     
     updateDrawable() {
+        const avgsz = rectangle_averageSize(this);
+        
         this.drawable.setPositionM(this.getPositionM());
-        this.drawable.multiplySize(1/1.125);
+        // this.drawable.multiplySize(1/1.125);
+        this.drawable.shrinkBase([0, avgsz/(16*(this.lifespan+1))]);
         this.drawable.setImaginaryAngle(this.speed.getAngle());
         
         return this;
@@ -1194,6 +1219,38 @@ class TextBubble extends Entity {
             
             drawable.setPosition1([this.getX(), this.getY() + i * this.lineHeight]);
         }
+        
+        return this;
+    }
+}
+
+class WaterDroplet extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.setLifespan(24);
+        
+        this.setSelfBrake(1.03125);
+        
+        this.addInteraction(new DragRecipient(0.03125));
+        
+        this.setSizeTransition(new VectorTransition(this.size, [0, 0], this.lifespan, powt(8)));
+        
+        let avgsz = rectangle_averageSize(this);
+        
+        this.setDrawable(PolygonDrawable.from(roundparticle));
+        
+        this.drawable.multiplySize(avgsz/12/irandom(4, 16));
+        this.drawable.stretchM([16, 0]);
+        
+        this.drawable.initImaginarySize(avgsz);
+    }
+    
+    updateDrawable() {
+        if(this.lifeCounter < 14) {this.drawable.shrinkBase([-1, 0]);}
+        this.drawable.setImaginaryAngle(this.speed.getAngle());
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
+        this.drawable.setPositionM(this.getPositionM());
         
         return this;
     }

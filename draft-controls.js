@@ -398,7 +398,7 @@ let ctrljson = {
         {"keyCode" : 77, "actionId" : "plasmaLightning"},
         {"keyCode" : 79, "actionId" : "autoSword"},
         {"keyCode" : 79, "actionId" : "veinSweep"},
-        // {"keyCode" : 85, "actionId" : "cutterDash"},
+        {"keyCode" : 75, "actionId" : "cutterDash"},
         {"keyCode" : 85, "actionId" : "burningAttack"},
         {"keyCode" : K_LEFT, "actionId" : "movementLeft"},
         {"keyCode" : K_UP, "actionId" : "movementUp"},
@@ -416,6 +416,8 @@ let ctrljson = {
         {"keyCode" : [84], "actionId" : "fc3"},
         {"keyCode" : [223], "actionId" : "targetFocus"},
         {"keyCode" : [76], "actionId" : "energyJump"},
+        {"keyCode" : [78], "actionId" : "paintBomb"},
+        {"keyCode" : [188], "actionId" : "paintSpray"},
     ],
     "keyToggle" : [
         // {"keyCode" : [67], "actionId" : "followMe"},

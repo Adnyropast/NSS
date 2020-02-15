@@ -62,7 +62,6 @@ class Bullet extends Hitbox {
         super(position, size);
         
         this.setTypeOffense(FX_PIERCING, 1);
-        this.addInteraction(new TypeDamager());
         
         this.addActset("hitboxTrail");
         this.addAction(new HitboxTrailing());

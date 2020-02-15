@@ -491,57 +491,18 @@ class TrailDrawable {
 }
 
 class CutDrawable extends PolygonDrawable {
-    constructor(centerPoint, direction = [1, 1]) {
-        /**
+    constructor(centerPoint, angle = Math.PI/4, size = 16) {
+        super(makePathPolygon([[0, -size], [0, 0], [0, +size]], 2));
         
-        super();
-        
-        this.centerPoint = Vector.from(centerPoint);
-        this.direction = Vector.from(direction);
-        
-        this.distances = new ColorTransition([2, 16], [0.125, 32], this.lifespan);
-        
-        this.setDimension(2);
-        
-        /**/
-        
-        super(diamondparticle);
-        this.direction = Vector.from(direction);
-        this.angle = this.direction.getAngle();
         this.setPositionM(centerPoint);
-        this.shrinkM([0, 2]);
-        this.rotate(this.angle);
+        this.setImaginaryAngle(angle);
         this.setLifespan(12);
         this.setStyle(new ColorTransition(CV_WHITE, [255, 255, 255, 0.5], this.lifespan));
     }
     
     update() {
-        /**
-        
-        let points = [];
-        
-        let size = this.distances.getNext();
-        
-        let xDirection = this.direction.normalized(size[0]);
-        let yDirection = this.direction.rotated(Math.PI/2).normalize(size[1]);
-        
-        points.push(this.centerPoint.minus(xDirection));
-        points.push(this.centerPoint.minus(yDirection));
-        points.push(this.centerPoint.plus(xDirection));
-        points.push(this.centerPoint.plus(yDirection));
-        
-        this.setPoints(points);
-        
-        /**/
-        
-        this.rotate(-this.angle);
-        // this.shrinkM(this.direction.normalized(1));
-        // this.stretchM(this.direction.normalized(4).rotate(Math.PI/2));
-        this.shrinkM([0.5, 0]);
-        this.stretchM([0, 8]);
-        
-        // this.multiplySize(1/1.0625);
-        this.rotate(+this.angle);
+        this.shrinkBase([1/(this.lifespan + 1), 0]);
+        this.stretchBase([0, this.lifespan]);
         
         return super.update();
     }

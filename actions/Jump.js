@@ -108,19 +108,16 @@ class MidairJump extends Jump {
             
             let avgsz = rectangle_averageSize(this.user);
             
-            let waveAvgsz = avgsz/12;
+            makeShockwave.lineWidth = 2;
             
-            let ovalWave = OvalWaveParticle.fromMiddle(Vector.addition(this.user.getPositionM(), [0, avgsz/2]), [waveAvgsz, waveAvgsz]);
+            const shockwave = makeShockwave(Vector.addition(this.user.getPositionM(), [0, avgsz/2]), avgsz/6);
+            shockwave.drawable.setStyle(new ColorTransition([255, 255, 255, 1], [255, 255, 255, 0], 24, powt(4)));
+            shockwave.drawable.setStrokeStyle(new ColorTransition([223, 223, 223, 1], [191, 191, 191, 0], 24, powt(4)));
+            shockwave.setSpeed(this.user.speed.times(-0.0625));
+            shockwave.makeEllipse();
             
-            ovalWave.setDrawable((new PolygonDrawable(makePathPolygon(makeOvalPath(16, 16, 16)))).rotate(Math.PI).multiplySize(waveAvgsz/16));
             
-            ovalWave.drawable.setStyle(new ColorTransition([255, 255, 255, 1], [255, 255, 255, 0.5], 24, powt(4)));
-            ovalWave.setSpeed(this.user.speed.times(-0.0625));
-            
-            ovalWave.direction = [0, 12];
-            ovalWave.controllers.add(function() {this.direction[1] /= 2;});
-            
-            addEntity(ovalWave);
+            makeShockwave.lineWidth = 1;
             
             this.user.triggerEvent("jump", {action: this});
         }

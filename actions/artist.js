@@ -1,39 +1,11 @@
 
 const AS_ARTIST = set_gather("brushSlash", "paintBomb", "paintSpray");
 
-class PaintDroplet extends Entity {
+class PaintDroplet extends WaterDroplet {
     constructor() {
         super(...arguments);
         
-        let avgsz = rectangle_averageSize(this);
-        
-        this.setDrawable(PolygonDrawable.from(roundparticle));
-        this.drawable.setStyle(MultiColorTransition.from(CT_RAINBOW).setDuration(24));
-        this.drawable.style.step = irandom(0, 23);
-        this.drawable.multiplySize(avgsz/12/irandom(4, 16));
-        this.drawable.stretchM([16, 0]);
-        this.setLifespan(24);
-        
-        this.setSelfBrake(1.03125);
-        
-        this.addInteraction(new DragRecipient(0.03125));
-        
-        let sizeTransition = new VectorTransition(this.size, [0, 0], this.lifespan, powt(8));
-        
-        this.controllers.add(function() {
-            this.setSizeM(sizeTransition.getNext());
-        });
-        
-        this.drawable.initImaginarySize(avgsz);
-    }
-    
-    updateDrawable() {
-        if(this.lifeCounter < 14) {this.drawable.shrinkBase([-1, 0]);}
-        this.drawable.setImaginaryAngle(this.speed.getAngle());
-        this.drawable.setImaginarySize(rectangle_averageSize(this));
-        this.drawable.setPositionM(this.getPositionM());
-        
-        return this;
+        this.drawable.setStyle(MultiColorTransition.from(CT_RAINBOW).setDuration(24).setStep(irandom(0, 23)));
     }
 }
 
@@ -45,9 +17,7 @@ class BrushSlash extends SlashAction {
         this.trailDrawable.trailStyle = MultiColorTransition.from(CT_RAINBOW).setDuration(12);
         this.trailDrawable.curveFunction = powt(1/4);
         
-        this.hitbox.addInteraction(new TypeDamager());
-        
-        this.hitbox.offenses = {};
+        this.hitbox.clearTypeOffenses();
         this.hitbox.setTypeOffense("paint", 1);
     }
     
@@ -112,8 +82,7 @@ class PaintBombEntity extends Hitbox {
         this.drawable.initImaginarySize(avgsz);
         
         this.addInteraction(new DragRecipient(0.5));
-        this.addInteraction(new ContactVanishRecipient(CVF_OBSTACLE));
-        this.addInteraction(new TypeDamager());
+        this.addInteraction(new ContactVanishRecipient(CVF_OBSTACLE | CVF_CHARACTER));
         this.setTypeOffense("paint", 4);
         this.addInteraction(new BrakeRecipient(0.5));
     }
@@ -124,7 +93,7 @@ class PaintBombEntity extends Hitbox {
         return this;
     }
     
-    onremove() {
+    oncontactvanish() {
         typeImpacts["paint"](this, this);
         
         return super.onremove();
@@ -153,6 +122,7 @@ class PaintBomb extends BusyAction {
             
             let bomb = PaintBombEntity.fromMiddle(Vector.addition(this.user.getPositionM(), direction.normalized(rectangle_averageSize(this.user)/2)), [8, 8]);
             bomb.setSpeed(direction.normalized(4));
+            bomb.launchDirection = bomb.speed;
             bomb.shareBlacklist(this.user.getBlacklist());
             
             addEntity(bomb);
@@ -188,8 +158,11 @@ class PaintCloud extends Hitbox {
         });
         
         this.addInteraction(new BrakeRecipient(1));
-        this.addInteraction((new TypeDamager()).setRehit(32));
+        this.findInteractorWithId("damage").setRehit(32);
         this.setTypeOffense("paint", 0.125);
+        this.setStats({"stun-timeout": 0});
+        
+        this.removeAutoHitListeners();
     }
     
     updateDrawable() {
@@ -197,6 +170,18 @@ class PaintCloud extends Hitbox {
         this.drawable.setImaginarySize(rectangle_averageSize(this));
         
         return this;
+    }
+    
+    onhit(event) {
+        const {actor, recipient} = event;
+        const {actorAvgsz, recipientAvgsz, bothAvgsz, actorPositionM, recipientPositionM, middlePosition} = interactionProperties(actor, recipient);
+        
+        const currentColorVector = actor.getDrawable().style.getCurrent();
+        
+        makeShockwave.lineWidth = recipientAvgsz/8;
+        const shockwave = makeShockwave(middlePosition, recipientAvgsz/6);
+        shockwave.getDrawable().setStyle(new ColorTransition(colorVector_alterAlpha(currentColorVector, +1.0), colorVector_alterAlpha(currentColorVector, -1.0), shockwave.lifespan, powt(1/2)));
+        makeShockwave.lineWidth = 1;
     }
 }
 

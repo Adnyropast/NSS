@@ -32,18 +32,18 @@ EC["haple"] = class Haple extends PlayableCharacter {
         });
         
         this.setEventListener("defeat", "vanish", function() {
-            let count = 8;
-            let positionM = this.getPositionM();
+            const positionM = this.getPositionM();
             
-            for(let i = 0; i < count; ++i) {
-                let angle = i / count * 2*Math.PI;
-                
-                let particle = HapleVanishParticle.fromMiddle(positionM, Vector.multiplication(this.size, 2));
-                
-                particle.setSpeed((new Vector(Math.cos(angle), Math.sin(angle))).normalize(Math.random()+3));
-                
-                addEntity(particle);
-            }
+            entityExplode.initialAngle = Math.random() * 2*Math.PI / 8;
+            entityExplode(8, HapleVanishParticle, positionM, Vector.multiplication(this.size, 1.25), 3);
+            
+            entityExplode.initialAngle = Math.random() * 2*Math.PI / 8;
+            entityExplode(irandom(8, 16), HapleVanishParticle2, positionM, undefined, 1)
+            .forEach(function(entity) {
+                entity.speed.multiply(6);
+            });
+            
+            entityExplode.initialAngle = 0;
         });
     }
     
@@ -59,7 +59,7 @@ EC["haple"] = class Haple extends PlayableCharacter {
         super.update();
         
         if(this.lifeCounter % 1 === 0) {
-            DEBUG.clear();
+            // DEBUG.clear();
             
             for(let i in this.state) {
                 try {
@@ -142,15 +142,16 @@ EC["haple"] = class Haple extends PlayableCharacter {
     }
 };
 
-class HapleVanishParticle extends Particle {
+class HapleVanishParticle extends Entity {
     constructor() {
         super(...arguments);
         
         this.setLifespan(32);
         this.setDrawable(PolygonDrawable.from(makeStarPolygon()).multiplySize(rectangle_averageSize(this)/16));
-        this.drawable.setStyle(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1], 32));
+        this.drawable.setStyle(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1], 32, powt(1/2)));
+        this.drawable.setShadowBlur(8);
         
-        this.setSelfBrake(1.0625);
+        this.setSelfBrake(1.125);
         
         this.rotationTransition = new ColorTransition([Math.PI/64], [0], 32);
     }
@@ -159,6 +160,38 @@ class HapleVanishParticle extends Particle {
         this.drawable.setPositionM(this.getPositionM());
         this.drawable.rotate(this.rotationTransition.getNext()[0]);
         this.drawable.multiplySize(1/1.0625);
+        
+        return this;
+    }
+}
+
+class HapleVanishParticle2 extends Entity {
+    constructor(position, size = [random(2, 4), random(2, 4)]) {
+        super(position, size);
+        
+        this.setLifespan(irandom(16, 64));
+        this.addInteraction(new DragRecipient(1));
+        this.addInteraction(new ReplaceRecipient());
+        this.addInteraction(new BrakeRecipient());
+        
+        const avgsz = rectangle_averageSize(this);
+        
+        this.setDrawable(PolygonDrawable.from(makeStarPolygon()).multiplySize(avgsz/16));
+        this.drawable.initImaginarySize(avgsz);
+        this.drawable.setShadowBlur(8);
+        this.drawable.setStyle(new ColorTransition([191, 127, 0, 1], [255, 255, 0, 1], this.lifespan, powt(1/2)));
+        
+        this.rotationTransition = new NumberTransition(1, 0, this.lifespan, powt(1/4));
+        
+        this.setSizeTransition(new VectorTransition(Array.from(size), [0, 0], this.lifespan, powt(2)));
+    }
+    
+    updateDrawable() {
+        const avgsz = rectangle_averageSize(this);
+        
+        this.drawable.setPositionM(this.getPositionM());
+        this.drawable.rotate(this.rotationTransition.getNext());
+        this.drawable.setImaginarySize(avgsz);
         
         return this;
     }

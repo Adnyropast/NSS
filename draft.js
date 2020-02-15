@@ -35,6 +35,10 @@ const FX_DARK = effectsCount++;
 const FX_POISON = effectsCount++;
 const FX_GOLD_ = effectsCount++;
 
+const FX_HEART_ = effectsCount++;
+
+const FX_PURPLE_ = effectsCount++;
+
 // 
 
 function getDD(bits) {

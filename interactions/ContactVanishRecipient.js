@@ -9,7 +9,12 @@ class ContactVanishRecipient extends Interrecipient {
     
     oninteraction(interactor) {
         if(this.flags & interactor.flags) {
-            let recipient = this.getRecipient();
+            const actor = interactor.getActor();
+            const recipient = this.getRecipient();
+            
+            const eventObject = new BumpEntityEvent(actor);
+            eventObject.flags = interactor.flags;
+            recipient.triggerEvent("contactvanish", eventObject);
             
             /**
             
@@ -22,7 +27,7 @@ class ContactVanishRecipient extends Interrecipient {
                 addEntity(particle);
             }
             
-            /**/
+            /**
             
             let averagesize = rectangle_averageSize(recipient);
             let particle = SpikeSmokeParticle.fromMiddle(recipient.getPositionM(), [averagesize, averagesize]);

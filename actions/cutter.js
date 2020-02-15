@@ -33,7 +33,7 @@ class Cutter extends TrailerEntity {
         
         // this.setStyle("cyan");
         this.addInteraction((new TypeDamager()).setRehit(9));
-        this.addInteraction(new ContactVanishRecipient(1));
+        this.addInteraction(new ContactVanishRecipient(CVF_OBSTACLE));
         
         this.addActset(AS_MOVEMENT);
         
@@ -71,7 +71,9 @@ class Cutter extends TrailerEntity {
         }
         
         this.setTypeOffense(FX_SHARP, 1);
-        this.addInteraction(new StunActor());
+        
+        this.setStats({"stun-timeout": 16});
+        this.addEventListener("hit", stunOnhit);
         
         this.drawables.add(this.bladeDrawable);
     }
@@ -111,6 +113,12 @@ class Cutter extends TrailerEntity {
         this.previousPositionM = positionM;
         
         return super.updateDrawable();
+    }
+    
+    oncontactvanish(event) {
+        sharpSparks(5, this.getPositionM(), rectangle_averageSize(this));
+        
+        return this;
     }
 }
 
@@ -186,17 +194,18 @@ class CutterDash extends SlashAction {
         else {thrust = thrust.value;}
         
         if(this.phase == 0) {
-            if(this.user.getEnergy() > this.getUseCost()) {
+            if(this.user.getEnergy() > this.getUseCost() && this.user.hasState("actuallyGrounded")) {
                 this.direction = this.user.getCursorDirection().normalize(thrust * 4);
+                this.direction = new Vector(this.user.faceSave * 4, 0);
                 
-                this.user.setFace(this.direction[0]);
+                // this.user.setFace(this.direction[0]);
                 
                 this.setRemovable(false);
                 
                 // this.user.hurt(this.getUseCost());
                 
                 this.dragInterrecipient = this.user.findInterrecipientWithId("drag");
-                this.user.removeInterrecipientWithId("drag");
+                // this.user.removeInterrecipientWithId("drag");
                 this.user.setSpeed(this.direction.normalized(4));
             } else {
                 return this.end();
@@ -224,15 +233,16 @@ class CutterDash extends SlashAction {
     
     onend() {
         this.user.addInteraction(this.damageableSave);
-        this.user.addInteraction(this.dragInterrecipient);
+        // this.user.addInteraction(this.dragInterrecipient);
         
         return super.onend();
     }
     
     transitionsSetup() {
-        let face = this.user.getCursorDirection();
+        let direction = this.user.getCursorDirection();
+        direction = this.direction;
         
-        let angle = face.getAngle();
+        let angle = direction.getAngle();
         
         this.baseAngleTransition = new ColorTransition([angle - Math.PI/2], [angle + Math.PI/2]);
         this.baseDistanceTransition = new ColorTransition([6], [6]);
@@ -292,7 +302,8 @@ class FinalCutter1 extends SlashAction {
         
         this.followup = FinalCutter2;
         
-        this.hitbox.addInteraction(new StunActor(64));
+        this.hitbox.setStats({"stun-timeout": 64});
+        
         this.endlag = 16;
         
         this.setUseCost(3);
@@ -581,7 +592,6 @@ class CutterWave extends Hitbox {
         
         this.setDrawable(null);
         
-        this.addInteraction(new TypeDamager());
         this.setLifespan(24);
         
         for(let i = 0; i < 2; ++i) {

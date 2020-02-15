@@ -4,7 +4,7 @@ const ENETRA_ENEMY = new ColorTransition([0, 255, 255, 1], [255, 0, 255, 1]);
 class Enemy extends Character {
     constructor(position, size) {
         super(position, size).setStyle("#7F007F");
-        this.setTypeResistance("enemy", 0);
+        this.setTypeResistance(FX_PURPLE_, 0);
         
         let avgsz = rectangle_averageSize(this);
         
@@ -30,7 +30,7 @@ class Enemy extends Character {
             "energy.effective": 10,
             "regeneration": 0.0625,
             "regeneration": 0,
-            "walk-speed-tired": 0.25,
+            "walk-speed-tired.effective": 0.25,
             "walk-speed.real": 0.25,
             "walk-speed.effective": 0.25,
             "swim-speed-tired.effective": 0.25,
@@ -43,11 +43,18 @@ class Enemy extends Character {
         
         this.items = [];
         
-        let count = irandom(1, 4);
-        
-        for(let i = 0; i < count; ++i) {
+        for(let i = 0, count = irandom(1, 4); i < count; ++i) {
             this.items.push(new IC["apple"]());
         }
+        
+        this.setEventListener("defeat", "vanish", function() {
+            const positionM = this.getPositionM();
+            const size = this.size;
+            
+            makeBurstEffect(EnemyVanishParticle2, positionM, size, this.speed);
+            
+            entityExplode(12, EnemyVanishParticle, positionM, size, 6);
+        });
     }
     
     onadd() {
@@ -59,25 +66,16 @@ class Enemy extends Character {
     }
     
     ondefeat() {
-        for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 3/2) {
-            var cos = Math.cos(angle), sin = Math.sin(angle);
-            var particle = EnemyVanishParticle.fromMiddle(this.getPositionM(), this.size);
-            particle.setSpeed((new Vector(cos, sin)).normalize(rectangle_averageSize(this)/16+Math.random()));
-            // particle.drag(this.speed);
-            
-            addEntity(particle);
-        }
-        
         for(let i = 0; i < this.items.length; ++i) {
             let pickableItem = PickableItem.fromMiddle(this.getPositionM(), [8, 8]);
             pickableItem.addItem(this.items[i]);
             
-            pickableItem.setSpeed((new Vector(1, 0)).rotate(Math.random() * 2*Math.PI));
+            pickableItem.setSpeed((new Vector(1.5, 0)).rotate(Math.random() * 2*Math.PI));
             
             addEntity(pickableItem);
         }
         
-        return super.ondefeat();
+        return this;
     }
     
     onremove() {
@@ -96,7 +94,7 @@ class EnemyVanishParticle extends Particle {
         this.setLifespan(64);
         this.setDrawable(PolygonDrawable.from(makeRandomPolygon(24, 12, 16)).multiplySize(rectangle_averageSize(this)/16));
         this.setStyle(new ColorTransition([127, 0, 127, 1], [0, 255, 255, 1], 64));
-        this.setSizeTransition(new ColorTransition(this.size, [0, 0], 32));
+        this.setSizeTransition(new VectorTransition(this.size, [0, 0], 32));
         
         this.collidable = true;
         this.addInteraction(new DragRecipient(0.5));
@@ -112,18 +110,26 @@ class EnemyVanishParticle extends Particle {
     }
 }
 
+class EnemyVanishParticle2 extends CharacterVanishParticle {
+    constructor() {
+        super(...arguments);
+        
+        this.drawable.setStyle(new ColorTransition([255, 0, 255, 1], [0, 255, 255, 1], this.lifespan));
+        this.drawable.setStrokeStyle(new ColorTransition([223, 0, 223, 1], [0, 223, 223, 1], this.lifespan));
+    }
+}
+
 class EnemyCharge extends BusyAction {
     constructor() {
         super();
         this.setId("enemyCharge");
         
         this.hitbox = new Hitbox([0, 0], [0, 0]);
-        this.hitbox.addInteraction(new TypeDamager());
         this.hitbox.addInteraction(new VacuumDragActor(-2));
         this.hitbox.setLifespan(16);
-        this.hitbox.addInteraction(new StunActor(8));
+        this.hitbox.setStats({"stun-timeout": 8});
         
-        this.hitbox.setTypeOffense("enemy", 8);
+        this.hitbox.setTypeOffense(FX_PURPLE_, 8);
     }
     
     use() {
@@ -200,8 +206,21 @@ class SniperProjectile extends Hitbox {
         
         this.addInteraction(new TypeDamageable());
         
-        this.addInteraction(new TypeDamager());
-        this.setTypeOffense("enemy", 4);
+        this.setTypeOffense(FX_PURPLE_, 4);
+        this.addInteraction(new ReplaceRecipient());
+        this.setLifespan(32);
+        this.addInteraction(new ContactVanishRecipient(CVF_OBSTACLE));
+    }
+    
+    oncontactvanish() {
+        entityExplode(8, Entity, this.getPositionM(), this.size, 2)
+        .forEach(function(entity) {
+            entity.setLifespan(32);
+            entity.setSelfBrake(1.0625);
+            entity.getDrawable().setStyle(new ColorTransition([127, 0, 127, 1], [0, 0, 0, 0.5], entity.lifespan));
+        });
+        
+        return this;
     }
 }
 
@@ -219,9 +238,6 @@ class EnemySnipe extends BusyAction {
             
             hitbox.shareBlacklist(this.user.getBlacklist());
             hitbox.setSpeed(direction.normalized(4));
-            hitbox.addInteraction(new ReplaceRecipient());
-            hitbox.setLifespan(32);
-            hitbox.addInteraction(new ContactVanishRecipient(1));
             
             addEntity(hitbox);
         } if(this.phase == 64) {

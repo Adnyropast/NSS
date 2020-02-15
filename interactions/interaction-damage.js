@@ -29,7 +29,7 @@ class TypeDamager extends Interactor {
                 let impact = typeImpacts[type];
                 
                 if(typeof impact === "function") {
-                    impact(actor, recipient);
+                    // impact(actor, recipient);
                 }
             }
             
@@ -211,38 +211,6 @@ class TypeDamageable extends Interrecipient {
     }
 }
 
-/**
- *
- */
-
-class StunActor extends Interactor {
-    constructor(timeout = 16) {
-        super();
-        this.setId("stun");
-        this.timeout = timeout;
-    }
-    
-    interact(interrecipient) {
-        let negotiatedTimeout = interrecipient.negotiateTimeout(this.timeout);
-        
-        if(negotiatedTimeout > 0) {
-            interrecipient.getRecipient().addAction(new StunState(negotiatedTimeout));
-        }
-        
-        return this;
-    }
-}
-
-class StunRecipient extends Interrecipient {
-    constructor(factor = 1) {
-        super();
-        this.setId("stun");
-        this.factor = factor;
-    }
-    
-    negotiateTimeout(timeout) {return timeout * this.factor;}
-}
-
 const typeImpacts = {};
 
 class OvalWaveParticle extends Entity {
@@ -251,9 +219,9 @@ class OvalWaveParticle extends Entity {
         
         let avgsz = rectangle_averageSize(this);
         
-        this.setDrawable(new PolygonDrawable(makePathPolygon(makeOvalPath(32, 64, 64), 1)));
-        this.setLifespan(24);
-        this.drawable.setStyle(new ColorTransition([255, 255, 255, 1], [255, 255, 255, 0], this.lifespan));
+        this.setDrawable(new PolygonDrawable(makePathPolygon(makeOvalPath(32, 64, 64), OvalWaveParticle.lineWidth)));
+        this.setLifespan(OvalWaveParticle.lifespan);
+        this.drawable.setStyle(new ColorTransition([255, 255, 255, 1], [255, 255, 255, 0], this.lifespan, powt(1/2)));
         this.drawable.rotate(Math.random() * 2*Math.PI);
         this.drawable.multiplySize(avgsz/64);
         this.drawable.initImaginarySize(avgsz);
@@ -273,25 +241,45 @@ class OvalWaveParticle extends Entity {
         
         return this;
     }
+    
+    makeEllipse(direction = [0, 12]) {
+        this.direction = direction;
+        this.controllers.add(function() {
+            this.direction[1] /= 2;
+        });
+        
+        return this;
+    }
 }
 
-typeImpacts[FX_SHARP] = function onimpact(actor, recipient) {
-    const bothAvgsz = (actor.getWidth() + actor.getHeight() + recipient.getWidth() + recipient.getHeight()) / 4;
+OvalWaveParticle.lineWidth = 1;
+OvalWaveParticle.lifespan = 24;
+
+function interactionProperties(actor, recipient) {
+    const actorAvgsz = rectangle_averageSize(actor);
+    const recipientAvgsz = rectangle_averageSize(recipient);
+    const bothAvgsz = rectangle_averageSize(actor, recipient);
     const actorPositionM = actor.getPositionM();
     const recipientPositionM = recipient.getPositionM();
-    const middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
+    const middlePosition = Vector.average(actorPositionM, recipientPositionM);
     
-    const recipientAvgsz = rectangle_averageSize(recipient);
+    return {
+        actorAvgsz: actorAvgsz,
+        recipientAvgsz: recipientAvgsz,
+        bothAvgsz: bothAvgsz,
+        actorPositionM: actorPositionM,
+        recipientPositionM: recipientPositionM,
+        middlePosition: middlePosition
+    };
+}
+
+function sharpImpact(position, size) {
+    addDrawable(new CutDrawable(position, random(0, 2*Math.PI), size));
+    addDrawable(new CutDrawable(position, random(0, 2*Math.PI), size));
     
-    addDrawable(new CutDrawable(middlePosition, [Math.random() * 2- 1, Math.random() * 2 - 1]).multiplySize(bothAvgsz/16));
+    /**/
     
-    entityExplode.randomAngleVariation = 1;
-    entityExplode(5, DiamondParticle, middlePosition, [bothAvgsz/16, bothAvgsz/16], 1)
-    .forEach(function(entity) {
-        entity.setZIndex(random(-3, +1));
-        entity.speed.multiply(irandom(bothAvgsz/12, bothAvgsz/8));
-    });
-    entityExplode.randomAngleVariation = 0;
+    sharpSparks(irandom(1, 5), position, size);
     
     /**
     
@@ -331,19 +319,42 @@ typeImpacts[FX_SHARP] = function onimpact(actor, recipient) {
     
     /**/
     
-    makeShockwave(middlePosition, recipientAvgsz/4);
+    makeShockwave.lineWidth = size/32;
+    makeShockwave(position, size/4);
+    makeShockwave.lineWidth = 1;
+}
+
+function sharpSparks(count, position, size) {
+    entityExplode.randomAngleVariation = 1;
+    const entities = entityExplode(3, DiamondParticle, position, [size, size], 1)
+    .forEach(function(entity) {
+        entity.setZIndex(random(-3, +1));
+        entity.speed.multiply(irandom(size/12, size/8));
+    });
+    entityExplode.randomAngleVariation = 0;
+    
+    return entities;
+}
+
+typeImpacts[FX_SHARP] = function onimpact(actor, recipient) {
+    const {actorAvgsz, recipientAvgsz, bothAvgsz, actorPositionM, recipientPositionM, middlePosition} = interactionProperties(actor, recipient);
+    
+    const sz = Math.max(recipientAvgsz, 16);
+    
+    sharpImpact(middlePosition, sz);
 };
 
 typeImpacts[FX_GOLD_] = function onimpact(actor, recipient) {
-    const bothAvgsz = (actor.getWidth() + actor.getHeight() + recipient.getWidth() + recipient.getHeight()) / 4;
-    const actorPositionM = actor.getPositionM();
-    const recipientPositionM = recipient.getPositionM();
-    const middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
+    const {actorAvgsz, recipientAvgsz, bothAvgsz, actorPositionM, recipientPositionM, middlePosition} = interactionProperties(actor, recipient);
     
     /**/
     
     directionSparks.randomAngleVariation = Math.PI/8;
-    directionSparks(irandom(7, 9), GoldSmokeParticle, middlePosition, [bothAvgsz/1.5, bothAvgsz/1.5], actor.speed.normalized(bothAvgsz/8));
+    directionSparks(irandom(7, 9), GoldSmokeParticle, middlePosition, [bothAvgsz/1.5, bothAvgsz/1.5], actor.speed.normalized(bothAvgsz/8))
+    .forEach(function(entity) {
+        entity.speed.multiply(random(0.5, 1.5));
+        entity.setZIndex(-1);
+    });
     directionSparks.randomAngleVariation = 0;
     
     /**/
@@ -374,61 +385,68 @@ typeImpacts[FX_GOLD_] = function onimpact(actor, recipient) {
     /**/
 };
 
-typeImpacts[FX_FIRE] = function onimpact(actor, recipient) {
-    const bothAvgsz = (actor.getWidth() + actor.getHeight() + recipient.getWidth() + recipient.getHeight()) / 4;
-    const actorPositionM = actor.getPositionM();
-    const recipientPositionM = recipient.getPositionM();
-    const middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
-    
-    /**
-    
-    let particle = FireParticle.fromMiddle(recipient.getPositionM(), recipient.getSize());
-    particle.drawable.multiplySize((recipient.getWidth() + recipient.getHeight())/2/16);
-    particle.drawable.setZIndex(Math.random() - 0.25);
-    particle.setSpeed([Math.random(), Math.random()]);
-    
-    addEntity(particle);
-    
-    let avgsz = rectangle_averageSize(recipient);
-    
-    let radialGradient = RectangleDrawable.fromMiddle(recipient.getPositionM(), [avgsz, avgsz]);
-    radialGradient.setStyle(makeRadialGradientCanvas("#FFFF00FF", "#FF000000"));
-    radialGradient.setLifespan(12);
-    
-    let sizeTransition = new ColorTransition(radialGradient.size, Vector.multiplication(radialGradient.size, 1.5), radialGradient.lifespan);
-    
-    radialGradient.controllers.add(function() {
-        this.setSizeM(sizeTransition.getNext());
-    });
-    
-    addDrawable(radialGradient);
-    
-    /**/
-    
-    let count = 0;
-    
-    for(let i = 0; i < count; ++i) {
-        let particle = FireParticle.fromMiddle(Vector.addition(actorPositionM, (new Vector(Math.random(), Math.random())).normalize(8)), [16, 16]);
-        
-        addEntity(particle);
-    }
-    
+function flamesEffect(count, position) {
     entityExplode.randomAngleVariation = 1;
-    entityExplode(irandom(3, 4), FireSmokeParticle, middlePosition, [bothAvgsz/2, bothAvgsz/2], bothAvgsz/16);
+    const entities = entityExplode(count, FireParticle, position, [16, 16], 2);
     entityExplode.randomAngleVariation = 0;
+    
+    return entities;
+}
+
+function fireSmokes(count, position, size) {
+    entityExplode.randomAngleVariation = 1;
+    const entities = entityExplode(count, FireSmokeParticle, position, [size/2, size/2], size/16);
+    entityExplode.randomAngleVariation = 0;
+    
+    return entities;
+}
+
+typeImpacts[FX_FIRE] = function onimpact(actor, recipient) {
+    const {actorAvgsz, recipientAvgsz, bothAvgsz, actorPositionM, recipientPositionM, middlePosition} = interactionProperties(actor, recipient);
+    
+    flamesEffect(3, middlePosition);
+    
+    fireSmokes(irandom(3, 4), middlePosition, bothAvgsz);
 };
 
-typeImpacts[FX_ELECTRIC] = function onimpact(actor, recipient) {
-    const bothAvgsz = (actor.getWidth() + actor.getHeight() + recipient.getWidth() + recipient.getHeight()) / 4;
-    const actorPositionM = actor.getPositionM();
-    const recipientPositionM = recipient.getPositionM();
-    const middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
+class SparkSpark extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.setLifespan(8);
+        
+        this.setSizeTransition(new VectorTransition(Vector.division(this.size, 2), Vector.from(this.size), this.lifespan, powt(1)));
+        
+        const avgsz = rectangle_averageSize(this);
+        
+        const drawable = PolygonDrawable.from(makeBurstPolygon2(
+            new VectorTransition([2], [4], 16, Math.random),
+            new VectorTransition([0], [20], 16, Math.random),
+            4
+        ));
+        
+        drawable.setPositionM(this.getPositionM());
+        drawable.multiplySize(avgsz / polygon_averageSize(drawable));
+        drawable.initImaginarySize(avgsz);
+        drawable.setStyle(new ColorTransition([0, 255, 255, 1], [255, 0, 255, 0], this.lifespan, function(t) {return Math.pow(t, 5);}));
+        
+        this.setDrawable(drawable);
+    }
     
-    let avgsz = rectangle_averageSize(recipient);
+    updateDrawable() {
+        this.drawable.setPositionM(this.getPositionM());
+        this.drawable.setImaginarySize(rectangle_averageSize(this));
+        
+        return this;
+    }
+}
+
+typeImpacts[FX_ELECTRIC] = function onimpact(actor, recipient) {
+    const {actorAvgsz, recipientAvgsz, bothAvgsz, actorPositionM, recipientPositionM, middlePosition} = interactionProperties(actor, recipient);
     
     /**/
     
-    let count = 3;
+    const count = irandom(1, 5);
     
     for(let i = 0; i < count; ++i) {
         let angle = i/count * 2*Math.PI + 2*(Math.random() - 0.5);
@@ -440,43 +458,29 @@ typeImpacts[FX_ELECTRIC] = function onimpact(actor, recipient) {
     
     /**/
     
-    let burstDrawable = PolygonDrawable.from(makeBurstPolygon2(new ColorTransition([2], [4], 16, Math.random), new ColorTransition([0], [20], 16, Math.random), 4));
-    burstDrawable.setPositionM(recipient.getPositionM());
-    burstDrawable.setLifespan(8);
-    burstDrawable.setStyle(new ColorTransition([0, 255, 255, 1], [255, 0, 255, 0], burstDrawable.lifespan, function(t) {return Math.pow(t, 5);}));
-    
-    burstDrawable.multiplySize(avgsz/24);
-    let imgsizeTransition = new ColorTransition([avgsz], [2*avgsz], 16, function(t) {return Math.pow(t, 1);});
-    burstDrawable.initImaginarySize(imgsizeTransition.at(0)[0]);
-    
-    burstDrawable.controllers.add(function() {
-        this.setImaginarySize(imgsizeTransition.getNext()[0]);
-    });
-    
-    addDrawable(burstDrawable);
+    entityExplode.randomAngleVariation = 0.75;
+    entityExplode.initialDistance = function(i) {return random(0, recipientAvgsz);};
+    entityExplode(irandom(3, 4), SparkSpark, recipientPositionM, [recipientAvgsz/4, recipientAvgsz/4], 0);
+    entityExplode.randomAngleVariation = 0;
+    entityExplode.initialDistance = 0;
     
     /**/
     
-    let radialGradient = RectangleDrawable.fromMiddle(recipient.getPositionM(), [avgsz, avgsz]);
-    radialGradient.setStyle(makeRadialGradientCanvas("#00FFFF1F", "#00FFFF00"));
-    let sizeTransition = new ColorTransition(radialGradient.size, Vector.multiplication(radialGradient.size, 2.5));
-    
-    radialGradient.controllers.add(function() {
-        this.setSizeM(sizeTransition.getNext());
-    });
-    
+    const radialGradient = Entity.fromMiddle(recipient.getPositionM(), [recipientAvgsz, recipientAvgsz]);
     radialGradient.setLifespan(12);
+    radialGradient.setSizeTransition(new VectorTransition(radialGradient.size, Vector.multiplication(radialGradient.size, 2.5)));
     
-    addDrawable(radialGradient);
+    radialGradient.getDrawable().setStyle(makeRadialGradientCanvas("#00FFFF1F", "#00FFFF00"));
+    
+    addEntity(radialGradient);
     
     /**/
 };
 
 typeImpacts["paint"] = function(actor, recipient) {
-    let actorPositionM = actor.getPositionM();
-    let recipientPositionM = recipient.getPositionM();
+    const {actorAvgsz, recipientAvgsz, bothAvgsz, actorPositionM, recipientPositionM, middlePosition} = interactionProperties(actor, recipient);
+    
     let avgsz = 16; rectangle_averageSize(actor);
-    let middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
     
     entityExplode.initialDistance = avgsz/8;
     entityExplode.randomAngleVariation = 1;
@@ -489,9 +493,7 @@ typeImpacts["paint"] = function(actor, recipient) {
 };
 
 typeImpacts[FX_HEART_] = function(actor, recipient) {
-    let actorPositionM = actor.getPositionM();
-    let recipientPositionM = recipient.getPositionM();
-    let middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
+    const {actorAvgsz, recipientAvgsz, bothAvgsz, actorPositionM, recipientPositionM, middlePosition} = interactionProperties(actor, recipient);
     
     let drawable = (new PolygonDrawable(makePathPolygon(makeSpiralPath(0, 4*Math.PI, 0, 32, 32)))).setStyle(new ColorTransition([0, 63, 255, 1], [0, 63, 255, 0], 16, powt(4)));
     
@@ -512,13 +514,12 @@ typeImpacts[FX_HEART_] = function(actor, recipient) {
     // 
     
     entityExplode.randomAngleVariation = 1;
-    const entities = entityExplode(irandom(8, 12), PaintDroplet, middlePosition, function() {
+    const entities = entityExplode(irandom(8, 12), HeartBloodDroplet, middlePosition, function() {
         const sz = irandom(8, 12);
         return [sz, sz];
     }, 1);
     entityExplode.randomAngleVariation = 0;
     entities.forEach(function(entity) {
-        entity.setStyle(new ColorTransition([0, 63, 255, 1], [0, 63, 255, 0], 16, powt(8)));
         entity.speed.multiply(random(1, 4));
     });
 };
@@ -592,10 +593,7 @@ typeImpacts[FX_BLUNT] = function onimpact(actor, recipient) {
 };
 
 function crownImpact(actor, recipient, style = "white") {
-    let actorPositionM = actor.getPositionM();
-    let recipientPositionM = recipient.getPositionM();
-    let middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
-    const recipientAvgsz = rectangle_averageSize(recipient);
+    const {actorAvgsz, recipientAvgsz, bothAvgsz, actorPositionM, recipientPositionM, middlePosition} = interactionProperties(actor, recipient);
     
     let direction = Vector.subtraction(recipientPositionM, actorPositionM).rotate(Math.random() * 2*Math.PI);
     
@@ -610,10 +608,7 @@ function crownImpact(actor, recipient, style = "white") {
 }
 
 function burstImpact(actor, recipient, style = "white") {
-    let actorPositionM = actor.getPositionM();
-    let recipientPositionM = recipient.getPositionM();
-    let middlePosition = Vector.addition(actorPositionM, recipientPositionM).divide(2);
-    const recipientAvgsz = rectangle_averageSize(recipient);
+    const {actorAvgsz, recipientAvgsz, bothAvgsz, actorPositionM, recipientPositionM, middlePosition} = interactionProperties(actor, recipient);
     
     let size = Math.max(1, recipientAvgsz/32);
     
@@ -627,6 +622,36 @@ function burstImpact(actor, recipient, style = "white") {
 }
 
 typeImpacts[FX_WIND] = function onimpact(actor, recipient) {
+    const {actorAvgsz, recipientAvgsz, bothAvgsz, actorPositionM, recipientPositionM, middlePosition} = interactionProperties(actor, recipient);
+    
+    entityExplode(irandom(8, 12), SmokeParticle, recipientPositionM, undefined, 2)
+    .forEach(function(entity) {
+        entity.drawable.setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 0, 1], entity.lifespan, powt(1/2)));
+    });
+    
+    makeShockwave.lineWidth = 4;
+    makeShockwave(recipientPositionM, recipientAvgsz/8)
+    .setSpeed(Vector.fromAngle(0).normalize(0.125))
+    .makeEllipse([0, 16])
+    .getDrawable()
+    .setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 0, 0], 24, powt(1/2)));
+    
+    makeShockwave.lineWidth = 4;
+    makeShockwave(recipientPositionM, recipientAvgsz/8)
+    .setSpeed(Vector.fromAngle(-Math.PI/3).normalize(0.125))
+    .makeEllipse([0, 16])
+    .getDrawable()
+    .setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 0, 0], 24, powt(1/2)));
+    
+    makeShockwave.lineWidth = 4;
+    makeShockwave(recipientPositionM, recipientAvgsz/8)
+    .setSpeed(Vector.fromAngle(-2*Math.PI/3).normalize(0.125))
+    .makeEllipse([0, 16])
+    .getDrawable()
+    .setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 0, 0], 24, powt(1/2)));
+    
+    makeShockwave.lineWidth = 1;
+    
     for(let i = 0; i < 2; ++i) {
         
     }
@@ -651,7 +676,13 @@ function entityExplode(count, entityClass, position, size, power) {
             s = size;
         }
         
-        const entity = entityClass.fromMiddle(Vector.addition(position, direction.normalized(entityExplode.initialDistance)), s);
+        let initialDistance = entityExplode.initialDistance;
+        
+        if(typeof initialDistance === "function") {
+            initialDistance = initialDistance(i);
+        }
+        
+        const entity = entityClass.fromMiddle(Vector.addition(position, direction.normalized(initialDistance)), s);
         entity.setSpeed(direction.times(power));
         
         entities.add(entity);
@@ -690,7 +721,10 @@ function directionSparks(count, entityClass, position, size, direction) {
 directionSparks.randomAngleVariation = 0;
 directionSparks.initialDistance = 0;
 
-function makeShockwave(position, radius, style) {
+function makeShockwave(position, radius) {
+    OvalWaveParticle.lineWidth = makeShockwave.lineWidth;
+    OvalWaveParticle.lifespan = makeShockwave.lifespan;
+    
     const entity = OvalWaveParticle.fromMiddle(position, [radius, radius]);
     
     addEntity(entity);
@@ -701,6 +735,7 @@ function makeShockwave(position, radius, style) {
 makeShockwave.precision = 64;
 makeShockwave.lifespan = 24;
 makeShockwave.timingFunction = powt(1/2);
+makeShockwave.lineWidth = 1;
 
 function angledSparks(count, entityClass, position, size, angleTransition) {
     const entities = new SetArray();
@@ -726,3 +761,34 @@ angledSparks.initialAngle = 0;
 function drawableExplode() {
     
 }
+
+function makeBurstEffect(entityClass, position, size, speed) {
+    const avgsz = array_average(size);
+    const entities = new SetArray();
+    
+    if(speed.getNorm() < 2) {
+        entityExplode(8, entityClass, position, size, avgsz/16);
+        entityExplode(8, entityClass, position, size, avgsz/8);
+        entityExplode(8, entityClass, position, size, avgsz/4);
+    } else {
+        directionSparks.randomAngleVariation = Math.PI/6;
+        directionSparks(32, entityClass, position, Vector.multiply(size, random(0.75, 1.25)), speed.normalized())
+        .forEach(function(entity) {
+            entity.speed.multiply(random(avgsz/16, avgsz/3));
+        });
+        directionSparks.randomAngleVariation = 0;
+    }
+    
+    return 
+}
+
+typeImpacts[FX_PIERCING] = function(actor, recipient) {
+    const {actorAvgsz, recipientAvgsz, bothAvgsz, actorPositionM, recipientPositionM, middlePosition} = interactionProperties(actor, recipient);
+    
+    directionSparks.randomAngleVariation = Math.PI/6;
+    directionSparks(8, BluntOvalParticle, middlePosition, [bothAvgsz/16, bothAvgsz/16], recipient.speed.normalized())
+    .forEach(function(entity) {
+        entity.speed.multiply(random(bothAvgsz/16, bothAvgsz/4));
+    });
+    directionSparks.randomAngleVariation = 0;
+};

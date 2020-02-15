@@ -23,23 +23,19 @@ class PlayableCharacter extends Character {
         this.defaultAnimStyle = "cyan";
         
         this.setEventListener("defeat", "vanish", function() {
-            let spd = rectangle_averageSize(this) / 16;
+            const positionM = this.getPositionM();
+            const size = this.size;
+            const avgsz = rectangle_averageSize(this);
             
-            for(var angle = Math.PI / 2; angle < 2 * Math.PI + Math.PI / 2; angle += Math.PI / 4) {
-                var cos = Math.cos(angle), sin = Math.sin(angle);
-                var particle = SmokeParticle.fromMiddle(this.getPositionM(), this.size);
-                particle.setSpeed([spd*cos, spd*sin]);
-                particle.drag(this.speed);
-                particle.setStyle(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1], 32));
-                particle.setSizeTransition(new ColorTransition(this.size, [0, 0], 32));
-                addEntity(particle);
-            }
+            makeBurstEffect(PlayableCharacterVanishParticle, positionM, size, this.speed);
             
-            var particle = SmokeParticle.fromMiddle(this.getPositionM(), this.size);
-            particle.drag(this.speed);
-            particle.setStyle(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1], 32));
-            particle.setSizeTransition(new ColorTransition(this.size, [0, 0], 32));
-            addEntity(particle);
+            makeShockwave.lifespan = 48;
+            makeShockwave.lineWidth = avgsz/4;
+            makeShockwave(positionM, avgsz/2)
+            .getDrawable()
+            .setStyle(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 0], 48, powt(1/4)));
+            makeShockwave.lifespan = 24;
+            makeShockwave.lineWidth = 1;
         });
         
         this.cursorDistance = 1024;
@@ -325,7 +321,7 @@ class CursorSmoke extends Entity {
         
         const avgsz = rectangle_averageSize(this);
         
-        this.setLifespan(24);
+        this.setLifespan(irandom(12, 24));
         this.addInteraction(new DragRecipient(0.03125));
         
         this.setSizeTransition(new VectorTransition(Array.from(this.size), [0, 0], this.lifespan, powt(2)));
@@ -333,6 +329,7 @@ class CursorSmoke extends Entity {
         let drawable = new PolygonDrawable(makeRandomPolygon(16, 12, 16));
         drawable.multiplySize(avgsz/polygon_averageSize(drawable));
         drawable.initImaginarySize(avgsz);
+        drawable.setZIndex(-1000);
         
         this.setDrawable(drawable);
         
@@ -395,5 +392,14 @@ class PlayerCursor extends Cursor {
         });
         
         this.alwaysLoad = true;
+    }
+}
+
+class PlayableCharacterVanishParticle extends CharacterVanishParticle {
+    constructor() {
+        super(...arguments);
+        
+        this.drawable.setStyle(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1], this.lifespan));
+        this.drawable.setStrokeStyle(new ColorTransition([0, 0, 223, 1], [0, 223, 223, 1], this.lifespan));
     }
 }
