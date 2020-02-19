@@ -1,5 +1,12 @@
 
 const ENETRA_DEF = new ColorTransition([255, 0, 0, 1], [0, 255, 0, 1]);
+const ENETRA_DEFMAX = new MultiColorTransition([[255, 0, 0, 1], [0, 255, 0, 1], [0, 255, 255, 1]], 1, function(t) {
+    if(t === 1) {
+        return 1;
+    }
+    
+    return t / 2;
+});
 
 const EBAR_HEIGHTPROP = 12/36;
 const EBAR_BORDERPROP = 4/36;
@@ -50,7 +57,11 @@ class EnergyBarDrawable extends RectangleDrawable {
         return this;
     }
     
-    setBorderWidth(borderWidth) {this.borderWidth = borderWidth;}
+    setBorderWidth(borderWidth) {
+        this.borderWidth = borderWidth;
+        
+        return this;
+    }
     
     setCamera(camera) {
         super.setCamera(camera);

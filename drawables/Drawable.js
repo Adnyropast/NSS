@@ -33,38 +33,21 @@ class Drawable {
             return this;
         }
         
-        if(this.style instanceof AnimatedImages) {
-            this.style.getNext();
-        } else if(this.style instanceof ColorTransition) {
-            this.style.getNext();
-        } if(this.strokeStyle instanceof ColorTransition) {
-            this.strokeStyle.getNext();
-        }
+        styleNext(this.style);
+        styleNext(this.strokeStyle);
         
         return this;
     }
     
     getStyle() {
-        if(this.style instanceof AnimatedImages) {
-            return this.style.getCurrent();
-        } else if(this.style instanceof ColorTransition) {
-            return this.style.getCurrentStyle();
-        }
-        
-        return this.style;
+        return trueStyleOf(this.style);
     }
     
     setCamera(camera) {this.camera = camera; return this;}
     getCamera() {return this.camera;}
     
     getStrokeStyle() {
-        if(this.strokeStyle instanceof AnimatedImages) {
-            return this.strokeStyle.getCurrent();
-        } else if(this.strokeStyle instanceof ColorTransition) {
-            return this.strokeStyle.getCurrentStyle();
-        }
-        
-        return this.strokeStyle;
+        return trueStyleOf(this.strokeStyle);
     }
     
     getShadowColor() {
@@ -176,4 +159,24 @@ class MultiDrawable extends Drawable {
         
         return this;
     }
+}
+
+function trueStyleOf(style) {
+    if(style instanceof AnimatedImages) {
+        return style.getCurrent();
+    } else if(style instanceof ColorTransition) {
+        return style.getCurrentStyle();
+    }
+    
+    return style;
+}
+
+function styleNext(style) {
+    if(style instanceof AnimatedImages) {
+        style.getNext();
+    } else if(style instanceof ColorTransition) {
+        style.getNext();
+    }
+    
+    return style;
 }

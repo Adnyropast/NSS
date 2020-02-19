@@ -262,6 +262,8 @@ class MultiColorTransition extends ColorTransition {
     }
     
     at(t) {
+        t = this.timing(t);
+        
         let vector = Vector.filled(this.getDimension(), 0);
         
         for(let i = 0; i < this.vectors.length - 1; ++i) {
@@ -273,10 +275,10 @@ class MultiColorTransition extends ColorTransition {
             if(progress0 <= t && t <= progress1) {
                 let tt = (t - progress0) / (progress1 - progress0);
                 
-                let ttt = this.timing(tt);
+                // let ttt = this.timing(tt);
                 
                 for(let dim = 0; dim < vector.length; ++dim) {
-                    vector[dim] = vector0[dim] + ttt * (vector1[dim] - vector0[dim]);
+                    vector[dim] = vector0[dim] + tt * (vector1[dim] - vector0[dim]);
                 }
                 
                 break;
