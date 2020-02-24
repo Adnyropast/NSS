@@ -6,7 +6,7 @@ class GameLoop {
         this.collidables = new SetArray();
         this.camera = null;
         
-        this.counter = 0; -1;
+        this.counter = 0;
         this.counterLimit = Infinity;
         this.controllers = new SetArray();
     }
@@ -708,6 +708,12 @@ function worldUpdate() {
 }
 
 WORLDLOOP.controllers.add(worldUpdate);
+WORLDLOOP.controllers.add(function() {
+    if(keyList.value(K_ESC) == 1 || gamepadRec.value(BUTTON_START) === 1) {
+        backupPhase = gamePhase;
+        switchPhase(ESCAPELOOP);
+    }
+});
 
 // --------------- //
 //// BATTLE LOOP ////
@@ -1256,7 +1262,6 @@ function escapeMenu() {
 
 ESCAPELOOP.controllers.add(escapeMenu);
 
-const GLOBALDRAWABLES = new SetArray();
 let COVERDRAWABLE = null;
 
 function transitionIn(duration = 16) {
@@ -1286,24 +1291,7 @@ function setGameTimeout(f, timeout) {
 GAMELOOP.controllers.add(gameEventController);
 
 function gameUpdate() {
-    if(gamePhase == WORLDLOOP) {
-        WORLDLOOP.update();
-        
-        if(keyList.value(K_ESC) == 1 || gamepadRec.value(BUTTON_START) === 1) {
-            backupPhase = gamePhase;
-            switchPhase(ESCAPELOOP);
-        }
-    } else if(gamePhase == BATTLELOOP) {
-        BATTLELOOP.update();
-    } else if(gamePhase == ESCAPELOOP) {
-        ESCAPELOOP.update();
-    }
-    
-    if(gamePhase !== ESCAPELOOP) {
-        // escapeCounter = 0;
-    }
-    
-    // 
+    gamePhase.update();
     
     // 
     
@@ -1322,14 +1310,9 @@ function gameUpdate() {
     
     eventsRecordersUpdate();
     
-    // 
+    //// Drawing ////
     
-    for(let i = 0; i < GLOBALDRAWABLES.length; ++i) {
-        let drawable = GLOBALDRAWABLES[i];
-        
-        drawable.update();
-        drawable.draw(CANVAS.getContext("2d"));
-    }
+    this.draw();
     
     if(COVERDRAWABLE != null) {
         COVERDRAWABLE.update().draw(CANVAS.getContext("2d"));

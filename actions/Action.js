@@ -40,7 +40,7 @@ class Action {
         this.useCost = 0;
         this.order = 0;
         
-        this.endid = -1;
+        this.endId = undefined;
         this.phaseLimit = 255;
         
         this.removable = true;
@@ -108,11 +108,15 @@ class Action {
         return this.end();
     }
     
-    setEndid(endid) {this.endid = endid; return this;}
+    setEndId(endId) {
+        this.endId = endId;
+        
+        return this;
+    }
     
-    end(endid = 0) {
+    end(endId = 0) {
         if(this.user != null && this.isRemovable()) {
-            this.endid = endid;
+            this.endId = endId;
             this.onend();
             
             var user = this.user;
@@ -151,6 +155,10 @@ class Action {
     
     sharesId(action) {
         return action instanceof Action && this.id === action.id;
+    }
+    
+    hasEnded() {
+        return this.endId !== undefined;
     }
 }
 

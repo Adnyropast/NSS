@@ -731,7 +731,7 @@ class Entity extends Rectangle {
     }
     
     addAction(action) {
-        // action.endid = "this message should be overwritten";
+        // action.endId = "this message should be overwritten";
         
         if(!this.canUseAction(action)) {
             if(action instanceof Action) action.end("User can't use the action.");
@@ -755,7 +755,7 @@ class Entity extends Rectangle {
             }
             
             if(this.actions[i].preventsAddition(action)) {
-                action.setEndid("Blocked from user by action.");
+                action.setEndId("Blocked from user by action.");
                 
                 ACTIONADDED = false;
                 
@@ -772,12 +772,12 @@ class Entity extends Rectangle {
         return this;
     }
     
-    removeActionAt(index, endid = "Removed from user.") {
+    removeActionAt(index, endId = "Removed from user.") {
         if(this.actions[index] instanceof Action && this.actions[index].isRemovable()) {
             var action = this.actions[index];
             
             this.actions.splice(index, 1);
-            action.end(endid);
+            action.end(endId);
         }
         
         return this;

@@ -84,7 +84,7 @@ class Jump extends Action {
     }
     
     onend() {
-        // console.log(this.endid);
+        // console.log(this.endId);
         
         return this;
     }
@@ -274,7 +274,7 @@ class AutoJump extends Action {
             }
         }
         
-        if(this.jumpAction && this.jumpAction.endid != -1) {
+        if(this.jumpAction && this.jumpAction.hasEnded()) {
             this.jumpAction = null;
         }
         

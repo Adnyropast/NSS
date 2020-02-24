@@ -661,7 +661,7 @@ function irandom(min, max) {
 }
 
 function powt(pow) {
-    return function timing(t) {
+    return function powt(t) {
         return Math.pow(t, pow);
     };
 }
