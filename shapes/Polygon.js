@@ -700,6 +700,38 @@ class Polygon extends Array {
         return this;
     }
     
+    getMinX() {
+        return this.getMinPosition(0);
+    }
+    
+    getMaxX() {
+        return this.getMaxPosition(0);
+    }
+    
+    getMinY() {
+        return this.getMinPosition(1);
+    }
+    
+    getMaxY() {
+        return this.getMaxPosition(1);
+    }
+    
+    getMinZ() {
+        return this.getMinPosition(2);
+    }
+    
+    getMaxZ() {
+        return this.getMaxPosition(2);
+    }
+    
+    forEachPoint(callbackfn) {
+        for(let i = 0; i < this.size(); ++i) {
+            callbackfn(this.getPoint(i), i, this);
+        }
+        
+        return this;
+    }
+    
 }
 
 /**/
@@ -1057,6 +1089,14 @@ class MultiPolygon extends Array {
         this.multiplySize(imaginarySize / this.imaginarySize);
         
         this.imaginarySize = imaginarySize;
+        
+        return this;
+    }
+    
+    forEachPolygon(callbackfn) {
+        for(let i = 0; i < this.size(); ++i) {
+            callbackfn(this.getPolygon(i), i, this);
+        }
         
         return this;
     }
