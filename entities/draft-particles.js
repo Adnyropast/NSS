@@ -452,3 +452,28 @@ class BluntOvalParticle extends Entity {
         return this;
     }
 }
+
+class PebbleParticle extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.setLifespan(32);
+        this.setSelfBrake(1.03125);
+        this.accelerators.add([0, 0.03125]);
+        
+        const drawable = new PolygonDrawable(makeRandomPolygon(5, 12, 16));
+        drawable.multiplySize(rectangle_averageSize(this)/polygon_averageSize(drawable));
+        drawable.setStyle("gray");
+        drawable.setStrokeStyle("dimGray");
+        
+        this.setDrawable(drawable);
+    }
+    
+    updateDrawable() {
+        const drawable = this.getDrawable();
+        
+        drawable.setPositionM(this.getPositionM());
+        
+        return this;
+    }
+}

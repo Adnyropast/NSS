@@ -225,13 +225,9 @@ class Character extends Entity {
         /**/
         
         directionSparks.randomAngleVariation = 0.5;
-        directionSparks(8, Entity, positionM, [norm/3, norm/3], this.speed.normalized(-1))
+        directionSparks(8, PebbleParticle, positionM, [norm/3, norm/3], this.speed.normalized(-1))
         .forEach(function(entity) {
-            entity.setLifespan(32);
-            entity.setSelfBrake(1.03125);
             entity.speed.multiply(random(1, 2));
-            entity.addInteraction(new DragRecipient(0.125));
-            entity.drawable.style = "gray";
         });
         
         /**/
