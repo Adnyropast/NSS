@@ -107,8 +107,6 @@ class Character extends Entity {
             makeShockwave(positionM, avgsz/2)
             .getDrawable()
             .setStyle(new ColorTransition(CV_WHITE, [0, 0, 0, 0], 48, powt(1/4)));
-            makeShockwave.lifespan = 24;
-            makeShockwave.lineWidth = 1;
         });
     }
     
@@ -223,9 +221,6 @@ class Character extends Entity {
             entity.speed.multiply(random(norm * 0.25, norm * 0.5));
             // entity.drawable.style = "blue";
         });
-        entityExplode.initialDistance = 0;
-        entityExplode.xRadius = 1;
-        entityExplode.radiusRotate = 0;
         
         /**/
         
@@ -238,7 +233,6 @@ class Character extends Entity {
             entity.addInteraction(new DragRecipient(0.125));
             entity.drawable.style = "gray";
         });
-        directionSparks.randomAngleVariation = 0;
         
         /**/
         

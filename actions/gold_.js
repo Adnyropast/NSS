@@ -220,7 +220,6 @@ class RocketPunch extends GoldAbility {
             .forEach(function(entity) {
                 entity.speed.multiply(Math.random() + 1);
             });
-            entityExplode.randomAngleVariation = 0;
             
             this.user.setFace(projectile.speed[0]);
             

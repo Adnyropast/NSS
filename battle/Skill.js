@@ -140,9 +140,6 @@ class EnemyAttackSkill extends Skill {
                 makeShockwave(targetPositionM, targetAvgsz/3)
                 .getDrawable()
                 .setStyle(new ColorTransition([255, 191, 255, 1], [191, 63, 191, 0], 32));
-                makeShockwave.lifespan = 24;
-                makeShockwave.lineWidth = 1;
-                makeShockwave.precision = 32;
                 
                 target.hurt(1);
             }
@@ -244,8 +241,6 @@ SKILLS["attack"] = class AttackSkill extends Skill {
                 drawable.setStyle(new ColorTransition([0, 255, 255, 1], [0, 0, 255, 0], entity.lifespan));
                 drawable.setShadowBlur(8);
             });
-            entityExplode.randomAngleVariation = 0;
-            entityExplode.initialDistance = 0;
         } if(this.phase == 32) {
             for(let i = 0; i < targets.length; ++i) {
                 const target = targets[i];
@@ -289,7 +284,6 @@ SKILLS["attack"] = class AttackSkill extends Skill {
                         
                         drawable.setZIndex(target.drawable.getZIndex() - 1);
                     });
-                    entityExplode.randomAngleVariation = 0;
                 }
                 
                 entityExplode(16, OvalParticle, opponentPositionM, [opponentAvgsz/4, opponentAvgsz/4], 1)
@@ -309,9 +303,6 @@ SKILLS["attack"] = class AttackSkill extends Skill {
                 .getDrawable()
                 .setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 255, 0], 32, powt(1/2)))
                 ;
-                makeShockwave.lifespan = 24;
-                makeShockwave.lineWidth = 1;
-                makeShockwave.precision = 32;
             }
             
             repaceLoop(32);

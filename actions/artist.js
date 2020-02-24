@@ -55,8 +55,6 @@ class BrushSlash extends SlashAction {
             .forEach(function(entity) {
                 entity.speed.multiply(irandom(2, 16)/8);
             });
-            entityExplode.initialDistance = 0;
-            entityExplode.randomAngleVariation = 0;
         }
         
         return this;
@@ -181,7 +179,6 @@ class PaintCloud extends Hitbox {
         makeShockwave.lineWidth = recipientAvgsz/8;
         const shockwave = makeShockwave(middlePosition, recipientAvgsz/6);
         shockwave.getDrawable().setStyle(new ColorTransition(colorVector_alterAlpha(currentColorVector, +1.0), colorVector_alterAlpha(currentColorVector, -1.0), shockwave.lifespan, powt(1/2)));
-        makeShockwave.lineWidth = 1;
     }
 }
 

@@ -146,8 +146,6 @@ class BurningHitbox extends Hitbox {
         entityExplode.initialAngle = random(0, 2*Math.PI / 8);
         entityExplode.randomAngleVariation = 0.75;
         entityExplode(8, FireSmokeParticle, positionM, [12, 12], 1);
-        entityExplode.initialAngle = 0;
-        entityExplode.randomAngleVariation = 0;
         
         makeShockwave.lineWidth = 4;
         makeShockwave(positionM, 1)
@@ -162,8 +160,6 @@ class BurningHitbox extends Hitbox {
         .makeEllipse([0, 16])
         .getDrawable()
         .setStyle(new ColorTransition([255, 255, 255, 1], [0, 0, 0, 0], 24, powt(2)));
-        
-        makeShockwave.lineWidth = 1;
         
         return this;
     }

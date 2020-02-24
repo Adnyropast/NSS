@@ -36,7 +36,6 @@ class BloodProjectile extends Projectile {
             .forEach(function(entity) {
                 entity.speed.multiply(random(1, 4));
             });
-            entityExplode.randomAngleVariation = 0;
         }
         
         return this;

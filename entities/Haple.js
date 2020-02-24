@@ -44,8 +44,6 @@ EC["haple"] = class Haple extends PlayableCharacter {
             .forEach(function(entity) {
                 entity.speed.multiply(6);
             });
-            
-            entityExplode.initialAngle = 0;
         });
     }
     

@@ -36,9 +36,6 @@ class Jump extends Action {
                 entity.speed.multiply(random(1.0, 1.5));
                 // entity.removeInterrecipientWithId("replace");
             });
-            entityExplode.xRadius = 1;
-            entityExplode.initialAngle = 0;
-            entityExplode.radiusRotate = 0;
             
             // 
             
@@ -50,7 +47,6 @@ class Jump extends Action {
                 entity.resetSpikeDrawable(irandom(4, 6), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
                 addDrawable(entity.drawable);
             });
-            entityExplode.initialAngle = 0;
         }
         /**/
         
@@ -116,9 +112,6 @@ class MidairJump extends Jump {
             shockwave.setSpeed(this.user.speed.times(-0.0625));
             shockwave.makeEllipse();
             
-            
-            makeShockwave.lineWidth = 1;
-            
             this.user.triggerEvent("jump", {action: this});
         }
         
@@ -161,8 +154,6 @@ class EnergyJump extends Jump {
             entityExplode.xRadius = 0.125;
             entityExplode.radiusRotate = this.direction.getAngle();
             entityExplode(8, GoldSmokeParticle, [this.user.getXM(), this.user.getY2()], [8, 8], 1.5);
-            entityExplode.xRadius = 1;
-            entityExplode.radiusRotate = 0;
         }
         
         if(this.phase < 2) {
@@ -318,7 +309,6 @@ class WallJump extends Action {
                 entity.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
                 addDrawable(entity.drawable);
             });
-            angledSparks.initialAngle = 0;
             
             // 
             
@@ -328,12 +318,12 @@ class WallJump extends Action {
             .forEach(function(entity) {
                 entity.speed.multiply(random(0.75, 1.75));
             });
+            directionSparks.initialDistance = avgsz/2;
+            directionSparks.randomAngleVariation = 0.5;
             directionSparks(irandom(2, 3), SmokeParticle, positionM, undefined, this.direction.rotated(+3*Math.PI/4).normalize())
             .forEach(function(entity) {
                 entity.speed.multiply(random(0.75, 1.75));
             });
-            directionSparks.initialDistance = 0;
-            directionSparks.randomAngleVariation = 0;
         }
         
         this.user.triggerEvent("jump", {action: this});

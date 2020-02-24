@@ -34,8 +34,6 @@ class PlayableCharacter extends Character {
             makeShockwave(positionM, avgsz/2)
             .getDrawable()
             .setStyle(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 0], 48, powt(1/4)));
-            makeShockwave.lifespan = 24;
-            makeShockwave.lineWidth = 1;
         });
         
         this.cursorDistance = 1024;
@@ -259,7 +257,6 @@ class PlayableCharacter extends Character {
                 
                 entity.speed.multiply(speedNorm);
             });
-            angledSparks.initialAngle = 0;
             
             /**/
         }
