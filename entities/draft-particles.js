@@ -225,32 +225,22 @@ class DiamondParticle extends Entity {
 class OvalParticle extends Entity {
     constructor() {
         super(...arguments);
-        
-        this.setDrawable(PolygonDrawable.from(roundparticle));
-        this.drawable.setPositionM(this.getPositionM());
-        this.drawable.initImaginarySize(rectangle_averageSize(this));
         this.setLifespan(12);
         
-        this.controllers.add(function() {
-            if(this.sizeTransition) {
-                this.setSizeM(this.sizeTransition.getNext());
-            }
-        });
+        const drawable = PolygonDrawable.from(roundparticle);
+        
+        drawable.setPositionM(this.getPositionM());
+        drawable.multiplySize(rectangle_averageSize(this)/polygon_averageSize(drawable));
+        drawable.initImaginarySize(rectangle_averageSize(this));
+        
+        this.setDrawable(drawable);
     }
     
     updateDrawable() {
-        this.drawable.setPositionM(this.getPositionM());
-        this.drawable.setImaginarySize(rectangle_averageSize(this));
+        const drawable = this.getDrawable();
         
-        return this;
-    }
-    
-    setSizeTransition() {
-        if(arguments[0] instanceof VectorTransition) {
-            this.sizeTransition = arguments[0];
-        } else {
-            this.sizeTransition = new VectorTransition(...arguments);
-        }
+        drawable.setPositionM(this.getPositionM());
+        drawable.setImaginarySize(rectangle_averageSize(this));
         
         return this;
     }
@@ -331,7 +321,7 @@ class OvalWaveParticle extends Entity {
         
         let avgsz = rectangle_averageSize(this);
         
-        this.setDrawable(new PolygonDrawable(makePathPolygon(makeOvalPath(32, 64, 64), OvalWaveParticle.lineWidth)));
+        this.setDrawable(new PolygonDrawable(makePathPolygon(makeOvalPath(OvalWaveParticle.precision, 64, 64), OvalWaveParticle.lineWidth)));
         this.setLifespan(OvalWaveParticle.lifespan);
         this.drawable.setStyle(new ColorTransition([255, 255, 255, 1], [255, 255, 255, 0], this.lifespan, powt(1/2)));
         this.drawable.rotate(Math.random() * 2*Math.PI);
@@ -366,6 +356,7 @@ class OvalWaveParticle extends Entity {
 
 OvalWaveParticle.lineWidth = 1;
 OvalWaveParticle.lifespan = 24;
+OvalWaveParticle.precision = 32;
 
 class SparkSpark extends Entity {
     constructor() {

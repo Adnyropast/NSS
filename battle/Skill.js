@@ -6,29 +6,43 @@ class Skill {
         return null;
     }
     
-    static getLabel() {
-        return new CommandLabel(camelToSentence(this.name));
-    }
-    
     constructor() {
         this.user = null;
         
         this.priority = 0;
         this.targets = new SetArray();
+        this.phase = 0;
+        
+        this.endId = undefined;
+        
+        this.moveCountBefore = 0;
     }
     
-    getPriority() {return this.priority;}
-    setPriority(priority) {this.priority = priority; return this;}
+    getPriority() {
+        return this.user.getPriority() - this.moveCountBefore;
+        return this.priority;
+    }
     
-    use(actIC) {
+    setPriority(priority) {
+        this.priority = priority;
+        return this;
+    }
+    
+    use() {
         this.end();
         
         return this;
     }
     
-    end(endid = 0) {
+    end(endId = 0) {
+        this.endId = endId;
         this.onend();
-        SKILLS_QUEUE.remove(this);
+        
+        const user = this.user;
+        user.moves.remove(this);
+        this.user = null;
+        
+        removeMove(this);
         
         return this;
     }
@@ -43,6 +57,22 @@ class Skill {
     onend() {
         return this;
     }
+    
+    hasEnded() {
+        return this.endId !== undefined;
+    }
+    
+    getPresentTargets() {
+        const targets = SetArray.from(this.targets);
+        
+        for(let i = targets.length - 1; i >= 0; --i) {
+            if(!BATTLELOOP.battlers.includes(targets[i])) {
+                targets.splice(i, 1);
+            }
+        }
+        
+        return targets;
+    }
 }
 
 class EnemyAttackSkill extends Skill {
@@ -50,27 +80,27 @@ class EnemyAttackSkill extends Skill {
         super();
     }
     
-    use(actIC) {
-        if(actIC == 0) {
+    use() {
+        const targets = this.getPresentTargets();
+        
+        if(this.phase == 0) {
             const userPositionM = this.user.drawable.getPositionM();
             const userAvgsz = rectangle_averageSize(this.user.drawable);
             
             {
-                const drawable = RectangleDrawable.fromMiddle(userPositionM, [userAvgsz*4, userAvgsz*4]);
-                drawable.setLifespan(32);
+                const entity = Entity.fromMiddle(userPositionM, [userAvgsz*4, userAvgsz*4]);
+                entity.setLifespan(32);
+                entity.setSizeTransition(new VectorTransition(Array.from(entity.size), [0, 0], entity.lifespan, powt(2)));
                 
+                const drawable = entity.getDrawable();
                 drawable.setStyle(makeRadialGradientCanvas("purple", "#FF00FF00"));
-                const sizeTransition = new VectorTransition(Array.from(drawable.size), [0, 0], drawable.lifespan, powt(2));
-                drawable.controllers.add(function() {
-                    this.setSizeM(sizeTransition.getNext());
-                });
                 
-                BATTLELOOP.addDrawable(drawable);
+                addEntity(entity);
             }
             
-        } else if(actIC == 32) {
-            for(let i = 0; i < this.targets.length; ++i) {
-                const target = this.targets[i];
+        } else if(this.phase == 32) {
+            for(let i = 0; i < targets.length; ++i) {
+                const target = targets[i];
                 const targetPositionM = target.drawable.getPositionM();
                 
                 const vector = new Vector(-1, +1);
@@ -87,24 +117,32 @@ class EnemyAttackSkill extends Skill {
                 
                 BATTLELOOP.addDrawable(drawable);
             }
-        } else if(actIC === 36) {
-            for(let i = 0; i < this.targets.length; ++i) {
-                const target = this.targets[i];
+        } else if(this.phase === 36) {
+            for(let i = 0; i < targets.length; ++i) {
+                const target = targets[i];
                 
                 const targetPositionM = target.drawable.getPositionM();
                 const targetAvgsz = rectangle_averageSize(target.drawable);
                 
-                makeBurstDrawables(16, targetPositionM, targetAvgsz).forEach(function(drawable) {
-                    drawable.multiplySize(1/2);
-                    drawable.setStyle(new ColorTransition([255, 127, 255, 1], [127, 0, 127, 0.5], drawable.lifespan));
-                    BATTLELOOP.addDrawable(drawable);
+                for(let j = 0; j < 2; ++j) {
+                    const drawable = sharpCut(targetPositionM, targetAvgsz);
+                    drawable.setStyle(new ColorTransition([255, 0, 255, 1], [191, 0, 191, 0.5], drawable.lifespan));
+                }
+                
+                sharpSparks(6, targetPositionM, targetAvgsz)
+                .forEach(function(entity) {
+                    entity.setStyle(new ColorTransition([255, 127, 255, 1], [127, 0, 127, 1], entity.lifespan, powt(1/2)));
                 });
                 
-                {
-                    const drawable = makeShockwaveBattleDrawable(targetPositionM, targetAvgsz/2);
-                    drawable.setStyle(new ColorTransition([255, 191, 255, 1], [191, 63, 191, 0.5], drawable.lifespan));
-                    BATTLELOOP.addDrawable(drawable);
-                }
+                makeShockwave.lifespan = 32;
+                makeShockwave.lineWidth = 2;
+                makeShockwave.precision = 64;
+                makeShockwave(targetPositionM, targetAvgsz/3)
+                .getDrawable()
+                .setStyle(new ColorTransition([255, 191, 255, 1], [191, 63, 191, 0], 32));
+                makeShockwave.lifespan = 24;
+                makeShockwave.lineWidth = 1;
+                makeShockwave.precision = 32;
                 
                 target.hurt(1);
             }
@@ -119,55 +157,48 @@ class EnemyAttackSkill extends Skill {
 SKILLS["enemyAttack"] = EnemyAttackSkill;
 
 SKILLS["flee"] = class FleeSkill extends Skill {
-    static getLabel() {return new CommandLabel("Flee");}
-    
     constructor() {
         super().setPriority(-Infinity);
     }
     
-    use(actIC) {
-        let user = this.user.drawable;
+    use() {
+        const user = this.user.drawable;
         
-        if(actIC == 0) {
-            let count = irandom(8, 12);
-            // let angleTransition = new VectorTransition([-Math.PI/2 - Math.PI/3], [-Math.PI/2 + Math.PI/3]);
-            let angleTransition = new VectorTransition([0], [2*Math.PI]);
+        if(this.phase == 0) {
+            const positionM = user.getPositionM();
+            const avgsz = rectangle_averageSize(user);
             
-            for(let i = 0; i < count; ++i) {
-                let angle = angleTransition.at(i/(count-1))[0];
-                let direction = Vector.fromAngle(angle);
+            for(let i = 0, count = 5; i < count; ++i) {
+                const width = 16 * (1 - i/count);
                 
-                let drawable = PolygonDrawable.from(makeRandomPolygon(128, 15.5, 16));
-                
-                drawable.setLifespan(64);
-                
-                drawable.setStyle(new ColorTransition([255, 255, 255, 1], [191, 191, 191, 0.75], drawable.lifespan));
-                
-                let positionM = user.getPositionM();
-                
-                let positionTransition = new VectorTransition(positionM, direction.normalized(irandom(12, 14)).add(positionM), drawable.lifespan, function(t) {
-                    return Math.pow(t, 1/6);
+                entityExplode(5 + (i/(count-1)) * (16 - 5), SmokeParticle, positionM, [width, width], 1)
+                .forEach(function(entity) {
+                    entity.setLifespan(96);
+                    entity.setSizeTransition(new VectorTransition(Vector.from(entity.size), [0, 0], entity.lifespan));
+                    entity.setSelfBrake(1.03125);
+                    entity.speed.multiply(random(0.125, 0.5) * (i/(count-1) + 1));
+                    
+                    const drawable = entity.getDrawable();
+                    drawable.setLifespan(entity.lifespan);
+                    drawable.setZIndex(random(-3, +1));
+                    drawable.setStyle(new ColorTransition([255, 255, 255, 1], [191, 191, 191, 0.75], entity.lifespan));
                 });
-                let avgsz = rectangle_averageSize(user);
-                let sizeTransition = new VectorTransition([avgsz/2], [avgsz/1.25], drawable.lifespan, function(t) {
-                    return Math.pow(t, 1/6);
-                });
-                
-                drawable.multiplySize(avgsz/32);
-                drawable.initImaginarySize(sizeTransition.at(0)[0]);
-                
-                drawable.controllers.add(function() {
-                    this.setPositionM(positionTransition.getNext());
-                    this.setImaginarySize(sizeTransition.getNext()[0]);
-                });
-                
-                drawable.setCamera(user.camera).setCameraMode(user.cameraMode);
-                
-                BATTLEDRAWABLES.add(drawable);
             }
+            
+            entityExplode(16, OvalParticle, positionM, [avgsz/4, avgsz/4], 1)
+            .forEach(function(entity) {
+                entity.setLifespan(64);
+                entity.setSelfBrake(1.03125);
+                entity.speed.multiply(random(1.5, 2));
+                
+                const drawable = entity.getDrawable();
+                drawable.setStyle(new ColorTransition([255, 255, 255, 1], [191, 191, 191, 0], entity.lifespan, powt(1/2)));
+            });
+            
+            removeDrawable(user);
         }
         
-        if(actIC >= 64) {
+        if(this.phase >= 64) {
             removeBattler(this.user);
             this.end();
         }
@@ -177,59 +208,60 @@ SKILLS["flee"] = class FleeSkill extends Skill {
 };
 
 SKILLS["attack"] = class AttackSkill extends Skill {
-    static getLabel() {return new CommandLabel("Attack");}
-    
-    use(actIC) {
+    use() {
+        const targets = this.getPresentTargets();
         const userDrawable = this.user.drawable;
         
-        if(actIC == 0) {
+        if(this.phase == 0) {
             const userPositionM = this.user.drawable.getPositionM();
             const userAvgsz = rectangle_averageSize(this.user.drawable);
             
             {
-                const drawable = RectangleDrawable.fromMiddle(userPositionM, [userAvgsz*4, userAvgsz*4]);
-                drawable.setLifespan(32);
+                const entity = Entity.fromMiddle(userPositionM, [userAvgsz*4, userAvgsz*4]);
+                entity.setLifespan(32);
+                entity.setSizeTransition(new VectorTransition(Array.from(entity.size), [0, 0], entity.lifespan, powt(2)));
                 
+                const drawable = entity.getDrawable();
                 drawable.setStyle(makeRadialGradientCanvas("cyan", "#00FFFF00"));
-                const sizeTransition = new VectorTransition(Array.from(drawable.size), [0, 0], drawable.lifespan, powt(2));
-                drawable.controllers.add(function() {
-                    this.setSizeM(sizeTransition.getNext());
-                });
                 
-                BATTLELOOP.addDrawable(drawable);
+                addEntity(entity);
             }
             
-            let count = 8;
-            
-            for(let i = 0; i < count; ++i) {
-                const angle = ((i+Math.random())/count) * 2*Math.PI;
+            entityExplode.randomAngleVariation = 1;
+            entityExplode.initialDistance = 1;
+            entityExplode(8, OvalParticle, userPositionM, [4, 4], 0)
+            .forEach(function(entity) {
+                entity.setLifespan(32);
+                entity.setPositionM(Vector.addition(userPositionM, Vector.subtraction(entity.getPositionM(), userPositionM).normalize(userAvgsz * random(1.75, 2.25))));
                 
-                const drawable = PolygonDrawable.from(roundparticle);
-                drawable.setLifespan(32);
-                drawable.setStyle(new ColorTransition([0, 255, 255, 0], [0, 0, 255, 1], drawable.lifespan));
-                drawable.multiplySize(1/8);
-                const positionTransition = new VectorTransition(Vector.addition(userPositionM, Vector.fromAngle(angle).normalize(userAvgsz * random(1.75, 2.25))), userPositionM, drawable.lifespan, powt(random(1/2, 2)));
-                
-                drawable.controllers.add(function() {
+                const positionTransition = new VectorTransition(Vector.from(entity.getPositionM()), userPositionM, entity.lifespan, powt(random(1/5, 5)));
+                entity.controllers.add(function() {
                     this.setPositionM(positionTransition.getNext());
                 });
                 
-                drawable.setShadowBlur(8);
+                const drawable = entity.getDrawable();
                 
-                BATTLELOOP.addDrawable(drawable);
-            }
-        } if(actIC == 32) {
-            for(let i = 0; i < this.targets.length; ++i) {
-                const target = this.targets[i];
+                drawable.setStyle(new ColorTransition([0, 255, 255, 1], [0, 0, 255, 0], entity.lifespan));
+                drawable.setShadowBlur(8);
+            });
+            entityExplode.randomAngleVariation = 0;
+            entityExplode.initialDistance = 0;
+        } if(this.phase == 32) {
+            for(let i = 0; i < targets.length; ++i) {
+                const target = targets[i];
                 const targetDrawable = target.drawable;
                 
-                const drawable = PolygonDrawable.from(makeBurstPolygon2(new ColorTransition([2], [4], 8*2, function() {return Math.random();}), new ColorTransition([16], [20], 8*2, Math.random), 6)).rotate(Math.random());
+                const userPositionM = userDrawable.getPositionM();
+                const targetPositionM = targetDrawable.getPositionM();
+                const direction = Vector.subtraction(targetPositionM, userPositionM);
                 
-                drawable.multiplySize(1/4);
+                const drawable = PolygonDrawable.from(flameparticle).rotate(direction.getAngle());
+                
+                drawable.multiplySize(6/polygon_averageSize(drawable));
                 drawable.setLifespan(16);
                 drawable.setStyle(new ColorTransition([0, 255, 255, 1], [0, 0, 255, 0.5], drawable.lifespan));
                 
-                let positionTransition = new VectorTransition(userDrawable.getPositionM(), targetDrawable.getPositionM(), drawable.lifespan, powt(1/1.5));
+                const positionTransition = new VectorTransition(userPositionM, targetPositionM, drawable.lifespan, powt(2));
                 
                 drawable.controllers.add(function() {
                     this.setPositionM(positionTransition.getNext());
@@ -237,53 +269,56 @@ SKILLS["attack"] = class AttackSkill extends Skill {
                 
                 BATTLELOOP.addDrawable(drawable);
             }
-        } if(actIC == 48) {
-            const opponents = this.targets;
-            
-            for(let i = 0; i < opponents.length; ++i) {
-                const opponent = opponents[i];
-                opponent.hurt(3);
+        } if(this.phase == 48) {
+            for(let i = 0; i < targets.length; ++i) {
+                const target = targets[i];
+                target.hurt(3);
                 
-                const opponentPositionM = opponent.drawable.getPositionM();
-                const opponentAvgsz = rectangle_averageSize(opponent.drawable);
+                const opponentPositionM = target.drawable.getPositionM();
+                const opponentAvgsz = rectangle_averageSize(target.drawable);
                 
-                /**/
-                
-                const bothAvgsz = average(rectangle_averageSize(opponent.drawable), 5);
-                
-                entityExplode.randomAngleVariation = 1;
-                entityExplode(irandom(7, 9), GoldSmokeParticle, opponentPositionM, [bothAvgsz/2, bothAvgsz/2], 1)
-                .forEach(function(entity) {
-                    entity.speed.multiply(irandom(bothAvgsz/12, bothAvgsz/10));
-                    // entity.setLifespan(32);
-                    entity.setSelfBrake(1.03125);
-                });
-                entityExplode.randomAngleVariation = 0;
-                
-                /*/
-                
-                makeBurstDrawables(8, opponentPositionM, opponentAvgsz).forEach(function(drawable) {
-                    drawable.setStyle(new ColorTransition([0, 255, 255, 1], [0, 0, 255, 0.5], drawable.lifespan));
-                    BATTLELOOP.addDrawable(drawable);
-                });
-                
-                /**/
-                
-                makeShockwave(opponentPositionM, opponentAvgsz/3);
-                
-                /**
-                
-                {
-                    const drawable = makeShockwaveBattleDrawable(opponentPositionM, opponentAvgsz/2);
-                    drawable.setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 255, 0.5], drawable.lifespan));
-                    BATTLELOOP.addDrawable(drawable);
+                for(let i = 0, count = 2; i < count; ++i) {
+                    entityExplode.randomAngleVariation = 1;
+                    entityExplode(8, GoldSmokeParticle, opponentPositionM, [opponentAvgsz/3, opponentAvgsz/3], 1)
+                    .forEach(function(entity) {
+                        entity.setLifespan(64);
+                        entity.setSelfBrake(1.03125);
+                        entity.speed.multiply(random(opponentAvgsz/24, opponentAvgsz/16) * (i/(count-1) + 1));
+                        
+                        const drawable = entity.getDrawable();
+                        
+                        drawable.setZIndex(target.drawable.getZIndex() - 1);
+                    });
+                    entityExplode.randomAngleVariation = 0;
                 }
                 
-                /**/
+                entityExplode(16, OvalParticle, opponentPositionM, [opponentAvgsz/4, opponentAvgsz/4], 1)
+                .forEach(function(entity) {
+                    entity.setLifespan(irandom(48, 64));
+                    entity.setSelfBrake(1.0625);
+                    entity.speed.multiply(random(opponentAvgsz/10, opponentAvgsz/8));
+                    
+                    const drawable = entity.getDrawable();
+                    drawable.setStyle(new ColorTransition([0, 255, 255, 1], [0, 0, 255, 0], entity.lifespan));
+                });
+                
+                makeShockwave.lifespan = 32;
+                makeShockwave.lineWidth = 2;
+                makeShockwave.precision = 64;
+                makeShockwave(opponentPositionM, opponentAvgsz/3)
+                .getDrawable()
+                .setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 255, 0], 32, powt(1/2)))
+                ;
+                makeShockwave.lifespan = 24;
+                makeShockwave.lineWidth = 1;
+                makeShockwave.precision = 32;
             }
             
+            repaceLoop(32);
+            
             // this.user.hurt(8);
-        } if(actIC == 64) {
+        } if(this.phase == 64) {
+            repaceLoop(16);
             this.end();
         }
         

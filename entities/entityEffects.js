@@ -19,9 +19,17 @@ function interactionProperties(actor, recipient) {
     };
 }
 
+function sharpCut(position, size) {
+    const drawable = new CutDrawable(position, random(0, 2*Math.PI), size);
+    
+    addDrawable(drawable);
+    
+    return drawable;
+}
+
 function sharpImpact(position, size) {
-    addDrawable(new CutDrawable(position, random(0, 2*Math.PI), size));
-    addDrawable(new CutDrawable(position, random(0, 2*Math.PI), size));
+    sharpCut(position, size);
+    sharpCut(position, size);
     
     /**/
     
@@ -72,8 +80,8 @@ function sharpImpact(position, size) {
 
 function sharpSparks(count, position, size) {
     entityExplode.randomAngleVariation = 1;
-    const entities = entityExplode(3, DiamondParticle, position, [size, size], 1)
-    .forEach(function(entity) {
+    const entities = entityExplode(count, DiamondParticle, position, [size, size], 1);
+    entities.forEach(function(entity) {
         entity.setZIndex(random(-3, +1));
         entity.speed.multiply(irandom(size/12, size/8));
     });
@@ -375,6 +383,7 @@ directionSparks.initialDistance = 0;
 function makeShockwave(position, radius) {
     OvalWaveParticle.lineWidth = makeShockwave.lineWidth;
     OvalWaveParticle.lifespan = makeShockwave.lifespan;
+    OvalWaveParticle.precision = makeShockwave.precision;
     
     const entity = OvalWaveParticle.fromMiddle(position, [radius, radius]);
     
@@ -383,7 +392,7 @@ function makeShockwave(position, radius) {
     return entity;
 }
 
-makeShockwave.precision = 64;
+makeShockwave.precision = 32;
 makeShockwave.lifespan = 24;
 makeShockwave.timingFunction = powt(1/2);
 makeShockwave.lineWidth = 1;

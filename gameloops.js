@@ -49,6 +49,14 @@ class GameLoop {
         return this;
     }
     
+    removeDrawables(drawables) {
+        for(let i = 0; i < drawables.length; ++i) {
+            this.removeDrawable(drawables[i]);
+        }
+        
+        return this;
+    }
+    
     getCollidables() {return this.collidables;}
     
     addEntity(entity) {
@@ -95,6 +103,8 @@ class GameLoop {
     
     draw(drawables = this.drawables) {
         const context = CANVAS.getContext("2d");
+        
+        drawables = SetArray.from(drawables);
         
         for(let i in drawables) {
             const drawable = drawables[i];
@@ -270,8 +280,139 @@ class WorldLoop extends GameLoop {
     }
 }
 
+let battleMode = "everyone";
+
 class BattleLoop extends GameLoop {
+    constructor() {
+        super();
+        
+        this.camera = (Camera.fromMiddle([0, 0, 0], [256, 144, 0]));
+        this.battlers = new SetArray();
+        this.movesQueue = new SetArray();
+    }
     
+    getTurnBattlers() {
+        if(battleMode === "everyone") {
+            return this.battlers;
+        } else if(battleMode === "single") {
+            return new SetArray(this.battlers[actorIndex]);
+        }
+        
+        return EMPTYSET;
+    }
+    
+    sortMoves() {
+        this.movesQueue.sort(function(a, b) {
+            if(a.getPriority() > b.getPriority()) {return -1;}
+            if(a.getPriority() < b.getPriority()) {return +1;}
+            return 0;
+        });
+        
+        const priorityTies = this.getPriorityTies();
+        
+        for(let index = 0; index < priorityTies.length; ++index) {
+            const priority = priorityTies[index].priority;
+            const moves = priorityTies[index].moves;
+            
+            const oldIndexes = [];
+            
+            for(let i = 0; i < moves.length; ++i) {
+                oldIndexes.push(this.movesQueue.indexOf(moves[i]));
+            }
+            
+            array_shuffle(moves);
+            
+            for(let i = 0; i < moves.length; ++i) {
+                const oldIndex = oldIndexes[i];
+                
+                this.movesQueue[oldIndex] = moves[i];
+            }
+        }
+        
+        return this;
+    }
+    
+    peekMove() {
+        return this.movesQueue[0];
+    }
+    
+    addMove(move) {
+        this.movesQueue.add(move);
+        this.sortMoves();
+        
+        return this;
+    }
+    
+    removeMove(move) {
+        this.movesQueue.remove(move);
+        
+        return this;
+    }
+    
+    addBattler(battler) {
+        if(battler instanceof Entity && battler.isBattler()) {
+            battler = battler.getBattler();
+            
+            this.addBattler(battler);
+        }
+        
+        else if(battler instanceof Battler) {
+            battler.onadd();
+            
+            this.battlers.add(battler);
+        }
+        
+        return this;
+    }
+    
+    removeBattler(battler) {
+        battler.onremove();
+        this.battlers.remove(battler);
+        
+        return this;
+    }
+    
+    sortBattlers() {
+        this.battlers.sort(function(a, b) {
+            if(a.getPriority() > b.getPriority()) return -1;
+            if(a.getPriority() < b.getPriority()) return +1;
+            return 0;
+        });
+        
+        return this;
+    }
+    
+    getPriorityTies() {
+        const priorityTies = [];
+        
+        for(let i = 0; i < this.movesQueue.length; ++i) {
+            const move = this.movesQueue[i];
+            
+            const priority = move.getPriority();
+            
+            let priorityGroup = priorityTies.find(function(priorityGroup, index, priorityTies) {
+                return priorityGroup.priority === priority;
+            });
+            
+            if(priorityGroup === undefined) {
+                priorityGroup = {priority: priority, moves: []};
+                priorityTies.push(priorityGroup);
+            }
+            
+            priorityGroup.moves.push(move);
+        }
+        
+        Object.defineProperty(priorityTies, "executeOrder", {value: function(callbackfn) {
+            for(let i = 0; i < this.length; ++i) {
+                const moves = this[i].moves;
+                const priority = this[i].priority;
+                
+                callbackfn(moves, i, this, priority);
+            }
+        }});
+        
+        return priorityTies;
+    }
 }
 
 class EscapeLoop extends GameLoop {
@@ -328,7 +469,7 @@ const WORLDLOOP = new WorldLoop();
 const BATTLELOOP = new BattleLoop();
 const ESCAPELOOP = new EscapeLoop();
 
-const NOENTITY = new SetArray();
+const EMPTYSET = new SetArray();
 const ENTITIES = WORLDLOOP.entities;
 // const COLLIDABLES = new SetArray();
 const DRAWABLES = WORLDLOOP.drawables;
@@ -568,291 +709,173 @@ function worldUpdate() {
 
 WORLDLOOP.controllers.add(worldUpdate);
 
-const BATTLERS = new SetArray();
-const SKILLS_QUEUE = new SetArray();
+// --------------- //
+//// BATTLE LOOP ////
+// --------------- //
+
+const BATTLERS = BATTLELOOP.battlers;
+const MOVESQUEUE = BATTLELOOP.movesQueue;
 
 var battleturn = 0;
-var actorIndex = 0;
+var actorIndex = -1;
 
-function addBattler(entity) {
-    if(entity instanceof Entity && entity.isBattler()) {
-        var battler = entity.getBattler();// Battler.fromEntity(entity);
-        
-        battler.onadd();
-        
-        BATTLERS.add(battler);
-    }
+function addBattler(battler) {
+    BATTLELOOP.addBattler(battler);
 }
 
 function addBattlers(battlers) {
-    for(var i = 0; i < battlers.length; ++i) {
+    for(let i = 0; i < battlers.length; ++i) {
         addBattler(battlers[i]);
     }
 }
 
 function removeBattler(battler) {
-    if(battler == MAINBATTLER) {
-        battler.oncenterout();
-        MAINBATTLER = null;
-    }
-    
-    battler.onremove();
-    BATTLERS.remove(battler);
+    BATTLELOOP.removeBattler(battler);
 }
 
-function addSkill(skill) {
-    SKILLS_QUEUE.add(skill);
+function addMove(move) {
+    BATTLELOOP.addMove(move);
 }
 
-function removeSkill(skill) {
-    SKILLS_QUEUE.remove(skill);
+function removeMove(move) {
+    BATTLELOOP.removeMove(move);
 }
 
-/**
-
-BATTLERS.sort(function(a, b) {
-    if(a.getPriority() > b.getPriority) return -1;
-    if(a.getPriority() < b.getPriority) return +1;
-    return 0;
-});
-
-/**/
-
-var battleMode = "everyone";
-/*
-class CommandsPage extends Array {
-    constructor() {
-        super(...arguments);
-        
-        this.commandIndex = 0;
-        this.drawables = [];
-    }
-    
-    getIndex() {return this.commandIndex;}
-    
-    decIndex() {
-        --this.commandIndex;
-        
-        if(this.commandIndex < 0) {
-            this.commandIndex = 0;
-        }
-        
-        return this;
-    }
-    
-    incIndex() {
-        ++this.commandIndex;
-        
-        if(this.commandIndex >= this.length) {
-            this.commandIndex = this.length - 1;
-        }
-        
-        return this;
-    }
-    
-    confirm() {
-        this[this.getIndex()].onselect();
-        
-        return this;
-    }
-    
-    draw(context) {
-        let blockWidth = CANVAS.width / 2;
-        let blockHeight = CANVAS.height / 9;
-        let x = CANVAS.width / 2;
-        
-        context.fillStyle = "#EFEFEF";
-        context.fillRect(x, 6 * CANVAS.height / 9, blockWidth, CANVAS.height / 2);
-        
-        for(let i = 0; i < this.length; ++i) {
-            let y = (6 + i) * CANVAS.height / 9;
-            
-            context.translate(x, y);
-            
-            if(i == this.getIndex()) {
-                this[i].label.drawSelect(context);
-            } else {
-                this[i].label.draw(context);
-            }
-            
-            context.translate(-x, -y);
-        }
-        
-        return this;
-    }
-    
-    update() {
-        if(keyList.value(K_UP) == 1) {this.decIndex();}
-        if(keyList.value(K_DOWN) == 1) {this.incIndex();}
-        if(keyList.value(K_RIGHT) == 1 || keyList.value(13) == 1) {this.confirm();}
-        if(keyList.value(K_LEFT) == 1) {commands.pop();}
-        
-        return this;
-    }
-}
-
-let commands = [];
-*/
-let MAINBATTLER = null;
+let electedPlayableBattler = null;
 
 const BATTLEDRAWABLES = BATTLELOOP.drawables;
 
-BATTLELOOP.setCamera(Camera.fromMiddle([0, 0, 0], [256, 144, 0]));
-
 const BATTLECAMERA = BATTLELOOP.getCamera();
-
-function setBattleViewPoint(mainBattler) {
-    if(MAINBATTLER != null) {
-        MAINBATTLER.oncenterout();
-    }
-    
-    MAINBATTLER = mainBattler;
-    
-    if(MAINBATTLER != null) {
-        MAINBATTLER.oncenterin();
-    }
-}
 
 let battlePhase = "act";
 
-let actIC = 0;
+const BATTLEMINY2 = 16, BATTLEMAXY2 = 24;
 
 function battleUpdate() {
+    
+    // End the battle when there's no fighter left.
+    
+    if(this.battlers.length === 0) {
+        this.movesQueue.clear();
+        this.drawables.clear();
+        this.entities.clear();
+        
+        actorIndex = -1;
+        
+        transitionIn();
+        switchPhase(WORLDLOOP);
+        battlePhase = "act";
+        transitionOut();
+        
+        return;
+    }
+    
+    // "Pick your move(s)" phase.
+    
     if(battlePhase === "strategy") {
-        var battlers;
+        const turnBattlers = this.getTurnBattlers();
         
-        if(battleMode === "everyone") {
-            battlers = BATTLERS;
-        } else if(battleMode === "single") {
-            battlers = new SetArray(BATTLERS[actorIndex]);
-        }
+        let allReady = true;
         
-        /**
-        
-        if(commands.length < 1 && MAINBATTLER != null) {
-            commands.push(MAINBATTLER.getCommandsPage());
-        }
-        
-        // /**
-        
-        let lastPage = commands[commands.length - 1];
-        
-        if(commands.length > 0) {
-            lastPage.update();
-        }
-        
-        /**
-        
-        for(var i = 0; i < battlers.length; ++i) {
-            if(!battlers[i].isPlayable()) {
-                battlers[i].setReady(true);
-            }
-        }
-        
-        /**/ 
-        
-        if(BATTLERS.length == 0) {
-            transitionIn();
-            switchPhase(WORLDLOOP);
-            battlePhase = "act";
-            transitionOut();
-        } else {
-            let allReady = true;
+        for(let i = 0; i < turnBattlers.length; ++i) {
+            const battler = turnBattlers[i];
             
-            for(var i = 0; i < battlers.length; ++i) {
-                var battler = battlers[i];
-                
-                if(!battler.isReady()) {
-                    allReady = false;
+            if(!battler.isReady()) {
+                if(electedPlayableBattler === null && battler.isPlayable()) {
+                    battler.onturnstart();
+                    electedPlayableBattler = battler;
                 }
+                
+                battler.strategyUpdate();
+                
+                allReady = false;
             }
-            
-            if(allReady) {
-                battlePhase = "act";
-            }
+        }
+        
+        if(electedPlayableBattler !== null && electedPlayableBattler.isReady()) {
+            electedPlayableBattler = null;
+        }
+        
+        if(allReady) {
+            battlePhase = "act";
         }
     }
     
+    // Executing the moves.
+    
     else if(battlePhase === "act") {
-        if(SKILLS_QUEUE.length > 0) {
-            SKILLS_QUEUE.sort(function() {
-                return 0;
-            });
+        
+        // Highest priority move in the list.
+        
+        if(this.movesQueue.length > 0) {
+            const move = this.peekMove();
             
-            let skill = SKILLS_QUEUE[0];
+            move.use();
+            ++move.phase;
             
-            skill.use(actIC);
-            
-            ++actIC;
-            
-            if(!SKILLS_QUEUE.includes(skill)) {
-                actIC = 0;
-            }
-        } else {
-            ++actorIndex;
-            actorIndex %= BATTLERS.length;
-            battlePhase = "strategy";
-            
-            for(let i = 0; i < BATTLERS.length; ++i) {
-                BATTLERS[i].setReady(false);
-            }
-            
-            if(MAINBATTLER == null) {
-                let battlers;
-                
-                if(battleMode === "everyone") {
-                    battlers = BATTLERS;
-                } else if(battleMode === "single") {
-                    battlers = new SetArray(BATTLERS[actorIndex]);
-                }
-                
-                for(let i = battlers.length - 1; i >= 0; --i) {
-                    if(battlers[i].isPlayable()) {
-                        setBattleViewPoint(battlers[i]);
-                    }
-                }
-            }
-            
-            if(MAINBATTLER != null) {
-                MAINBATTLER.onturnstart();
+            if(move.hasEnded()) {
+                this.sortMoves();
             }
         }
         
-        for(let i = BATTLERS.length - 1; i >= 0; --i) {
-            if(BATTLERS[i].getEnergy() <= 0) {
-                removeBattler(BATTLERS[i]);
+        // No move left to execute, going back to the strategy phase.
+        
+        else {
+            ++actorIndex;
+            actorIndex %= this.battlers.length;
+            
+            for(let i = 0; i < this.battlers.length; ++i) {
+                this.battlers[i].setReady(false);
             }
+            
+            this.sortBattlers();
+            
+            const turnBattlers = this.getTurnBattlers();
+            
+            for(let i = 0; i < turnBattlers.length; ++i) {
+                const battler = turnBattlers[i];
+                
+                // battler.onturnstart();
+            }
+            
+            battlePhase = "strategy";
         }
     }
     
     // Remove battlers without an opponent.
     
-    for(let i = BATTLERS.length - 1; i >= 0; --i) {
-        const battler = BATTLERS[i];
+    var allBattlers = SetArray.from(this.battlers);
+    
+    for(let i = 0; i < allBattlers.length; ++i) {
+        const battler = allBattlers[i];
         const opponents = battler.getOpponents();
         
-        if(opponents.length == 0) {
+        if(opponents.length === 0) {
             removeBattler(battler);
         }
     }
     
     // 
     
-    for(let i = 0; i < BATTLERS.length; ++i) {
-        BATTLERS[i].update();
+    var allBattlers = SetArray.from(this.battlers);
+    
+    for(let i = 0; i < allBattlers.length; ++i) {
+        allBattlers[i].update();
     }
     
-    for(let i = 0; i < this.entities.length; ++i) {
-        const entity = this.entities[i];
+    var allEntities = SetArray.from(this.entities);
+    
+    for(let i = 0; i < allEntities.length; ++i) {
+        const entity = allEntities[i];
         entity.update();
     }
     
-    for(let i = 0; i < this.entities.length; ++i) {
-        const entity = this.entities[i];
+    for(let i = 0; i < allEntities.length; ++i) {
+        const entity = allEntities[i];
         entity.updateReset();
     }
     
-    // Draw battle things.
+    //// Draw battle things. ////
     
     array_bubbleSort(this.drawables, function(a, b) {
         if(a.getZIndex() > b.getZIndex()) {return -1;}
@@ -864,17 +887,79 @@ function battleUpdate() {
     
     this.draw();
     
-    for(let i = 0; i < SKILLS_QUEUE.length; ++i) {
-        const skill = SKILLS_QUEUE[i];
-        const drawable = new RectangleDrawable([i*16, 0], [16, 16]);
-        drawable.setStyle((new ColorTransition([255, 255, 0, 1], [255, 255, 255, 0], 32)).setLoop(true));
-        drawable.setCameraMode("reproportion");
+    /* Showing the moves queue */
+    
+    const priorityTies = this.getPriorityTies();
+    const offsetTop = (battleMode === "single") ? 32 + 8 : 0;
+    
+    for(let index = 0, x = 0; index < priorityTies.length; ++index) {
+        const priority = priorityTies[index].priority;
+        const moves = priorityTies[index].moves;
         
-        drawable.draw(context);
+        for(let i = 0; i < moves.length; ++i) {
+            const move = moves[i];
+            
+            const drawable = new RectangleDrawable([x*32 + 4, 4 + offsetTop], [32, 32]);
+            drawable.setStyle(move.user.drawable.getStyle());
+            drawable.setCameraMode("reproportion");
+            
+            drawable.draw(context);
+            
+            ++x;
+        }
+        
+        x += 0.5;
+    }
+    
+    /**/
+    
+    if(battleMode === "single") {
+        for(let i = 0; i < this.battlers.length; ++i) {
+            const battler = this.battlers[i];
+            
+            const drawable = new RectangleDrawable([i * 32 + 4, 4], [32, 32]);
+            drawable.setCameraMode("reproportion");
+            drawable.setStyle(battler.drawable.getStyle());
+            
+            drawable.draw(context);
+        }
     }
 }
 
 BATTLELOOP.controllers.add(battleUpdate);
+
+function engageBattle(battlers = EMPTYSET) {
+    transitionIn();
+    
+    switchPhase(BATTLELOOP);
+    
+    addBattlers(battlers);
+    BATTLELOOP.sortBattlers();
+    
+    addEntity(BATTLELOOP.camera);
+    addEntity(new EC["skyDecoration"]([0, 0], [640, 360]));
+    const ground0 = new Entity([-640, BATTLEMAXY2], [1280, 360]);
+    ground0.getDrawable()
+    .setZIndex(+0.5)
+    .setStyle("#7F5F00");
+    addEntity(ground0);
+    const ground1 = new Entity([-640, BATTLEMINY2 - 4], [1280, 360]);
+    ground1.getDrawable()
+    .setZIndex(+1)
+    .setStyle("#3F3F00");
+    addEntity(ground1);
+    
+    for(let i = 0; i < battlers.length; ++i) {
+        const battler = battlers[i].getBattler();
+        
+        if(battler.isPlayable()) {
+            battler.makeCenter();
+            break;
+        }
+    }
+    
+    transitionOut();
+}
 
 // -------------- //
 //// ESCAPELOOP ////
@@ -1289,14 +1374,6 @@ function loadCheck() {
     }
     
     return false;
-}
-
-function engageBattle(battlers = NOENTITY) {
-    transitionIn();
-    addBattlers(battlers);
-    switchPhase(BATTLELOOP);
-    addEntity(new EC["skyDecoration"]([0, 0], [640, 360]));
-    transitionOut();
 }
 
 switchLoop(loadCheck, WORLD_PACE);

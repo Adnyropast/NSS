@@ -686,6 +686,22 @@ class Entity extends Rectangle {
         this.preposition = Vector.from(this.position);
         this.presize = Vector.from(this.size);
         
+        if(this.energy <= 0) {
+            this.triggerEvent("defeat", new EntityEvent());
+            removeEntity(this);
+            
+            return this;
+        }
+        
+        ++this.lifeCounter;
+        
+        if(this.lifeCounter == this.lifespan) {
+            // this.triggerEvent("defeat", new EntityEvent());
+            removeEntity(this);
+            
+            return this;
+        }
+        
         // for(let i = 0; i < this.controllers.length; ++i) {
         for(let i in this.controllers) {
             this.controllers[i].bind(this)();
@@ -699,18 +715,6 @@ class Entity extends Rectangle {
         // this.thrust += this.selfThrust;
         
         // this.updateReset();
-        
-        if(this.energy <= 0) {
-            this.triggerEvent("defeat", new EntityEvent());
-            removeEntity(this);
-        }
-        
-        ++this.lifeCounter;
-        
-        if(this.lifeCounter == this.lifespan) {
-            // this.triggerEvent("defeat", new EntityEvent());
-            removeEntity(this);
-        }
         
         return this;
     }

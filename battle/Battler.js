@@ -1,4 +1,10 @@
 
+const BATTLESPACE_LEFT = 6;
+const BATTLESPACE_RIGHT = 2;
+const BATTLESPACE_ALLIES = 4;
+const BATTLESPACE_OPPONENTS = 4;
+const BATTLESPACE_CENTER = 16;
+
 class Battler {
     constructor() {
         this.speedPriority = 0;
@@ -8,8 +14,6 @@ class Battler {
         this.statuses = [];
         this.entity = null;
         
-        this.image = "black";
-        
         this.playable = false;
         
         this.skillset = set_gather("flee");
@@ -17,23 +21,24 @@ class Battler {
         this.drawable = new BattlerDrawable([0, 0]);
         
         this.energyBar = new EnergyBarDrawable([0, 0]);
-        this.energyBar.setProperWidth(rectangle_averageSize(this.drawable));
-        // this.energyBar.setCameraMode("none");
-        this.energyBar.setCamera(BATTLECAMERA);
+        this.energyBar.setProperWidth(rectangle_averageSize(this.drawable), 10/36, 3/36);
+        this.energyBar.setEnergyTransition(ENETRA_DEFMAX);
         
-        this.picks = new SetArray();
+        this.moves = new SetArray();
         
         this.controllers = new SetArray();
         
-        this.controllers[0] = function() {
-            if(!this.isReady()) {
-                const skill = new SKILLS["enemyAttack"];
-                Array.prototype.push.apply(skill.targets, this.getOpponents());
-                
-                this.addPick(skill);
-                this.setReady(true);
-            }
+        this.strategyControllers = new SetArray();
+        
+        this.autoMoveSelectController = function autoMoveSelectController() {
+            const move = new SKILLS["enemyAttack"];
+            Array.prototype.push.apply(move.targets, this.getOpponents());
+            
+            this.addMove(move);
+            this.setReady(true);
         };
+        
+        this.strategyControllers.add(this.autoMoveSelectController);
     }
     
     static fromEntity(entity) {
@@ -88,15 +93,15 @@ class Battler {
     }
     
     onadd() {
-        BATTLEDRAWABLES.add(this.drawable);
-        BATTLEDRAWABLES.add(this.energyBar);
+        BATTLELOOP.addDrawable(this.drawable);
+        BATTLELOOP.addDrawable(this.energyBar);
         
         return this;
     }
     
     onremove() {
-        BATTLEDRAWABLES.remove(this.drawable);
-        BATTLEDRAWABLES.remove(this.energyBar);
+        BATTLELOOP.removeDrawable(this.drawable);
+        BATTLELOOP.removeDrawable(this.energyBar);
         
         return this;
     }
@@ -106,7 +111,7 @@ class Battler {
         let allies = new SetArray();
         
         for(let i = 0; i < entities.length; ++i) {
-            if(BATTLERS.includes(entities[i].getBattler())) {
+            if(BATTLELOOP.battlers.includes(entities[i].getBattler())) {
                 allies.add(entities[i].getBattler());
             }
         }
@@ -119,7 +124,7 @@ class Battler {
         let opponents = new SetArray();
         
         for(let i = 0; i < entities.length; ++i) {
-            if(BATTLERS.includes(entities[i].getBattler())) {
+            if(BATTLELOOP.battlers.includes(entities[i].getBattler())) {
                 opponents.add(entities[i].getBattler());
             }
         }
@@ -142,217 +147,171 @@ class Battler {
         
         this.updateDrawable();
         
+        if(this.getEnergy() <= 0) {
+            removeBattler(this);
+        }
+        
         return this;
     }
     
-    getCommandsPage() {
-        return new CommandsPage(
-            {"label" : new CommandLabel("Moves"), "onselect" : function onselect() {
-                let commandsPage = new CommandsPage();
-                
-                let skills = this.battler.getSkills();
-                
-                for(let i = 0; i < skills.length; ++i) {
-                    commandsPage.push({"label" : skills[i].getLabel(), "onselect" : function onselect() {
-                        let skill = (new skills[i]()).setUser(this.battler);
-                        
-                        /**/
-                        
-                        SKILLS_QUEUE.push(skill);
-                        this.battler.picks.push(skill);
-                        commands.pop();
-                        
-                        /**
-                        
-                        let commandsPage = new CommandsPage();
-                        
-                        commandsPage.push({"label" : new CommandLabel("OK"), "onselect" : function onselect() {
-                            SKILLS_QUEUE.push(skill);
-                            this.battler.picks.push(skill);
-                            commands.pop(); commands.pop();
-                        }, "battler" : this.battler});
-                        
-                        let opponents = this.battler.getOpponents();
-                        let opponentsPart = [];
-                        
-                        for(let j = 0; j < opponents.length; ++j) {
-                            opponentsPart.push({"label" : new CommandLabel(camelToSentence(opponents.constructor.name)), "onselect" : function onselect() {
-                                
-                            }, "battler" : this.battler});
-                        }
-                        
-                        commandsPage.push({"label" : new CommandLabel("All opponents"), "onselect" : function onselect() {
-                            
-                        }, "battler" : this.battler});
-                        
-                        commands.push(commandsPage);
-                        
-                        /**/
-                    }, "battler" : this.battler});
-                }
-                
-                commands.push(commandsPage);
-            }, "battler" : this},
-            {"label" : new CommandLabel("Cancel"), "onselect" : function onselect() {
-                SKILLS_QUEUE.remove(this.battler.picks.pop());
-            }, "battler" : this},
-            {"label" : new CommandLabel("Done"), "onselect" : function onselect() {
-                this.battler.setReady(true);
-                commands.pop();
-            }, "battler" : this}
-        );
-    }
+    /**
+     * Reposition battlers so that this battler is centered, allies to the left, opponents to the right.
+     */
     
-    oncenterin() {
-        let space = 16;
-        let totalWidth = 2 * space;
-        
-        // this.drawable.setX2(-16).setYM(0);
-        
-        let allies = this.getAllies();
-        let opponents = this.getOpponents();
+    makeCenter() {
+        const camera = BATTLELOOP.getCamera();
+        const allies = this.getAllies();
+        const opponents = this.getOpponents();
         
         allies.remove(this);
         
-        let battlers = allies.concat([this], opponents);
+        const battlers = allies.concat([this], opponents);
         
-        for(let i = 0; i < battlers.length; ++i) {
-            let battler = battlers[i];
+        // 
+        
+        // let space = 16;
+        let totalWidth = 0;// 2 * space;
+        totalWidth += BATTLESPACE_LEFT;
+        
+        for(let i = 0; i < allies.length; ++i) {
+            const battler = allies[i];
             
-            totalWidth += battler.drawable.getWidth();
+            totalWidth += battler.getLeftSpace() + battler.drawable.getWidth() + battler.getRightSpace();
             
-            if(i < battlers.length - 1) {
-                totalWidth += space;
+            totalWidth += BATTLESPACE_ALLIES;
+        }
+        
+        totalWidth += this.getLeftSpace() + this.drawable.getWidth() + this.getRightSpace();
+        
+        totalWidth += BATTLESPACE_CENTER;
+        
+        for(let i = 0; i < opponents.length; ++i) {
+            const battler = opponents[i];
+            
+            totalWidth += battler.getLeftSpace() + battler.drawable.getWidth() + battler.getRightSpace();
+            
+            if(i < opponents.length - 1) {
+                totalWidth += BATTLESPACE_OPPONENTS;
             }
         }
         
-        let properHeight = BATTLECAMERA.getHeight() * totalWidth / BATTLECAMERA.getWidth();
+        totalWidth += BATTLESPACE_RIGHT;
         
-        let battlerX = -totalWidth / 2 + space;
+        // 
         
-        for(let i = 0; i < battlers.length; ++i) {
-            let battler = battlers[i];
+        let properHeight = totalWidth * camera.getHeight() / camera.getWidth();
+        
+        let battlerX = -totalWidth / 2;// + space;
+        battlerX += BATTLESPACE_LEFT;
+        
+        for(let i = 0; i < allies.length; ++i) {
+            const battler = allies[i];
+            
+            battlerX += battler.getLeftSpace();
+            battler.drawable.setX(battlerX);
+            battlerX += battler.drawable.getWidth() + battler.getRightSpace();
+            
+            battlerX += BATTLESPACE_ALLIES;
+        }
+        
+        battlerX += this.getLeftSpace();
+        this.drawable.setX(battlerX);
+        battlerX += this.drawable.getWidth() + this.getRightSpace();
+        
+        battlerX += BATTLESPACE_CENTER;
+        
+        for(let i = 0; i < opponents.length; ++i) {
+            const battler = opponents[i];
+            
+            battlerX += battler.getLeftSpace();
             
             battler.drawable.setX(battlerX);
             
-            battlerX += battler.drawable.getWidth() + space;
-            
-            let minY = -properHeight/2 + this.drawable.getHeight(), maxY = +properHeight/2 - this.drawable.getHeight();
-            if(battler == this) {minY = 0; maxY = 0;}
-            
-            let yTransition = new ColorTransition([0, 0], [minY, maxY]);
-            
-            let prog = Math.abs(i - battlers.length/2) / (battlers.length/2);
-            
-            minY = yTransition.at(prog)[0];
-            maxY = yTransition.at(prog)[1];
-            
-            battler.drawable.setYM(Math.floor(Math.random() * (maxY - minY) + minY));
-        }
-        
-        /*  *
-        
-        let alliesWidth = 0;
-        
-        for(let i = 0; i < allies.length; ++i) {
-            alliesWidth += allies[i].drawable.getWidth();
-            
-            if(i < allies.length - 1) {
-                alliesWidth += space;
-            }
-        }
-        
-        for(let j = 0; j < allies.length; ++j) {
-            let ally = allies[j];
-            
-            if(allies[j] != this) {
-                // allies[j].drawable.setX((5 - j) * CANVAS.width / 16);
-                // allies[j].drawable.setY(4 * CANVAS.height / 9);
-                let minX = -BATTLECAMERA.getWidth()/2 + ally.drawable.getWidth();
-                let maxX = -16 - this.drawable.getWidth();
-                
-                allies[j].drawable.setX2(Math.floor(Math.random() * (maxX - minX) + minX));
-                
-                let minY = (-BATTLECAMERA.getWidth() + ally.drawable.getHeight()) / 2;
-                let maxY = (+BATTLECAMERA.getWidth() - ally.drawable.getHeight()) / 2;
-                
-                ally.drawable.setYM(Math.floor(Math.random() * (maxY - minY) + minY));
-            }
-        }
-        
-        let opponentsWidth = 0;
-        
-        for(let i = 0; i < opponents.length; ++i) {
-            opponentsWidth += opponents[i].drawable.getWidth();
+            battlerX += battler.drawable.getWidth() + battler.getRightSpace();// + space;
             
             if(i < opponents.length - 1) {
-                opponentsWidth += space;
+                battlerX += BATTLESPACE_OPPONENTS;
             }
         }
         
-        let opponentX = 0;
+        // battlerX += BATTLESPACE_RIGHT;
         
-        for(let j = 0; j < opponents.length; ++j) {
-            let opponent = opponents[j];
+        for(let i = 0; i < battlers.length; ++i) {
+            const battler = battlers[i];
             
-            // opponents[j].drawable.setX((9 + j) * CANVAS.width / 16);
-            // opponents[j].drawable.setY(3 * CANVAS.height / 9);
-            
-            let maxX = +BATTLECAMERA.getWidth()/2 - opponent.drawable.getWidth();
-            let minX = +16 + this.drawable.getWidth();
-            
-            // opponent.drawable.setX(Math.floor(Math.random() * (maxX - minX) + minX));
-            opponent.drawable.setX(opponentX);
-            opponentX += this.drawable.getWidth() + space;
-            
-            let minY = (-BATTLECAMERA.getWidth() + opponent.drawable.getHeight()) / 2;
-            let maxY = (+BATTLECAMERA.getWidth() - opponent.drawable.getHeight()) / 2;
-            minY = -16; maxY = +16;
-            
-            opponent.drawable.setYM(Math.floor(Math.random() * (maxY - minY) + minY));
+            battler.drawable.setY2(random(BATTLEMINY2, BATTLEMAXY2));
         }
         
-        totalWidth = alliesWidth + space + this.drawable.getWidth() + space + opponentsWidth;
+        if(totalWidth < 112) {
+            totalWidth = 112;
+            properHeight = totalWidth * camera.getHeight() / camera.getWidth();
+        }
         
-        /**/
+        camera.setSizeM([totalWidth, properHeight]);
+        camera.setY2(properHeight / 2 - 0.125 * (totalWidth - 112));
+        camera.originalSize = camera.size;
         
-        BATTLECAMERA.setSizeM([totalWidth, properHeight]);
-        BATTLECAMERA.originalSize = BATTLECAMERA.size;
-        
-        return this;
-    }
-    
-    oncenterout() {
         return this;
     }
     
     updateDrawable() {
-        let energyRatio = this.entity.getEnergyRatio();
+        const energyRatio = this.entity.getEnergyRatio();
         
         this.energyBar.setXM(this.drawable.getXM());
-        this.energyBar.setY2(this.drawable.getY());
+        this.energyBar.setY2(this.drawable.getY1());
         this.energyBar.setEnergyRatio(energyRatio);
         
         return this;
     }
     
-    addPick(skill) {
-        skill.setUser(this);
-        SKILLS_QUEUE.add(skill);
-        this.picks.add(skill);
+    addMove(move) {
+        move.setUser(this);
+        move.moveCountBefore = this.getMoveCount();
+        
+        addMove(move);
+        this.moves.add(move);
         
         return this;
     }
     
-    onturnstart() {return this;}
-    onturnend() {return this;}
+    onturnstart() {
+        return this;
+    }
+    
+    onturnend() {
+        return this;
+    }
+    
+    strategyUpdate() {
+        for(let i in this.strategyControllers) {
+            this.strategyControllers[i].bind(this)();
+        }
+        
+        return this;
+    }
+    
+    setSpeedPriority(speedPriority) {
+        this.speedPriority = speedPriority;
+        
+        return this;
+    }
+    
+    getMoveCount() {return this.moves.length;}
+    
+    getLeftSpace() {
+        return 0;
+    }
+    
+    getRightSpace() {
+        return 0;
+    }
 }
 
 class HapleBattler extends Battler {
     constructor() {
         super().setPlayable(true);
         
-        let battler = this;
+        const battler = this;
         
         this.skillset = set_gather("attack", "flee");
         this.drawable.setStyle(IMGCHAR["haple"]["battle-right"]);
@@ -360,103 +319,125 @@ class HapleBattler extends Battler {
         
         this.visibleList = (new VisibleList()).setType("auto");
         
-        this.visibleList.addItem({name:"Weak Attack", use:function use() {
+        // this.visibleList.addItem({name:"Weak Attack", use:function use() {
             
-        }});
+        // }});
         this.visibleList.addItem({name:"Attack", use:function use() {
-            let skill = new SKILLS["attack"];
-            battler.selectedMove = skill;
-            battler.controltype = "targetpick";
+            const move = new SKILLS["attack"];
+            battler.prepareMove(move);
+            battler.setControlType("targetPick");
         }});
-        this.visibleList.addItem({name:"Strong Attack", use:function use() {
+        // this.visibleList.addItem({name:"Strong Attack", use:function use() {
             
-        }});
-        this.visibleList.addItem({name:"Defend", use:function use() {
+        // }});
+        // this.visibleList.addItem({name:"Defend", use:function use() {
             
-        }});
+        // }});
         this.visibleList.addItem({name:"Flee", use:function use() {
-            battler.addPick(new SKILLS["flee"]);
+            battler.addMove(new SKILLS["flee"]);
             battler.setReady(true);
         }});
         this.visibleList.addItem({name:"Go!"/*"Pass"*/, use:function use() {
             battler.setReady(true);
         }});
         
-        this.autoReady = false;
-        this.controltype = ["moveselect", "targetpick"][0];
-        this.targetcursor = 0;
-        this.selectedMove = null;
+        this.autoReady = true;
+        this.targetIndex = 0;
+        this.preparedMove = null;
         
-        this.battlerPlayerController = function() {
-            if(this.controltype === "moveselect") {
-                if(keyList.value(K_UP) == 1) {
-                    this.visibleList.decIndex();
-                } if(keyList.value(K_DOWN) == 1) {
-                    this.visibleList.incIndex();
-                } if(keyList.value(K_CONFIRM) == 1) {
-                    this.visibleList.getItem().use();
+        this.moveSelectController = function moveSelectController() {
+            if(keyList.value(K_UP) === 1) {
+                this.visibleList.decIndex();
+            } if(keyList.value(K_DOWN) === 1) {
+                this.visibleList.incIndex();
+            }
+            
+            if(keyList.value(set_gather(K_CONFIRM, KEY_SPACE)) === 1 || keyList.value(K_RIGHT) === 1) {
+                this.visibleList.getItem().use();
+            }
+            
+            if(keyList.value(KEY_ESCAPE) === 1 || keyList.value(K_LEFT) === 1) {
+                removeMove(this.moves.pop());
+            }
+        };
+        
+        this.targetPickController = function targetPickController() {
+            const preparedMove = this.preparedMove;
+            
+            // Move target cursor.
+            
+            if(keyList.value(K_LEFT) === 1) {
+                --this.targetIndex;
+            } if(keyList.value(K_RIGHT) === 1) {
+                ++this.targetIndex;
+            }
+            
+            if(this.targetIndex < 0) {this.targetIndex = 0;}
+            if(this.targetIndex >= BATTLERS.length) {this.targetIndex = BATTLERS.length - 1;}
+            
+            // Pick / Cancel target.
+            
+            if(keyList.value(K_DOWN) === 1) {
+                const target = getSortedBattlers()[this.targetIndex];
+                
+                if(preparedMove.targets.indexOf(target) === -1) {
+                    preparedMove.targets.add(target);
                     
-                    // if(this.autoReady) {
-                        // this.setReady(true);
-                    // }
+                    const crosshair = new TargetedCrosshairDrawable(target.drawable.getPositionM());
+                    crosshair.target = target;
+                    this.targetedCrosshairs.add(crosshair);
+                    addDrawable(crosshair);
                 }
-            } else if(this.controltype === "targetpick") {
-                if(keyList.value(K_LEFT) == 1) {
-                    --this.targetcursor;
-                } if(keyList.value(K_RIGHT) == 1) {
-                    ++this.targetcursor;
-                } if(keyList.value(K_UP) == 1) {
-                    const target = getSortedBattlers()[this.targetcursor];
-                    this.selectedMove.targets.add(target);
-                } if(keyList.value(K_DOWN) == 1) {
-                    const target = getSortedBattlers()[this.targetcursor];
-                    this.selectedMove.targets.remove(target);
-                } if(keyList.value(K_CONFIRM) == 1) {
-                    this.addPick(this.selectedMove);
-                    this.controltype = "moveselect";
-                    if(this.autoReady) {
-                        this.setReady(true);
-                    }
-                } if(keyList.value(K_ESC) == 1) {
-                    this.controltype = "moveselect";
+            } if(keyList.value(K_UP) === 1) {
+                const target = getSortedBattlers()[this.targetIndex];
+                
+                const crosshair = this.targetedCrosshairs.find(function(crosshair) {
+                    return crosshair.target === target;
+                });
+                
+                preparedMove.targets.remove(target);
+                
+                this.targetedCrosshairs.remove(crosshair);
+                BATTLELOOP.removeDrawable(crosshair);
+            }
+            
+            // Confirm target.
+            
+            if(keyList.value(KEY_SPACE) === 1) {
+                this.addMove(preparedMove);
+                this.prepareMove(null);
+                this.setControlType("moveSelect");
+            }
+            
+            if(keyList.value(K_CONFIRM) === 1) {
+                this.addMove(preparedMove);
+                this.prepareMove(null);
+                this.setControlType("moveSelect");
+                
+                if(this.autoReady) {
+                    this.setReady(true);
                 }
             }
             
-            if(this.targetcursor < 0) {this.targetcursor = 0;}
-            if(this.targetcursor >= BATTLERS.length) {this.targetcursor = BATTLERS.length - 1;}
+            // Cancel prepared move.
             
-            if(keyList.value(KEY_CTRL)) {
-                this.autoReady = true;
-            } else if(keyList.justReleased(KEY_CTRL)) {
-                this.autoReady = false;
+            if(keyList.value(K_ESC) === 1) {
+                this.prepareMove(null);
+                this.setControlType("moveSelect");
             }
         };
         
         this.multiDrawable = (new MultiDrawable()).setCamera(this.drawable.getCamera());
         this.selectedColorTransition = (new ColorTransition([255, 255, 0, 1], [255, 255, 159, 1], 128)).setLoop(true);
         
-        this.targetDrawable = PolygonDrawable.from(diamondparticle);
-        this.targetDrawable.setStyle((new ColorTransition([0, 255, 255, 1], [0, 191, 255, 1], 64)).setLoop(true));
-        this.targetDrawable.setCamera(this.drawable.camera).setCameraMode(this.drawable.cameraMode);
-        this.targetDrawable.multiplySize(1/4);
+        this.targetDiamond = PolygonDrawable.from(diamondparticle);
+        this.targetDiamond.setStyle((new ColorTransition([0, 255, 255, 1], [0, 191, 255, 1], 64)).setLoop(true));
+        this.targetDiamond.multiplySize(1/4);
         
         this.controllers.clear();
-    }
-    
-    getCommandsPage() {
-        let battler = this;
+        this.strategyControllers.clear();
         
-        return new CommandsPage(
-            {"label" : new CommandLabel("something"), "onselect" : function onselect() {
-                battler.setReady(true);
-            }},
-            {"label" : new CommandLabel("something"), "onselect" : function onselect() {
-                
-            }},
-            {"label" : new CommandLabel("something"), "onselect" : function onselect() {
-                
-            }}
-        );
+        this.targetedCrosshairs = new SetArray();
     }
     
     updateDrawable() {
@@ -464,7 +445,7 @@ class HapleBattler extends Battler {
         
         this.multiDrawable.drawables.clear();
         
-        if(this.controltype === "moveselect") {
+        if(this.getControlType() === "moveSelect") {
             
             let visibleOptions = this.visibleList.getVisible();
             
@@ -490,45 +471,107 @@ class HapleBattler extends Battler {
             tfparams["padding-top"] = 0;
             
             // this.drawable.
-        } if(this.controltype === "targetpick") {
-            BATTLELOOP.addDrawable(this.targetDrawable);
+        }
+        
+        else if(this.getControlType() === "targetPick") {
+            const targetDrawable = getSortedBattlers()[this.targetIndex].drawable;
             
-            let drawable = getSortedBattlers()[this.targetcursor].drawable;
-            
-            this.targetDrawable.setPositionM(Vector.addition(drawable.getPositionM(), [0, -drawable.getHeight()/2 - 8]));
-            
-            const targets = this.selectedMove.targets;
-            
-            for(let i = 0; i < targets.length; ++i) {
-                const target = targets[i];
-                const targetDrawable = target.drawable;
-                
-                const drawable = RectangleDrawable.from(targetDrawable);
-                drawable.setLifespan(1);
-                drawable.setCameraMode("basic");
-                drawable.setStyle(new ColorTransition([0, 255, 255, 0.5], [255, 255, 255, 0.125], 32).setLoop(true));
-                
-                BATTLELOOP.addDrawable(drawable);
-            }
-        } else {
-            BATTLELOOP.removeDrawable(this.targetDrawable);
+            this.targetDiamond.setPositionM(Vector.addition(targetDrawable.getPositionM(), [0, -targetDrawable.getHeight()/2 - 8]));
         }
         
         return this;
     }
     
     onturnstart() {
-        this.controllers.add(this.battlerPlayerController);
+        this.setControlType("moveSelect");
         BATTLELOOP.addDrawable(this.multiDrawable);
         
         return this;
     }
     
     onturnend() {
-        this.controllers.remove(this.battlerPlayerController);
+        this.strategyControllers.clear();
+        for(let i in this.strategyControllers) {
+            delete this.strategyControllers[i];
+        }
+        
         BATTLELOOP.removeDrawable(this.multiDrawable);
         
         return this;
+    }
+    
+    setControlType(controlType) {
+        
+        // Clearing stuffs associated with the previous control type.
+        
+        if(this.getControlType() === "targetPick") {
+            BATTLELOOP.removeDrawable(this.targetDiamond);
+            BATTLELOOP.removeDrawables(this.targetedCrosshairs);
+            this.targetedCrosshairs.clear();
+        }
+        
+        // Settings stuffs associated with the new control type.
+        
+        if(controlType === "moveSelect") {
+            this.strategyControllers["main"] = this.moveSelectController;
+        }
+        
+        else if(controlType === "targetPick") {
+            this.targetIndex = this.getFirstOpponentIndex();
+            BATTLELOOP.addDrawable(this.targetDiamond);
+            
+            this.strategyControllers["main"] = this.targetPickController;
+        }
+        
+        return this;
+    }
+    
+    getControlType() {
+        if(this.strategyControllers["main"] === this.moveSelectController) {
+            return "moveSelect";
+        }
+        
+        if(this.strategyControllers["main"] === this.targetPickController) {
+            return "targetPick";
+        }
+        
+        return null;
+    }
+    
+    prepareMove(move) {
+        this.preparedMove = move;
+        
+        return this;
+    }
+    
+    getPreparedMove() {
+        return this.preparedMove;
+    }
+    
+    getFirstOpponentIndex() {
+        const battlers = getSortedBattlers();
+        const opponents = this.getOpponents();
+        
+        for(let i = 0; i < battlers.length; ++i) {
+            if(opponents.includes(battlers[i])) {
+                return i;
+            }
+        }
+        
+        return -1;
+    }
+    
+    getFirstAllyIndex() {
+        const battlers = getSortedBattlers();
+        const allies = this.getOpponents();
+        
+        for(let i = 0; i < battlers.length; ++i) {
+            if(allies.includes(battlers[i])) {
+                return i;
+            }
+        }
+        
+        return -1;
     }
 }
 
@@ -547,9 +590,7 @@ class EnemyBattler extends Battler {
 class BattlerDrawable extends RectangleDrawable {
     constructor(position, size = [16, 16]) {
         super(position, size);
-        this.style = "white";
-        // this.setCameraMode("none");
-        this.setCamera(BATTLECAMERA);
+        this.style = "black";
     }
 }
 
@@ -576,7 +617,7 @@ class CommandLabel extends RectangleDrawable {
 }
 
 function getSortedBattlers() {
-    const battlers = SetArray.from(BATTLERS);
+    const battlers = SetArray.from(BATTLELOOP.battlers);
     
     array_bubbleSort(battlers, function(a, b) {
         const aX = a.drawable.getX();

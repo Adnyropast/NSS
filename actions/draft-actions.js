@@ -197,7 +197,7 @@ class ZoneEngage extends BusyAction {
             makeShockwave(this.zone.getPositionM(), 24)
             .getDrawable()
             .setStyle(new ColorTransition([0, 255, 255, 0.5], [0, 255, 255, 0], 24, powt(1/2)));
-            makeShockwave.lineWidth = 0;
+            makeShockwave.lineWidth = 1;
             
             removeEntity(this.zone);
             removeEntity(this.wind);
