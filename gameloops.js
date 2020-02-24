@@ -1282,10 +1282,10 @@ function transitionInOut(durationIn = 16, durationOut = 16) {
     setGameTimeout(transitionOut.bind(transitionOut, durationOut), durationIn);
 }
 
-let gameTimeouts = [];
+const gameTimeouts = new SetArray();
 
 function setGameTimeout(f, timeout) {
-    gameTimeouts.push({"function" : f, "timeout" : timeout});
+    gameTimeouts.push({function: f, timeout: timeout});
 }
 
 GAMELOOP.controllers.add(gameEventController);
@@ -1293,16 +1293,18 @@ GAMELOOP.controllers.add(gameEventController);
 function gameUpdate() {
     gamePhase.update();
     
-    // 
+    // Executing timeout functions.
     
-    for(let i = gameTimeouts.length - 1; i >= 0; --i) {
-        let gameTimeout = gameTimeouts[i];
+    const gameTimeoutsCopy = SetArray.from(gameTimeouts);
+    
+    for(let i = 0; i < gameTimeoutsCopy.length; ++i) {
+        const gameTimeout = gameTimeoutsCopy[i];
         
-        if(gameTimeouts[i].timeout > 0) {
-            --gameTimeouts[i].timeout;
+        if(gameTimeout.timeout > 0) {
+            --gameTimeout.timeout;
         } else {
-            gameTimeouts[i].function();
-            gameTimeouts.splice(i, 1);
+            gameTimeout.function();
+            gameTimeouts.remove(gameTimeout);
         }
     }
     
