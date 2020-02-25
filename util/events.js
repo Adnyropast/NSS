@@ -547,7 +547,7 @@ class GamepadEventsRecorder {
                 let button = gamepad.buttons[i];
                 
                 if(button.pressed) {
-                    console.log(i);
+                    // console.log(i);
                     
                     if(this.buttons[i]) {
                         ++this.buttons[i];

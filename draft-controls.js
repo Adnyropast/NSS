@@ -443,7 +443,7 @@ let ctrljson = {
         // {"which" : 3, "actionId" : "flamethrower"},
     ],
     "buttonOnce" : [
-        {"button" : 3, "actionId" : "goldenJab"},
+        {"button" : 3, "actionId" : "zoneEngage"},
     ],
     "buttonRepeat" : [
         {"button" : 5, "actionId" : "autoJump"},

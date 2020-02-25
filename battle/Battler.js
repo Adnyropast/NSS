@@ -345,18 +345,27 @@ class HapleBattler extends Battler {
         this.targetIndex = 0;
         this.preparedMove = null;
         
+        let gpdSave = [];
+        
         this.moveSelectController = function moveSelectController() {
-            if(keyList.value(K_UP) === 1) {
+            const gamepadDirection = gamepad_getDirection(getGamepad(0));
+            
+            if(Math.sign(gpdSave[0]) === Math.sign(gamepadDirection[0])) {gamepadDirection[0] = 0;}
+            else {gpdSave[0] = gamepadDirection[0];}
+            if(Math.sign(gpdSave[1]) === Math.sign(gamepadDirection[1])) {gamepadDirection[1] = 0;}
+            else {gpdSave[1] = gamepadDirection[1];}
+            
+            if(keyList.value(K_UP) === 1 || gamepadDirection[1] < 0) {
                 this.visibleList.decIndex();
-            } if(keyList.value(K_DOWN) === 1) {
+            } if(keyList.value(K_DOWN) === 1 || gamepadDirection[1] > 0) {
                 this.visibleList.incIndex();
             }
             
-            if(keyList.value(set_gather(K_CONFIRM, KEY_SPACE)) === 1 || keyList.value(K_RIGHT) === 1) {
+            if(keyList.value(set_gather(K_CONFIRM, KEY_SPACE)) === 1 || keyList.value(K_RIGHT) === 1 || gamepadRec.value(BUTTON_A) === 1 || gamepadDirection[0] > 0) {
                 this.visibleList.getItem().use();
             }
             
-            if(keyList.value(KEY_ESCAPE) === 1 || keyList.value(K_LEFT) === 1) {
+            if(keyList.value(KEY_ESCAPE) === 1 || keyList.value(K_LEFT) === 1 || gamepadRec.value(BUTTON_B) === 1 || gamepadDirection[0] < 0) {
                 removeMove(this.moves.pop());
             }
         };
@@ -364,11 +373,18 @@ class HapleBattler extends Battler {
         this.targetPickController = function targetPickController() {
             const preparedMove = this.preparedMove;
             
+            const gamepadDirection = gamepad_getDirection(getGamepad(0));
+            
+            if(Math.sign(gpdSave[0]) === Math.sign(gamepadDirection[0])) {gamepadDirection[0] = 0;}
+            else {gpdSave[0] = gamepadDirection[0];}
+            if(Math.sign(gpdSave[1]) === Math.sign(gamepadDirection[1])) {gamepadDirection[1] = 0;}
+            else {gpdSave[1] = gamepadDirection[1];}
+            
             // Move target cursor.
             
-            if(keyList.value(K_LEFT) === 1) {
+            if(keyList.value(K_LEFT) === 1 || gamepadDirection[0] < 0) {
                 --this.targetIndex;
-            } if(keyList.value(K_RIGHT) === 1) {
+            } if(keyList.value(K_RIGHT) === 1 || gamepadDirection[0] > 0) {
                 ++this.targetIndex;
             }
             
@@ -377,7 +393,7 @@ class HapleBattler extends Battler {
             
             // Pick / Cancel target.
             
-            if(keyList.value(K_DOWN) === 1) {
+            if(keyList.value(K_DOWN) === 1 || gamepadDirection[1] > 0) {
                 const target = getSortedBattlers()[this.targetIndex];
                 
                 if(preparedMove.targets.indexOf(target) === -1) {
@@ -388,7 +404,7 @@ class HapleBattler extends Battler {
                     this.targetedCrosshairs.add(crosshair);
                     addDrawable(crosshair);
                 }
-            } if(keyList.value(K_UP) === 1) {
+            } if(keyList.value(K_UP) === 1 || gamepadDirection[1] < 0) {
                 const target = getSortedBattlers()[this.targetIndex];
                 
                 const crosshair = this.targetedCrosshairs.find(function(crosshair) {
@@ -409,7 +425,7 @@ class HapleBattler extends Battler {
                 this.setControlType("moveSelect");
             }
             
-            if(keyList.value(K_CONFIRM) === 1) {
+            if(keyList.value(K_CONFIRM) === 1 || gamepadRec.value(BUTTON_A) === 1) {
                 this.addMove(preparedMove);
                 this.prepareMove(null);
                 this.setControlType("moveSelect");
@@ -421,7 +437,7 @@ class HapleBattler extends Battler {
             
             // Cancel prepared move.
             
-            if(keyList.value(K_ESC) === 1) {
+            if(keyList.value(K_ESC) === 1 || gamepadRec.value(BUTTON_B) === 1) {
                 this.prepareMove(null);
                 this.setControlType("moveSelect");
             }
