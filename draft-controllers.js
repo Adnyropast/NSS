@@ -52,3 +52,26 @@ function enemyController() {
 function healController() {
     this.regenerate();
 }
+
+function routeOrbit() {
+    this.setSelfBrake(Infinity);
+    
+    const positionM = this.getPositionM();
+    const vector = Vector.subtraction(this.route, positionM);
+    const currentAngle = vector.getAngle();
+    const angleValue = this.rotateValue || +Math.PI/32;
+    const nextAngle = currentAngle + angleValue;
+    const nextPosition = Vector.subtraction(this.route, Vector.fromAngle(nextAngle).normalize(vector.getNorm()));
+    
+    this.speed.add(Vector.subtraction(nextPosition, positionM));
+}
+
+function routeTravel() {
+    const vector = Vector.subtraction(this.route, this.getPositionM());
+    
+    if(this.routeTravelSpeedFactor) {
+        this.speed.add(vector.multiply(this.routeTravelSpeedFactor));
+    } else {
+        this.speed.add(vector.multiply(+0.0625));
+    }
+}
