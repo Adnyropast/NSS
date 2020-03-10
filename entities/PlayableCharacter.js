@@ -13,8 +13,6 @@ class PlayableCharacter extends Character {
         
         this.resetEnergy();
         
-        // this.setEffectFactor("default", 1);
-        
         this.cursor = PlayerCursor.fromMiddle(this.getPositionM(), [256, 256]);
         
         this.anim = null;

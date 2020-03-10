@@ -46,8 +46,7 @@ class BloodShot extends Action {
     constructor() {
         super();
         this.id = "bloodShot";
-        this.setUseCost(5);
-        this.setUseCost(0);
+        this.setUseCost(4);
         
         this.initialPosition = null;
         this.targetPosition = null;
@@ -55,6 +54,14 @@ class BloodShot extends Action {
     }
     
     use() {
+        if(this.phase === 0) {
+            if(this.user.spendEnergy(this.getUseCost())) {
+                
+            } else {
+                return this.end();
+            }
+        }
+        
         if(this.phase <= 1) {
             let direction = this.user.getCursorDirection();
             
@@ -65,8 +72,6 @@ class BloodShot extends Action {
             projectile.shareBlacklist(this.user.getBlacklist());
             
             addEntity(projectile);
-            
-            // repaceLoop(1000);
         }
         
         if(this.phase >= 10) {
@@ -75,8 +80,6 @@ class BloodShot extends Action {
         
         return this;
     }
-    
-    onend() {repaceLoop(16)}
 }
 
 AC["bloodShot"] = BloodShot;
@@ -85,6 +88,7 @@ class BlowoutShots extends Action {
     constructor() {
         super();
         this.id = "heartBlowout";
+        this.setUseCost(0.5);
         
         this.angle = 0;
         this.inc = 6;
@@ -105,14 +109,23 @@ class BlowoutShots extends Action {
         }
         
         if(this.phase % this.pace == 0) {
-            let direction = new Vector(Math.cos(this.angle), Math.sin(this.angle));
-            
-            var projectile = BloodProjectile.fromMiddle(direction.normalized(rectangle_averageSize(this.user) / 2).add(this.user.getPositionM()), [4, 4]);
-            projectile.setSpeed(direction.normalize(4));
-            projectile.launchDirection = direction.normalized(1);
-            projectile.shareBlacklist(this.user.getBlacklist());
-            projectile.setLifespan(20);
-            addEntity(projectile);
+            if(this.user.spendEnergy(this.getUseCost())) {
+                let direction = new Vector(Math.cos(this.angle), Math.sin(this.angle));
+                
+                var projectile = BloodProjectile.fromMiddle(direction.normalized(rectangle_averageSize(this.user) / 2).add(this.user.getPositionM()), [4, 4]);
+                projectile.setSpeed(direction.normalize(4));
+                projectile.launchDirection = direction.normalized(1);
+                projectile.shareBlacklist(this.user.getBlacklist());
+                projectile.setLifespan(20);
+                projectile.setEventListener("hit", "freeze", function freeze(event) {
+                    set_gather(event.actor.getBlacklist(), event.recipient.getBlacklist())
+                    .forEach(function(entity) {
+                        entity.setFreeze(2);
+                    });
+                });
+                
+                addEntity(projectile);
+            }
         }
         
         this.angle += this.inc;
@@ -185,6 +198,11 @@ class VeinSweep extends SlashAction {
         }
         
         this.hitbox.launchDirection = face.times(1);
+        
+        const user = this.user;
+        this.hitbox.addEventListener("hit", function() {
+            user.heal(1);
+        });
         
         return this;
     }

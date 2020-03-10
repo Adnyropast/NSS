@@ -1,4 +1,93 @@
 
+function cameraSizeEffect() {
+    if(CAMERA.sizeTransition) {
+        CAMERA.setSizeM(CAMERA.sizeTransition.at(1));
+        delete CAMERA.sizeTransition;
+        CAMERA.controllers.remove(sizeTransitionController);
+    }
+    
+    const sizeTransition = new VectorTransition(Vector.division(CAMERA.getSize(), 1.00390625), Vector.from(CAMERA.getSize()), 12, function timing(t) {
+        let sign = (t * 5) % 2 == 0 ? -1 : 1;
+        let val = 1 - t;
+        
+        return 1 + sign * val;
+    });
+    
+    CAMERA.setSizeTransition(sizeTransition);
+}
+
+function cameraPositionEffect() {
+    const vector = new Vector(0, 1);
+    vector.rotate(Math.random() * 2*Math.PI);
+    
+    const norm = Math.pow(Math.floor(1), 1/16) / 128;
+    
+    vector.normalize(norm);
+    
+    const positionM = CAMERA.getPositionM();
+    
+    const positionTransition = new VectorTransition(Vector.addition(positionM, vector), positionM, 16);
+    
+    let f = function() {
+        this.setPositionM(positionTransition.getNext());
+        
+        if(positionTransition.isDone()) {
+            this.controllers.remove(f);
+        }
+    };
+    
+    CAMERA.controllers.add(f);
+}
+
+function shakeController() {
+    let state = this.findState("shake");
+    
+    if(state !== undefined) {
+        const positionM = state.positionM;
+        
+        const avgsz = rectangle_averageSize(this);
+        const vector = state.vector;
+        
+        this.setPositionM(Vector.addition(positionM, vector));
+        
+        vector.rotate(random(Math.PI - Math.PI/4, Math.PI + Math.PI/4));
+        
+        --state.timeout;
+        
+        if(state.timeout <= 0) {
+            this.controllers.remove(shakeController);
+            this.setPositionM(state.positionM);
+            this.setSpeed(state.saveSpeed);
+            
+            this.removeState("shake");
+        }
+    } else {
+        this.controllers.remove(shakeController);
+    }
+}
+
+function entityShake(entity, duration) {
+    let state = entity.findState("shake");
+    
+    if(state === undefined) {
+        state = {
+            name: "shake",
+            positionM: entity.getPositionM(),
+            timeout: duration,
+            vector: Vector.fromAngle(random(0, 2*Math.PI)).normalize(rectangle_averageSize(entity)/16)
+        };
+        
+        entity.addStateObject(state);
+        entity.controllers.add(shakeController);
+    } else {
+        if(duration > state.timeout) {
+            state.timeout = duration;
+        }
+    }
+    
+    state.saveSpeed = Vector.from(entity.speed);
+}
+
 /**
  *
  */
@@ -10,168 +99,58 @@ class TypeDamager extends Interactor {
         
         this.value = 0;
         this.values = {};
-        this.hit = new SetArray();
+        this.hitList = new SetArray();
         this.rehit = -1;
     }
     
     interact(interrecipient) {
-        var actor = this.getActor();
-        var recipient = interrecipient.getRecipient();
+        const actor = this.getActor();
+        const recipient = interrecipient.getRecipient();
         
-        if(!this.hit.includes(interrecipient)) {
-            let offenses = actor.offenses;
+        if(!this.hitList.includes(interrecipient)) {
+            const offenses = actor.offenses;
             
             for(let type in offenses) {
-                let negotiatedDamage = interrecipient.negotiateDamage(type, offenses[type]);
+                const negotiatedDamage = interrecipient.negotiateDamage(type, offenses[type]);
                 
                 recipient.hurt(negotiatedDamage);
-                
-                let impact = typeImpacts[type];
-                
-                if(typeof impact === "function") {
-                    // impact(actor, recipient);
-                }
             }
             
             actor.triggerEvent("hit", new EntityDamageEvent(actor, recipient));
             recipient.triggerEvent("hurt", new EntityDamageEvent(actor, recipient));
             
-            this.hit.add(interrecipient);
+            this.hitList.add(interrecipient);
             
-            let hit = this.hit;
+            /* Clear hit list with timeout */
             
             if(this.rehit > 0) {
-                setGameTimeout(function() {
-                    hit.splice(0, hit.length);
-                }, this.rehit);
-            }
-            
-            /**
-            worldFreeze = 3;
-            setGameTimeout(function() {
-                worldFreeze = 2;
-            }, 1);/**/
-            
-            /**
-            
-            let ts;
-            
-            if(ts = CAMERA.findActionWithId("transitionSize")) {
-                CAMERA.setSizeM(ts.sizeTransition.vector2);
-            }
-            
-            CAMERA.removeActionsWithId("transitionSize");
-            
-            CAMERA.addAction(new TransitionSize(new ColorTransition(Vector.subtraction(CAMERA.getSize(), [2 * totalDamage, 2 * totalDamage, 0]), CAMERA.getSize(), 12, function timing(t) {
-                let sign = (t * 5) % 2 == 0 ? -1 : 1;
-                let val = 1 - t;
-                
-                return 1 + sign * val;
-            })));
-            
-            /**
-            
-            let saveReplaceRecipient = CAMERA.findInterrecipientWithId("cameraReplace");
-            CAMERA.removeInterrecipientWithId("cameraReplace")
-            
-            let vector = new Vector(0, 1);
-            vector.rotate(Math.random() * 2*Math.PI);
-            
-            let norm = Math.pow(Math.floor(negotiatedDamage), 1/16) / 128;
-            
-            vector.normalize(norm);
-            
-            let index = CAMERA.controllers.length;
-            let timeout = 16; Math.min(negotiatedDamage * 2, 16);
-            
-            let c = 0;
-            
-            let positionM = CAMERA.getPositionM();
-            
-            let f = function() {
-                vector.divide(-2);
-                
-                this.setPositionM(vector.plus(positionM));
-                
-                
-                ++c;
-                
-                if(timeout > 0) {
-                    --timeout;
-                    
-                    for(let dim = 0; dim < vector.length; ++dim) {
-                        if(!isAlmostZero(vector[dim])) {
-                            return;
-                        }
-                    }
-                }
-                
-                this.controllers.remove(f);
-                this.addInteraction(saveReplaceRecipient);
-            };
-            
-            CAMERA.controllers.add(f);
-            
-            /**/
-            
-            let entities = [];
-            
-            entities.push.apply(entities, actor.getBlacklist());
-            entities.push.apply(entities, recipient.getBlacklist());
-            
-            for(let i = 0; i < entities.length; ++i) {
-                const entity = entities[i];
-                
-                // entity.setFreeze(2);
-            }
-            
-            let recipients = recipient.getBlacklist();
-            recipients = [recipient];
-            
-            for(let i = 0; i < recipients.length; ++i) {
-                const entity = recipients[i];
-                
-                let state = entity.findState("originalPositionM");
-                
-                if(state === undefined) {
-                    state = {name:"originalPositionM", value:entity.getPositionM(), count:1};
-                    entity.addStateObject(state);
-                } else {
-                    ++state.count;
-                }
-                
-                let positionM = state.value;
-                
-                let avgsz = rectangle_averageSize(entity);
-                
-                entity.setPositionM(Vector.addition(positionM, (new Vector(Math.random(), Math.random())).normalize(avgsz/16)));
+                const hitList = this.hitList;
                 
                 setGameTimeout(function() {
-                    entity.setPositionM(Vector.addition(positionM, (new Vector(Math.random(), Math.random())).normalize(avgsz/32)));
-                    
-                    setGameTimeout(function() {
-                        entity.setPositionM(positionM);
-                        --state.count;
-                        
-                        if(state.count <= 0) {
-                            entity.removeState("originalPositionM");
-                        }
-                    }, 1);
-                }, 1);
+                    hitList.remove(interrecipient);
+                }, this.rehit - 1);
             }
-        } else {/**
+        } else {
+            /**
+            
             ++interrecipient.rehitTimer;
             
             if(interrecipient.rehitTimer == this.rehit) {
                 interrecipient.rehitTimer = 0;
                 this.hit.remove(interrecipient);
-            }**/
+            }
+            
+            /**/
         }
         
         return this;
     }
     
-    setRehit(rehit) {this.rehit = rehit; return this;}
+    setRehit(rehit) {
+        this.rehit = rehit;
+        
+        return this;
+    }
 }
 
 class TypeDamageable extends Interrecipient {

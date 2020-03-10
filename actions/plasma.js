@@ -20,6 +20,10 @@ class PlasmaEffect extends Hitbox {
         });
         
         this.setTypeOffense(FX_ELECTRIC, 1);
+        
+        this.setEventListener("hit", "shake", function shake(event) {
+            entityShake(event.recipient, 32);
+        });
     }
     
     updateDrawable() {
@@ -41,13 +45,13 @@ class PlasmaLightning extends BusyAction {
     
     use() {
         if(this.phase == 0) {
-            if(this.user.getEnergy() <= this.getUseCost()) {
-                return this.end();
-            } else {
+            if(this.user.spendEnergy(this.getUseCost())) {
                 this.setRemovable(false);
-                this.user.hurt(this.getUseCost());
+            } else {
+                return this.end();
             }
         }
+        
         let cursorDirection = this.user.getCursorDirection();
         
         if(cursorDirection.getNorm() > this.maxRange) {

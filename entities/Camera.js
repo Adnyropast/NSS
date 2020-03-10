@@ -1,4 +1,86 @@
 
+function positionTransitionToRoute() {
+    if(this.route != null) {
+        const vector = Vector.subtraction(this.route, this.getPositionM());
+        
+        if(isAlmostZero(vector.getNorm())) {
+            this.setPositionM(this.route);
+        } else {
+            this.speed.set(vector.divide(4));
+        }
+    }
+}
+
+function cameraKeyController() {
+    const accVal = 1.125;
+    const vector = new Vector(0, 0);
+    
+    if(keyList.value(100)) {
+        vector.add([-1, 0]);
+    }
+    
+    if(keyList.value(104)) {
+        vector.add([0, -1]);
+    }
+    
+    if(keyList.value(102)) {
+        vector.add([+1, 0]);
+    }
+    
+    if(keyList.value(101)) {
+        vector.add([0, +1]);
+    }
+    
+    this.drag(vector.normalize(accVal));
+}
+
+function cameraZoomController() {
+    // var a = 1.03125;// 1.00025;
+    const newSize = Vector.from(this.size);
+    
+    if(poh(keyList.value(107))) {
+        // this.setSizeM(Vector.from(this.getSize()).divide(a));
+        
+        // this.setSizeM(0, this.size[0] - 16);
+        // if(this.size[0] < this.minSize[0]) {this.setSizeM(0, this.minSize[0])}
+        // this.setSizeM(1, this.size[1] - 9);
+        // if(this.size[1] < this.minSize[1]) {this.setSizeM(1, this.minSize[1])}
+        
+        newSize[0] -= 16;
+        if(newSize[0] < this.minSize[0]) {
+            newSize[0] = this.minSize[0];
+        }
+        
+        newSize[1] -= 9;
+        if(newSize[1] < this.minSize[1]) {
+            newSize[1] = this.minSize[1];
+        }
+    }
+    
+    if(poh(keyList.value(109))) {
+        // this.setSizeM(Vector.from(this.getSize()).multiply(a));
+        
+        // this.setSizeM(0, this.size[0] + 16);
+        // if(this.size[0] > this.maxSize[0]) {this.setSizeM(0, this.maxSize[0])}
+        // this.setSizeM(1, this.size[1] + 9);
+        // if(this.size[1] > this.maxSize[1]) {this.setSizeM(1, this.maxSize[1])}
+        
+        newSize[0] += 16;
+        if(newSize[0] > this.maxSize[0]) {
+            newSize[0] = this.maxSize[0];
+        }
+        
+        newSize[1] += 9;
+        if(newSize[1] > this.maxSize[1]) {
+            newSize[1] = this.maxSize[1];
+        }
+    }
+    
+    if(this.sizeTransition == null && Vector.distance(this.size, newSize) !== 0) {
+        this.setSizeTransition(new VectorTransition(Array.from(this.size), newSize, 8, powt(1/4)));
+    }
+}
+
 const DEF_CAMPOS = [0, 0, -(Math.pow(2, 9) + Math.pow(2, 8))/2];
 // const DEF_CAMSIZE = [448, 252, 0];
 const DEF_CAMSIZE = [416, 234, 0];
@@ -16,14 +98,12 @@ class Camera extends Entity {
         super(position_, size_);
         // this.setCollidable(true);
         this.setSelfBrake(1.25);
-        // this.setEffectFactor("default", 0);
         
         this.ratio = 1;
-        this.accVal = 1.125;
-        this.accVal = 4;
-        this.cameraControllable = true;
         
-        this.addActset(AS_MOVEMENT, "transitionSize");
+        this.accVal = 4;
+        
+        this.addActset(AS_MOVEMENT);
         
         this.addInteraction(new CameraReplaceRecipient());
         
@@ -40,6 +120,10 @@ class Camera extends Entity {
         this.originalSize = size;
         
         this.order = Infinity;
+        
+        this.controllers.add(cameraKeyController);
+        this.controllers.add(cameraZoomController);
+        this.controllers.add(positionTransitionToRoute);
     }
     
     static fromData(data) {
@@ -103,49 +187,12 @@ class Camera extends Entity {
     }
     
     update() {
-        /**
-        var a = 1.03125;// 1.00025;
-        
-        if(keyList.value(107) == 1) {
-            // this.setSizeM(Vector.from(this.getSize()).divide(a));
-            this.setSizeM(0, this.size[0] - 16);
-            if(this.size[0] < this.minSize[0]) {this.setSizeM(0, this.minSize[0])}
-            this.setSizeM(1, this.size[1] - 9);
-            if(this.size[1] < this.minSize[1]) {this.setSizeM(1, this.minSize[1])}
-        } if(keyList.value(109) == 1) {
-            // this.setSizeM(Vector.from(this.getSize()).multiply(a));
-            this.setSizeM(0, this.size[0] + 16);
-            if(this.size[0] > this.maxSize[0]) {this.setSizeM(0, this.maxSize[0])}
-            this.setSizeM(1, this.size[1] + 9);
-            if(this.size[1] > this.maxSize[1]) {this.setSizeM(1, this.maxSize[1])}
-        }
-        if(this.cameraControllable) {
-            if(keyList.value(100)) {
-                this.drag([-this.accVal, 0]);
-            } if(keyList.value(104)) {
-                this.drag([0, -this.accVal]);
-            } if(keyList.value(102)) {
-                this.drag([+this.accVal, 0]);
-            } if(keyList.value(101)) {
-                this.drag([0, +this.accVal]);
-            }
-        }
-        /**
-        
-        if(this.target != null) {
-            this.route = this.target.getPositionM();
-            this.addAction(this.movementTo);
-        } else if(this.route != null) {
-            this.route = null;
-            this.removeAction(this.movementTo);
-        }
-        
         /**/
         
-        let rect = makeEncompassingRectangle(this.targets, {left:16, right:16, up:16, down:16});
+        const rect = makeEncompassingRectangle(this.targets);
         
         let willUpdate = false;
-        let minDim = Math.min(rect.size.length, this.originalSize.length);
+        const minDim = Math.min(rect.size.length, this.originalSize.length);
         
         for(let dim = 0; dim < minDim; ++dim) {
             if(rect.size[dim] > this.originalSize[dim]) {
@@ -154,13 +201,12 @@ class Camera extends Entity {
         }
         
         if(willUpdate) {
-            const dimension = Math.min(rect.size.length, 3);
             const proportions = [16, 9, 16];
             let biggestRatio = 0;
             let biggestDimension = -1;
             
-            for(let dim = 0; dim < dimension; ++dim) {
-                let ratio = rect.size[dim] / proportions[dim];
+            for(let dim = 0; dim < minDim; ++dim) {
+                const ratio = rect.size[dim] / proportions[dim];
                 
                 if(ratio > biggestRatio) {
                     biggestRatio = ratio;
@@ -168,7 +214,7 @@ class Camera extends Entity {
                 }
             }
             
-            let size = Vector.multiplication(proportions, biggestRatio);
+            const size = Vector.multiplication(proportions, biggestRatio);
             
             this.setSizeM(size);
         } else {
@@ -176,9 +222,7 @@ class Camera extends Entity {
         }
         
         if(this.targets.length > 0) {
-            // this.setPositionM(rect.getPositionM());
             this.route = rect.getPositionM();
-            this.addAction(this.movementTo);
         }
         
         /**/
@@ -279,7 +323,6 @@ class CameraBoundary extends Entity {
     constructor(position, size) {
         super(position, size);
         // this.setReplaceId(-1);
-        // this.setEffectFactor("default", 0);
         
         this.addInteraction(new CameraReplaceActor());
         // this.setStyle("#FF0000");

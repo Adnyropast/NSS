@@ -41,28 +41,26 @@ class GoldFlurry extends GoldAbility {
     }
     
     use() {
-        if(this.user.getEnergy() <= this.getUseCost()) {
-            return this.end();
-        }
-        
         this.phase %= this.phaseLimit;
         this.t = this.phase % (2 * Math.PI) * 16;
         
         if(this.phase % 6 == 0) {
-            this.user.hurt(this.getUseCost());
-            
-            let direction = this.user.getCursorDirection();
-            direction.rotate(Math.sin(this.t) * 0.5);
-            
-            let size = irandom(7, 9);
-            
-            var hitbox = GoldSolid.fromMiddle(direction.normalized(rectangle_averageSize(this.user)/4).add(this.user.getPositionM()), [size, size]);
-            hitbox.shareBlacklist(this.user.getBlacklist());
-            
-            hitbox.setSpeed(direction.normalized(2.5));
-            hitbox.launchDirection = hitbox.speed.normalized(0.5);
-            
-            addEntity(hitbox);
+            if(this.user.spendEnergy(this.getUseCost())) {
+                let direction = this.user.getCursorDirection();
+                direction.rotate(Math.sin(this.t) * 0.5);
+                
+                let size = irandom(7, 9);
+                
+                var hitbox = GoldSolid.fromMiddle(direction.normalized(rectangle_averageSize(this.user)/4).add(this.user.getPositionM()), [size, size]);
+                hitbox.shareBlacklist(this.user.getBlacklist());
+                
+                hitbox.setSpeed(direction.normalized(2.5));
+                hitbox.launchDirection = hitbox.speed.normalized(0.5);
+                
+                addEntity(hitbox);
+            } else {
+                return this.end();
+            }
         }
         
         return this;
@@ -147,33 +145,32 @@ class RocketPunch extends GoldAbility {
     }
     
     use() {
-        if(this.user.getEnergy() <= this.getUseCost()) {
-            return this.end();
-        }
-        
         if(this.phase == 0) {
-            this.user.hurt(this.getUseCost());
-            this.setRemovable(false);
-            
-            
-            
-            let particle = PolygonDrawable.from(makeRandomPolygon(16, 16, 16));
-            particle.setLifespan(16);
-            particle.setStyle(new ColorTransition([255, 255, 255, 0], [0, 255, 255, 0.75], particle.lifespan));
-            
-            particle.setPositionM(this.user.getPositionM());
-            
-            let sizeTransition = new VectorTransition([16], [0], particle.lifespan);
-            particle.initImaginarySize(sizeTransition.at(0)[0]);
-            
-            let user = this.user;
-            
-            particle.controllers.add(function() {
-                this.setImaginarySize(sizeTransition.getNext()[0]);
-                this.setPositionM(user.getPositionM());
-            });
-            
-            addDrawable(particle);
+            if(this.user.spendEnergy(this.getUseCost())) {
+                this.setRemovable(false);
+                
+                
+                
+                let particle = PolygonDrawable.from(makeRandomPolygon(16, 16, 16));
+                particle.setLifespan(16);
+                particle.setStyle(new ColorTransition([255, 255, 255, 0], [0, 255, 255, 0.75], particle.lifespan));
+                
+                particle.setPositionM(this.user.getPositionM());
+                
+                let sizeTransition = new VectorTransition([16], [0], particle.lifespan);
+                particle.initImaginarySize(sizeTransition.at(0)[0]);
+                
+                let user = this.user;
+                
+                particle.controllers.add(function() {
+                    this.setImaginarySize(sizeTransition.getNext()[0]);
+                    this.setPositionM(user.getPositionM());
+                });
+                
+                addDrawable(particle);
+            } else {
+                return this.end();
+            }
         }
         
         if(this.phase < 8) {
@@ -201,30 +198,34 @@ class RocketPunch extends GoldAbility {
         }
         
         if(this.phase == 16) {
-            let positionM = this.user.getPositionM();
-            let direction = this.user.getCursorDirection();
-            let startPosition = direction.normalized(rectangle_averageSize(this.user)/2).add(positionM);
-            
-            var projectile = RocketPunchProjectile.fromMiddle(startPosition, [8, 8]);
-            
-            projectile.setSpeed(direction.normalized(6));
-            // projectile.setForce(projectile.speed.times(2));
-            // projectile.addInteraction(new DragActor(projectile.speed.times(1)));
-            projectile.launchDirection = projectile.speed;
-            projectile.shareBlacklist(this.user.getBlacklist());
-            
-            addEntity(projectile);
-            
-            entityExplode.randomAngleVariation = 1;
-            entityExplode(8, GoldSmokeParticle, startPosition, [12, 12], 1)
-            .forEach(function(entity) {
-                entity.speed.multiply(Math.random() + 1);
-            });
-            
-            this.user.setFace(projectile.speed[0]);
-            
-            this.user.hurt(this.getUseCost());
-            this.user.drag(direction.normalized(-1));
+            if(this.user.spendEnergy(this.getUseCost())) {
+                let positionM = this.user.getPositionM();
+                let direction = this.user.getCursorDirection();
+                let startPosition = direction.normalized(rectangle_averageSize(this.user)/2).add(positionM);
+                
+                var projectile = RocketPunchProjectile.fromMiddle(startPosition, [8, 8]);
+                
+                projectile.setSpeed(direction.normalized(6));
+                // projectile.setForce(projectile.speed.times(2));
+                // projectile.addInteraction(new DragActor(projectile.speed.times(1)));
+                projectile.launchDirection = projectile.speed;
+                projectile.shareBlacklist(this.user.getBlacklist());
+                
+                addEntity(projectile);
+                
+                entityExplode.randomAngleVariation = 1;
+                entityExplode(8, GoldSmokeParticle, startPosition, [12, 12], 1)
+                .forEach(function(entity) {
+                    entity.speed.multiply(Math.random() + 1);
+                });
+                
+                this.user.setFace(projectile.speed[0]);
+                
+                this.user.drag(direction.normalized(-1));
+            } else {
+                this.setRemovable(true);
+                this.end();
+            }
         } else if(this.phase > 16) {
             this.setRemovable(true);
             this.end();

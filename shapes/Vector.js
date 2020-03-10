@@ -715,6 +715,8 @@ class VectorTransition {
     getStep() {return this.step;}
     
     getCurrent() {return this.at(this.getProgress());}
+    
+    isDone() {return this.step >= this.duration;}
 }
 
 class NumberTransition extends VectorTransition {

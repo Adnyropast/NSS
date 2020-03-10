@@ -653,3 +653,7 @@ function gamepad_getDirection(gamepad) {
     
     return new Vector(0, 0);
 }
+
+function poh(value) {
+    return value === 1 || (value > 16 && value % 3 === 0);
+}

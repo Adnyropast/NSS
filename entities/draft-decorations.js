@@ -3,7 +3,6 @@ class Decoration extends Entity {
     constructor(position, size) {
         super(position, size);
         this.collidable = false;
-        // this.setEffectFactor("default", 0);
     }
 }
 

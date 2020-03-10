@@ -1,9 +1,29 @@
 
+let mapTransitioning = false;
+
+function mapTransition(mapname, warpPositionM) {
+    if(!mapTransitioning) {
+        mapTransitioning = true;
+        getCurrentSave().playerPositionM = warpPositionM;
+        updateCurrentCharacter();
+        
+        transitionIn(16);
+        
+        setGameTimeout(function() {
+            transitionOut(16);
+            saveMapState();
+            loadMap(mapname);
+            
+            setGameTimeout(function() {
+                mapTransitioning = false;
+            }, 1);
+        }, 16);
+    }
+}
+
 /**
  *
  */
-
-let maptransitioning = false;
 
 class MapWarper extends Interactor {
     constructor(mapname, warpPositionM = [0, 0]) {
@@ -15,14 +35,8 @@ class MapWarper extends Interactor {
     }
     
     interact(interrecipient) {
-        if(!maptransitioning) {
-            // loadMap(this.mapname);
-            maptransitioning = true;
-            getCurrentSave().playerPositionM = this.warpPositionM;
-            updateCurrentCharacter();
-            removeEntity(interrecipient.getRecipient());
-            addEntity(new TransitionCover(this.mapname));
-        }
+        mapTransition(this.mapname, this.warpPositionM);
+        removeEntity(interrecipient.getRecipient());
         
         return this;
     }

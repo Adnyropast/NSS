@@ -174,7 +174,6 @@ class ZoneEngage extends BusyAction {
         }
         
         // repaceLoop(WORLD_PACE + Math.pow(2, this.phase));
-        // worldFreeze = Math.floor(Math.pow(this.phase, 1.5));
         
         this.zone.setSizeM([Math.pow(1.125+0.0625, this.phase), Math.pow(1.125+0.0625, this.phase)]);
         this.zone.setPositionM(this.user.getPositionM());
@@ -204,8 +203,6 @@ class ZoneEngage extends BusyAction {
             if(this.opponentFound) {
                 repaceLoop(64);
             }
-            
-            // worldFreeze = 0;
         }
         
         if(this.phase === 48) {
@@ -433,9 +430,8 @@ class SlashAction extends BusyAction {
             
             this.user.setFace(this.user.getCursorDirection()[0]);
             
-            if(this.user.getEnergy() > this.getUseCost()) {
+            if(this.user.spendEnergy(this.getUseCost())) {
                 this.setRemovable(false);
-                this.user.hurt(this.getUseCost());
                 this.user.addStateObject({name:"attack"});
             } else {
                 return this.end();

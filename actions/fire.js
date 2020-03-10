@@ -7,10 +7,12 @@ class FireEffect extends Hitbox {
         
         this.setLifespan(24);
         
-        let avgsz = rectangle_averageSize(this);
+        const positionM = this.getPositionM();
+        const avgsz = rectangle_averageSize(this);
         
         for(let i = 0; i < 2; ++i) {
-            let drawable = makeFireParticle();
+            const drawable = makeFireParticle();
+            drawable.setPositionM(positionM);
             drawable.setZIndex(random(-1, 1));
             drawable.multiplySize(avgsz/polygon_averageSize(drawable));
             drawable.initImaginarySize(avgsz);
@@ -31,7 +33,7 @@ class FireEffect extends Hitbox {
     
     updateDrawable() {
         for(let i = 0; i < this.drawables.length; ++i) {
-            let drawable = this.drawables[i];
+            const drawable = this.drawables[i];
             
             drawable.setImaginarySize(rectangle_averageSize(this));
             // drawable.stretchM(this.speed.normalized(0.125));
@@ -57,29 +59,27 @@ class Flamethrower extends BusyAction {
             this.setUseCost(this.getUseCost()/1.25);
         }
         
-        if(this.user.getEnergy() <= this.getUseCost()) {
-            return this.end();
-        }
-        
         this.phase %= this.phaseLimit;
         
         if(this.phase % 1 == 0) {
-            let cursorDirection = this.user.getCursorDirection();
-            
-            let fireEffect = FireEffect.fromMiddle(Vector.addition(this.user.getPositionM(), cursorDirection.normalized(4)), [8, 8]);
-            fireEffect.setSpeed(cursorDirection.normalized(random(2, 3)));
-            fireEffect.shareBlacklist(this.user.getBlacklist());
-            fireEffect.addInteraction(new DragActor(Vector.from(fireEffect.speed).normalize(0.03125)));
-            
-            if(this.phase % 12 !== 0) {
-                fireEffect.removeInteractorWithId("damage");
+            if(this.user.spendEnergy(this.getUseCost())) {
+                let cursorDirection = this.user.getCursorDirection();
+                
+                let fireEffect = FireEffect.fromMiddle(Vector.addition(this.user.getPositionM(), cursorDirection.normalized(4)), [8, 8]);
+                fireEffect.setSpeed(cursorDirection.normalized(random(2, 3)));
+                fireEffect.shareBlacklist(this.user.getBlacklist());
+                fireEffect.addInteraction(new DragActor(Vector.from(fireEffect.speed).normalize(0.03125)));
+                
+                if(this.phase % 12 !== 0) {
+                    fireEffect.removeInteractorWithId("damage");
+                }
+                
+                addEntity(fireEffect);
+                
+                this.user.setFace(cursorDirection[0]);
+            } else {
+                return this.end();
             }
-            
-            addEntity(fireEffect);
-            
-            this.user.setFace(cursorDirection[0]);
-            
-            this.user.hurt(this.getUseCost());
         }
         
         return this;
@@ -181,7 +181,7 @@ class BurningAttack extends BusyAction {
         }
         
         if(this.phase == 8) {
-            if(this.user.getEnergy() > this.getUseCost()) {
+            if(this.user.spendEnergy(this.getUseCost())) {
                 const user = this.user;
                 const avgsz = rectangle_averageSize(this.user);
                 
@@ -192,7 +192,7 @@ class BurningAttack extends BusyAction {
                 this.hitbox.shareBlacklist(this.user.getBlacklist());
                 this.hitbox.order = this.user.order - 1;
                 addEntity(this.hitbox);
-                this.user.hurt(this.getUseCost());
+                
                 this.saveTypeDamageable = this.user.findInterrecipientWithId("damage");
                 this.user.removeInterrecipientWithId("damage");
                 

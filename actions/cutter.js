@@ -132,8 +132,8 @@ class CutterBoomerang extends CutterAbility {
     
     use() {
         if(this.phase == 0) {
-            if(this.user.energy > this.getUseCost()) {
-                this.user.hurt(this.getUseCost());
+            if(this.user.spendEnergy(this.getUseCost())) {
+                
             } else {
                 this.end();
             }
@@ -363,7 +363,7 @@ class FinalCutter1 extends SlashAction {
             
             this.bladeWidthTransition = new ColorTransition([0], [16], 1, finalCutter1BladeTransition);
             
-            this.hitbox.addInteraction(new DragActor([this.face[0] * 0.125, 0]));
+            this.hitbox.launchDirection = [this.face[0] * 1, 0];
         } else {
             return null;
         }
@@ -662,7 +662,7 @@ class FinalCutter5 extends FinalCutter4 {
             
             let gravityDirection = this.user.getGravityDirection();
             
-            this.hitbox.addInteraction(new DragActor(gravityDirection.normalized(6)));
+            this.hitbox.launchDirection = gravityDirection.normalized(10);
             
             this.user.speed.add(gravityDirection.normalized(6));
         } else {

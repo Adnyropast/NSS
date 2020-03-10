@@ -113,9 +113,10 @@ class Movement extends Action {
                     this.user.triggerEvent("drift", {action: this});
                 }
                 
-                if(this.getUseCost() < this.user.getEnergy()) {
+                if(this.user.spendEnergy(this.getUseCost())) {
+                    
+                } else {
                     // return this.end("not enough energy");
-                    this.user.hurt(this.getUseCost());
                 }
             }
         }

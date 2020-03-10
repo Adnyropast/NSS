@@ -10,7 +10,6 @@ class ActorCollidable extends Entity {
     constructor(position, size) {
         super(position, size);
         this.collidable = true;
-        // this.setEffectFactor("default", 0);
         
         this.collide_priority = +1;
     }
@@ -386,34 +385,6 @@ EC["mazeGenerator"] = class MazeGenerator extends Entity {
         return this;
     }
 };
-
-class TransitionCover extends Entity {
-    constructor(mapname) {
-        super([0, 0], [CANVAS.width, CANVAS.height]);
-        
-        // this.setStyle(new ColorTransition([0, 0, 0, 0], [0, 0, 0, 1], 16));
-        // this.drawable.setCameraMode("none").setZIndex(-Infinity);
-        this.setLifespan(16);
-        this.mapname = mapname;
-    }
-    
-    onadd() {
-        transitionIn(this.lifespan);
-        
-        return super.onadd();
-    }
-    
-    onremove() {
-        transitionOut(16);
-        saveMapState();
-        loadMap(this.mapname);
-        setGameTimeout(function() {
-            maptransitioning = false;
-        }, 1);
-        
-        return super.onremove();
-    }
-}
 
 EC["invisibleWall"] = class InvisibleWall extends ActorCollidable {
     constructor() {

@@ -1198,13 +1198,8 @@ class Entity extends Rectangle {
     }
     
     setSizeTransition(sizeTransition) {
-        if(!this.sizeTransition) {
-            this.controllers.add(function() {
-                this.setSizeM(this.sizeTransition.getNext());
-            });
-        }
-        
         this.sizeTransition = sizeTransition;
+        this.controllers.add(sizeTransitionController);
         
         return this;
     }
@@ -1384,6 +1379,16 @@ class Entity extends Rectangle {
         
         return this;
     }
+    
+    spendEnergy(energy) {
+        if(this.getEnergy() > energy) {
+            this.hurt(energy);
+            
+            return true;
+        }
+        
+        return false;
+    }
 }
 
 function stunOnhit(event) {
@@ -1403,7 +1408,7 @@ class Hitbox extends Entity {
         this.addInteraction(new TypeDamager());
         this.launchDirection = [0, 0, 0];
         
-        this.addEventListener("hit", function(event) {
+        this.addEventListener("hit", function drag(event) {
             const recipient = event.recipient;
             
             if(Array.isArray(this.launchDirection)) {
@@ -1418,6 +1423,17 @@ class Hitbox extends Entity {
         
         this.setStats({"stun-timeout": 16});
         this.addEventListener("hit", stunOnhit);
+        this.addEventListener("hit", cameraSizeEffect);
+        // this.addEventListener("hit", cameraPositionEffect);
+        this.setEventListener("hit", "freeze", function freeze(event) {
+            set_gather(event.actor.getBlacklist(), event.recipient.getBlacklist())
+            .forEach(function(entity) {
+                // entity.setFreeze(2);
+            });
+        });
+        this.setEventListener("hit", "shake", function shake(event) {
+            entityShake(event.recipient, 3);
+        });
     }
 }
 

@@ -671,8 +671,11 @@ function worldUpdate() {
     });
     
     this.entities.forEach(function(entity) {
+        if(!entity.isFrozen()) {
+            entity.updateReset();
+        }
+        
         entity.thaw();
-        entity.updateReset();
     });
     
     // Collisions
@@ -1002,13 +1005,13 @@ function escapeMenu() {
     
     // Moving the cursor
     
-    if(keyList.value(K_LEFT) === 1 || gamepadDirection[0] < 0) {
+    if(poh(keyList.value(K_LEFT)) || gamepadDirection[0] < 0) {
         if(this.getItemIndex() > 0) {
             this.setItemIndex(this.getItemIndex() - 1);
         }
         
         this.cancelMenu();
-    } if(keyList.value(K_RIGHT) === 1 || gamepadDirection[0] > 0) {
+    } if(poh(keyList.value(K_RIGHT)) || gamepadDirection[0] > 0) {
         if(this.getItemIndex() < inventory.items.length - 1) {
             this.setItemIndex(this.getItemIndex() + 1);
         }
@@ -1016,13 +1019,13 @@ function escapeMenu() {
         this.cancelMenu();
     }
     
-    if((keyList.value(K_UP) === 1 || gamepadDirection[1] < 0) && !this.menuOpen()) {
+    if((poh(keyList.value(K_UP)) || gamepadDirection[1] < 0) && !this.menuOpen()) {
         if(this.getItemIndex() >= displayWidth) {
             this.setItemIndex(this.getItemIndex() - displayWidth);
         }
         
         this.cancelMenu();
-    } if((keyList.value(K_DOWN) === 1 || gamepadDirection[1] > 0) && !this.menuOpen()) {
+    } if((poh(keyList.value(K_DOWN)) || gamepadDirection[1] > 0) && !this.menuOpen()) {
         if(this.getItemIndex() < inventory.items.length - displayWidth) {
             this.setItemIndex(this.getItemIndex() + displayWidth);
         }
@@ -1030,13 +1033,13 @@ function escapeMenu() {
         this.cancelMenu();
     }
     
-    if((keyList.value(K_UP) === 1 || gamepadDirection[1] < 0) && this.menuOpen()) {
+    if((poh(keyList.value(K_UP)) || gamepadDirection[1] < 0) && this.menuOpen()) {
         this.menuDrawables[this.menuIndex].setStyle("white");
         
         if(this.menuIndex > 0) {--this.menuIndex;}
         
         this.menuDrawables[this.menuIndex].setStyle("yellow");
-    } if((keyList.value(K_DOWN) === 1 || gamepadDirection[1] > 0) && this.menuOpen()) {
+    } if((poh(keyList.value(K_DOWN)) || gamepadDirection[1] > 0) && this.menuOpen()) {
         this.menuDrawables[this.menuIndex].setStyle("white");
         
         if(this.menuIndex < this.menuDrawables.length - 1) {++this.menuIndex;}
@@ -1154,7 +1157,7 @@ function escapeMenu() {
     
     // Go back to parent inventory
     
-    if(keyList.value(222) === 1 || gamepadRec.value(BUTTON_L) === 1 || gamepadRec.value(BUTTON_B) === 1) {
+    if(poh(keyList.value(222)) || gamepadRec.value(BUTTON_L) === 1 || gamepadRec.value(BUTTON_B) === 1) {
         if(!this.menuOpen()) {
             save_cdParentInventory();
             

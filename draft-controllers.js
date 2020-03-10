@@ -75,3 +75,12 @@ function routeTravel() {
         this.speed.add(vector.multiply(+0.0625));
     }
 }
+
+function sizeTransitionController() {
+    this.setSizeM(this.sizeTransition.getNext());
+    
+    if(this.sizeTransition.isDone()) {
+        delete this.sizeTransition;
+        this.controllers.remove(sizeTransitionController);
+    }
+}
