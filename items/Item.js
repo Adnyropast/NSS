@@ -366,7 +366,7 @@ IC["saveIdentifier"] = class SaveIdentifier extends Item {
         this.inventoryPath = "";
         this.playerIdPath = "";
         
-        this.saveOnQuit = false;
+        this.saveOnQuit = true;
         this.saveOnWarp = true;
         
         let saveIdentifier = this;

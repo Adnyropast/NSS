@@ -1211,10 +1211,17 @@ function escapeMenu() {
     // Save inventory file locally
     
     if(keyList.value(KEY_NUMPAD9) === 1) {
-        let data = saveInventoryFile();
+        getCurrentSave().playerPositionM = PLAYERS[0].entity.getPositionM();
+        updateCurrentCharacter();
+        saveGameState();
+        updateSaveState({savePath : getInventoryItemPath(getCurrentSave())});
         
-        if(data.success) {
-            alert("Saved as \"" + data.filename + "\".");
+        if(saveGameState.success) {
+            if(saveGameState.outputtedType === "file") {
+                alert("Saved as \"" + saveGameState.resFileName + "\".");
+            } else if(saveGameState.outputtedType === "local storage") {
+                alert("Saved in local web storage.");
+            }
         } else {
             alert("Could not save the inventory state.");
         }
@@ -1363,8 +1370,6 @@ function loadCheck() {
     
     return false;
 }
-
-switchLoop(loadCheck, WORLD_PACE);
 
 function gamePause() {
     clearInterval(gameInterval);

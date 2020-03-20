@@ -1,44 +1,5 @@
 
-let INVENTORY = IC["inventory"].fromData({"classId" : "inventory", "id" : "0", "displayWidth" : 16, "date" : new Date(), "items" : [
-    {"classId" : "inventory", "id" : "0", "displayWidth" : 16, "items" : [
-        {"classId" : "apple", "id" : "0"},
-        {"classId" : "apple", "id" : "1"},
-        {"classId" : "apple", "id" : "2"},
-        {"classId" : "apple", "id" : "3"},
-        {"classId" : "apple", "id" : "4"},
-        {"classId" : "inventory", "id" : "5", "displayWidth" : 16, "items" : []},
-    ]},
-    {"classId" : "inventory", "id" : "1", "displayWidth" : 16, "items" : [
-        {"classId" : "inventory", "id" : "0", "displayWidth" : 16, "items" : []},
-        {"classId" : "inventory", "id" : "1", "displayWidth" : 16, "items" : []},
-        {"classId" : "inventory", "id" : "2", "displayWidth" : 16, "items" : []},
-        {"classId" : "inventory", "id" : "3", "displayWidth" : 16, "items" : []},
-    ]},
-    {"classId" : "inventory", "id" : "2", "displayWidth" : 16, "items" : []}
-]});
-
-INVENTORY.addItem(IC["characterIdentifier"].fromCharacter(new EC["adnyropast"]()));
-INVENTORY.addItem(IC["characterIdentifier"].fromCharacter(new EC["haple"]()));
-INVENTORY.addItem(IC["characterIdentifier"].fromCharacter((new EC["haple"]()).setStats({"regeneration" : 2})));
-INVENTORY.addItem(IC["characterIdentifier"].fromCharacter((new EC["haple"]()).setStats({"action-costFactor" : 0, "energy.effective": 1, "energy.effectiveLock": true}).resetEnergy()));
-
-INVENTORY.addItem(IC["characterIdentifier"].fromCharacter(new EC["ten"]()));
-
-/**/
-
-for(let i = 3; i < 100; ++i) {
-    INVENTORY.addItem(IC["characterIdentifier"].fromCharacter(new EC["haple"]));
-}
-
-/**/
-
-INVENTORY.addItem(currentSave = IC["saveIdentifier"].fromData(makeNewGame()));
-INVENTORY.addItem(IC["saveIdentifier"].fromData(makeNewGame()));
-INVENTORY.items[0].addItem(IC["saveIdentifier"].fromData(makeNewGame()));
-
-for(let i = 0; i < 16*9; ++i) {
-    INVENTORY.addItem(new IC["apple"]());
-}
+let INVENTORY = null;
 
 function getInventoryFromPath(path) {
     if(typeof path === "string") {
@@ -89,44 +50,92 @@ function getInventoryItemPath(searchItem, inventory = INVENTORY, path = "/") {
     return res;
 }
 
-function saveInventoryFile() {
-    // let filename = (new Date()).toJSON() + ".json";
-    // filename = filename.replace(/:/g, "'");
-    let filename = "save-inventory.json";
-    // let pathname = "saves/" + filename;
-    pathname = filename;
-    let success = false;
+function saveGameState() {
+    let fileName, pathName;
     
-    if(fs) {
-        fs.writeFileSync(pathname, JSON.stringify(INVENTORY));
-        success = true;
+    if(typeof saveGameState.fileName === "function") {
+        fileName = saveGameState.fileName();
+    } else {
+        fileName = saveGameState.fileName;
     }
     
-    return {
-        filename : filename,
-        pathname : pathname,
-        success : success
-    };
+    // let filename = (new Date()).toJSON() + ".json";
+    // filename = filename.replace(/:/g, "'");
+    
+    if(typeof saveGameState.pathName === "function") {
+        pathName = saveGameState.pathName(fileName);
+    } else {
+        pathName = fileName;
+    }
+    
+    // pathname = "saves/" + filename;
+    
+    //// Resetting values ////
+    
+    saveGameState.outputtedType = null;
+    saveGameState.resFileName = null;
+    saveGameState.resPathName = null;
+    saveGameState.success = false;
+    
+    //// Trying to save the game state somewhere ////
+    
+    if(fileSystem_isUsable()) {
+        fs.writeFileSync(pathName, JSON.stringify(INVENTORY));
+        
+        saveGameState.outputtedType = "file";
+        saveGameState.resFileName = fileName;
+        saveGameState.resPathName = pathName;
+        saveGameState.success = true;
+    }
+    
+    else if(localStorage_isUsable()) {
+        localStorage.setItem("gameState", JSON.stringify(INVENTORY));
+        
+        saveGameState.outputtedType = "local storage";
+        saveGameState.success = true;
+    }
 }
+
+saveGameState.outputtedType = null;
+saveGameState.fileName = "gameState.json";
+saveGameState.pathName = saveGameState.fileName;
+saveGameState.resFileName = null;
+saveGameState.resPathName = null;
+saveGameState.success = false;
 
 addEventListener("beforeunload", function() {
     if(getCurrentSave().saveOnQuit) {
+        getCurrentSave().playerPositionM = PLAYERS[0].entity.getPositionM();
         updateCurrentCharacter();
-        saveInventoryFile();
+        saveGameState();
         updateSaveState({savePath : getInventoryItemPath(getCurrentSave())});
     }
 });
 
-if(fs != undefined) {
-    try {
-        let data = JSON.parse(fs.readFileSync("save-inventory.json", {encoding : "utf-8"}));
+function inventory_findItem(inventory, predicate) {
+    for(let i = 0; i < inventory.items.length; ++i) {
+        const item = inventory.items[i];
         
-        let inventory = IC["inventory"].fromData(data);
-        
-        INVENTORY = inventory;
-    } catch(error) {
-        
+        if(predicate(item)) {
+            return item;
+        }
     }
     
-    currentSave = getInventoryFromPath(getSaveState().savePath) || currentSave;
+    for(let i = 0; i < inventory.items.length; ++i) {
+        const item = inventory.items[i];
+        
+        if(item instanceof IC["inventory"]) {
+            const foundItem = inventory_findItem(item, predicate);
+            
+            if(foundItem !== null) {
+                return foundItem;
+            }
+        }
+    }
+    
+    return null;
+}
+
+function findItem(predicate) {
+    return inventory_findItem(INVENTORY, predicate);
 }

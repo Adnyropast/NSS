@@ -59,7 +59,7 @@ function loadFromData(data) {
         lists.camera = Camera.fromData(object_clone(data.camera));
     }
     
-    lists.player0 = getCurrentCharacter();
+    lists.player0 = makeEntityFromData(getCurrentCharacterData());
     lists.player0.initPositionM(getCurrentSave().playerPositionM);
     
     if(data.variable_entities) {

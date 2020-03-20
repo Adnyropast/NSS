@@ -24,6 +24,10 @@
             fs = require("fs");
         }
         
+        function fileSystem_isUsable() {
+            return !!fs;
+        }
+        
         </script>
         <script src="draft-menu.js"></script>
         
@@ -126,5 +130,7 @@
         <script src="draft-saves.js"></script>
         <script src="draft-saves-characters.js"></script>
         <script src="draft-saves-inventory.js"></script>
+        
+        <script src="gameStart.js"></script>
     </body>
 </html>

@@ -56,15 +56,25 @@ function save_getCurrentInventory(saveIdentifier = getCurrentSave()) {
 let currentSave;
 
 function getSaveState() {
-    if(fs != undefined) {
+    if(fileSystem_isUsable()) {
         try {
-            let saveState = fs.readFileSync("save-state.json", {encoding:"utf-8"});
+            let saveState = fs.readFileSync("saveState.json", {encoding:"utf-8"});
             
             let data = JSON.parse(saveState);
             
             return data;
-        } catch(error) {
-            // fs.writeFileSync("save-state.json", "{}");
+        } catch(e) {
+            
+        }
+    }
+    
+    if(localStorage_isUsable()) {
+        if(localStorage.hasOwnProperty("saveState")) {
+            const saveState = localStorage.getItem("saveState");
+            
+            const data = JSON.parse(saveState);
+            
+            return data;
         }
     }
     
@@ -72,14 +82,18 @@ function getSaveState() {
 }
 
 function updateSaveState(properties) {
-    if(fs != undefined) {
-        let saveState = getSaveState();
-        
-        for(let i in properties) {
-            saveState[i] = properties[i];
-        }
-        
-        fs.writeFileSync("save-state.json", JSON.stringify(saveState));
+    const saveState = getSaveState();
+    
+    for(let i in properties) {
+        saveState[i] = properties[i];
+    }
+    
+    if(fileSystem_isUsable()) {
+        fs.writeFileSync("saveState.json", JSON.stringify(saveState));
+    }
+    
+    else if(localStorage_isUsable()) {
+        localStorage.setItem("saveState", JSON.stringify(saveState));
     }
 }
 

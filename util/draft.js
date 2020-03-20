@@ -744,3 +744,13 @@ function average() {
     
     return average;
 }
+
+function localStorage_isUsable() {
+    try {
+        localStorage;
+        
+        return true;
+    } catch(e) {
+        return false;
+    }
+}

@@ -21,12 +21,6 @@ function updateCurrentCharacter() {
     characterData.energy = entity.getEnergy();
 }
 
-function getCurrentCharacter() {
-    let characterData = getInventoryFromPath(getCurrentSave().playerIdPath).characterData;
-    
-    return EC[characterData.classId].fromData(characterData);
-}
-
 function getCurrentCharacterData() {
     return getInventoryFromPath(getCurrentSave().playerIdPath).characterData;
 }

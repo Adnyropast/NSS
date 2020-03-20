@@ -14,6 +14,11 @@ function mapTransition(mapname, warpPositionM) {
             saveMapState();
             loadMap(mapname);
             
+            if(getCurrentSave().saveOnWarp) {
+                saveGameState();
+                updateSaveState({savePath : getInventoryItemPath(getCurrentSave())});
+            }
+            
             setGameTimeout(function() {
                 mapTransitioning = false;
             }, 1);
