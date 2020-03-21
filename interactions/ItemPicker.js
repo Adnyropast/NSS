@@ -17,7 +17,7 @@ class ItemPicker extends Interactor {
         // this.items.push(interrecipient.item);
         // interrecipient.item = null;
         
-        let inventory = save_getCurrentInventory();
+        let inventory = chapter_getCurrentInventory();
         let items = interrecipient.getItems();
         
         inventory.addItems(items);

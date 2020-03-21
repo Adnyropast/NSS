@@ -446,7 +446,7 @@ class EscapeLoop extends GameLoop {
     }
     
     getItemIndex() {
-        const inventoryPath = save_getCurrentInventoryPath();
+        const inventoryPath = chapter_getCurrentInventoryPath();
         
         if(this.pathsItemIndexes[inventoryPath] === undefined) {
             this.pathsItemIndexes[inventoryPath] = 0;
@@ -456,7 +456,7 @@ class EscapeLoop extends GameLoop {
     }
     
     setItemIndex(itemIndex) {
-        const inventoryPath = save_getCurrentInventoryPath();
+        const inventoryPath = chapter_getCurrentInventoryPath();
         
         this.pathsItemIndexes[inventoryPath] = itemIndex;
         
@@ -618,11 +618,12 @@ function setPlayer(entity) {
     CAMERA.targets.clear().add(entity);
     
     entity.addEventListener("defeat", function() {
+        saveMapState();
         setGameTimeout(function() {
             transitionIn();
         }, 48);
         setGameTimeout(function() {
-            loadMap(getCurrentSave().lastMap);
+            loadMap(chapter_getLastMap());
             transitionOut();
         }, 64);
     });
@@ -979,7 +980,7 @@ let gpdSave = [];
 const ESCDRAWABLES = ESCAPELOOP.drawables;
 
 function escapeMenu() {
-    const inventory = save_getCurrentInventory();
+    const inventory = chapter_getCurrentInventory();
     
     const marginLR = 8, marginTB = 5;
     const spaceBetween = 4;
@@ -1159,7 +1160,7 @@ function escapeMenu() {
     
     if(poh(keyList.value(222)) || gamepadRec.value(BUTTON_L) === 1 || gamepadRec.value(BUTTON_B) === 1) {
         if(!this.menuOpen()) {
-            save_cdParentInventory();
+            chapter_cdParentInventory();
             
             this.cancelMenu();
         } else {
@@ -1211,10 +1212,11 @@ function escapeMenu() {
     // Save inventory file locally
     
     if(keyList.value(KEY_NUMPAD9) === 1) {
-        getCurrentSave().playerPositionM = PLAYERS[0].entity.getPositionM();
+        getCurrentChapter().playerPositionM = PLAYERS[0].entity.getPositionM();
         updateCurrentCharacter();
+        saveMapState();
         saveGameState();
-        updateSaveState({savePath : getInventoryItemPath(getCurrentSave())});
+        updateSaveState({chapterPath : getInventoryItemPath(getCurrentChapter())});
         
         if(saveGameState.success) {
             if(saveGameState.outputtedType === "file") {
@@ -1360,7 +1362,7 @@ function loadCheck() {
             }
         }
         
-        loadMap(getCurrentSave().lastMap);
+        loadMap(chapter_getLastMap());
         transitionIn(), transitionOut();
         
         switchLoop(main, WORLD_PACE);

@@ -104,11 +104,12 @@ saveGameState.resPathName = null;
 saveGameState.success = false;
 
 addEventListener("beforeunload", function() {
-    if(getCurrentSave().saveOnQuit) {
-        getCurrentSave().playerPositionM = PLAYERS[0].entity.getPositionM();
+    if(getCurrentChapter().saveOnQuit) {
+        getCurrentChapter().playerPositionM = PLAYERS[0].entity.getPositionM();
         updateCurrentCharacter();
+        saveMapState();
         saveGameState();
-        updateSaveState({savePath : getInventoryItemPath(getCurrentSave())});
+        updateSaveState({chapterPath : getInventoryItemPath(getCurrentChapter())});
     }
 });
 
@@ -138,4 +139,10 @@ function inventory_findItem(inventory, predicate) {
 
 function findItem(predicate) {
     return inventory_findItem(INVENTORY, predicate);
+}
+
+function findCharacterIdentifier() {
+    return findItem(function(item) {
+        return item instanceof IC["characterIdentifier"];
+    });
 }

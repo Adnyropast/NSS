@@ -232,54 +232,75 @@ class Projectile extends Hitbox {
 }
 
 EC["autoDoor"] = class AutoDoor extends Entity {
-    constructor(position, size, mapname = "hub", warpPositionM = [0, 0]) {
+    constructor(position, size, mapName = chapters[getCurrentChapter().chapterName].startMap, warpPositionM = chapters[getCurrentChapter().chapterName].playerPositionM) {
         super(position, size);
         
-        this.setMapwarp(mapname, warpPositionM);
+        this.mapName = mapName;
+        this.warpPositionM = warpPositionM;
         
         this.setStyle("#000000BF");
         this.setZIndex(+10);
-    }
-    
-    setMapwarp(mapname, warpPositionM) {
-        this.mapname = mapname;
-        this.warpPositionM = warpPositionM;
-        this.addInteraction(new MapWarper(mapname, warpPositionM));
         
-        return this;
+        this.enablerTimeout = 8;
     }
     
     static fromData(data) {
-        let clone = {};
-        Object.assign(clone, data);
+        const door = super.fromData(data);
         
-        let mapname = clone.mapname;
-        delete clone.mapname;
-        let warpPositionM = clone.warpPositionM;
-        delete clone.warpPositionM;
-        
-        let door = super.fromData(clone);
-        
-        door.setMapwarp(mapname, warpPositionM);
+        if(data.mapName) {door.mapName = data.mapName;}
+        if(data.warpPositionM) {door.warpPositionM = data.warpPositionM;}
         
         return door;
     }
     
     getData() {
-        let data = super.getData();
+        const data = super.getData();
         
-        data.mapname = this.mapname;
-        data.warpPositionM = this.warpPositionM;
+        data.mapName = this.mapName;
+        
+        if(this.warpPositionM) {
+            data.warpPositionM = this.warpPositionM;
+        }
+        
+        else if(this.warpPosition1) {
+            data.warpPosition1 = this.warpPosition1;
+        }
         
         return data;
+    }
+    
+    enableMapWarper() {
+        this.addInteraction(new MapWarper(this.mapName, this.warpPositionM));
+        
+        return this;
+    }
+    
+    update() {
+        const foundMapWarpable = this.collidedWith.find(function(entity) {return entity.findInterrecipientWithId("mapwarp") !== null;}) !== undefined;
+        
+        if(foundMapWarpable) {
+            this.enablerTimeout = 8;
+        }
+        
+        if(this.enablerTimeout <= 0) {
+            this.enableMapWarper();
+        }
+        
+        --this.enablerTimeout;
+        
+        return this;
     }
 };
 
 EC["lookupDoor"] = class LookupDoor extends EC["autoDoor"] {
-    setMapwarp(mapname, warpPositionM) {
-        this.mapname = mapname;
-        this.warpPositionM = warpPositionM;
-        this.addInteraction(new LookupMapWarper(mapname, warpPositionM));
+    enableMapWarper()  {
+        this.addInteraction(new LookupMapWarper(this.mapName, this.warpPositionM));
+        
+        return this;
+    }
+    
+    update() {
+        this.enableMapWarper();
         
         return this;
     }
@@ -339,6 +360,8 @@ EC["mazeGenerator"] = class MazeGenerator extends Entity {
         this.cellSize = undefined; [64, 16*3];
         this.wallSize = undefined; [8, 8];
         this.mode;
+        
+        this.previousMapName = null;
     }
     
     static fromData(data) {
@@ -353,34 +376,64 @@ EC["mazeGenerator"] = class MazeGenerator extends Entity {
         mazeGenerator.cellSize = cellSize || mazeGenerator.cellSize;
         mazeGenerator.wallSize = wallSize || mazeGenerator.wallSize;
         mazeGenerator.mode = mode;
+        mazeGenerator.previousMapName = data.previousMapName || null;
+        mazeGenerator.entrancePositionM = data.entrancePositionM;
         
         return mazeGenerator;
     }
     
     update() {
-        if(this.mode === "test") {
-            let maze = buildMazeLevel([10, 4], [2*16, 3*16], [8, 8], array_random(["topdown", "sideways", "sideways-water"]));
-            
-            const entities = maze.variable_entities;
-            
-            // loadFromData(maze);
-            
-            let cba = entities.find(function(entity) {
-                return entity.classId === "cameraBoundaryAround";
-            });
-            
-            cba.position = [+16, +16];
-            
-            for(let i = 0; i < entities.length; ++i) {
-                addEntity(makeEntityFromData(entities[i]));
-            }
-            
-            PLAYERS[0].entity.initPositionM(getCurrentSave().playerPositionM);
-            
-            removeEntity(this);
-        } else {
-            loadMaze(this.mazeSize, this.cellSize, this.wallSize, this.mode);
+        const builder = new MazeLevelBuilder(this.mazeSize, this.cellSize, this.wallSize);
+        
+        if(this.mode) {
+            builder.setMode(this.mode);
         }
+        
+        const generator = this;
+        
+        builder.playerCellFunctions.add(function() {
+            const chapter = getCurrentChapter();
+            const previousMapName = generator.previousMapName;
+            
+            if(chapter.maps.hasOwnProperty(previousMapName)) {
+                const previousMap = chapter.maps[previousMapName];
+                
+                // Go-back/Entrance door.
+                
+                const doorSize = [24, 24];
+                
+                const doorPosition = [
+                    this.cX + this.wallSize[0] + Math.random() * (this.cellSize[0] - doorSize[0]),
+                    this.cY + this.wallSize[1] + Math.random() * (this.cellSize[1] - doorSize[1])
+                ];
+                
+                const doorPositionM = [
+                    this.cellCenterX,
+                    this.cellCenterY
+                ];
+                
+                this.mapState.variable_entities.push({
+                    classId: "mazeEntrance",
+                    positionM: doorPositionM,
+                    size: doorSize,
+                    mapName: previousMapName,
+                    warpPositionM: generator.entrancePositionM
+                });
+                
+                // Previous map door/Exit.
+                
+                previousMap.variable_entities.forEach(function(data) {
+                    // if(data.classId === "mazeExit")
+                    if(data.mapName === chapter.lastMap) {
+                        data.warpPositionM = doorPositionM;
+                    }
+                });
+            }
+        });
+        
+        const mapState = builder.build();
+        
+        loadFromData(mapState);
         
         return this;
     }
@@ -636,3 +689,19 @@ class TextBubble extends Entity {
         return this;
     }
 }
+
+EC["mazeExit"] = class MazeExit extends EC["autoDoor"] {
+    constructor() {
+        super(...arguments);
+        
+        this.getDrawable().setStyle("#FF7FFFBF");
+    }
+};
+
+EC["mazeEntrance"] = class MazeEntrance extends EC["autoDoor"] {
+    constructor() {
+        super(...arguments);
+        
+        this.getDrawable().setStyle("#7FFFFFBF");
+    }
+};

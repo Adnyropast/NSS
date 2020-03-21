@@ -1,10 +1,10 @@
 
 let mapTransitioning = false;
 
-function mapTransition(mapname, warpPositionM) {
+function mapTransition(mapName, warpPositionM) {
     if(!mapTransitioning) {
         mapTransitioning = true;
-        getCurrentSave().playerPositionM = warpPositionM;
+        getCurrentChapter().playerPositionM = warpPositionM;
         updateCurrentCharacter();
         
         transitionIn(16);
@@ -12,11 +12,11 @@ function mapTransition(mapname, warpPositionM) {
         setGameTimeout(function() {
             transitionOut(16);
             saveMapState();
-            loadMap(mapname);
+            loadMap(mapName);
             
-            if(getCurrentSave().saveOnWarp) {
+            if(getCurrentChapter().saveOnWarp) {
                 saveGameState();
-                updateSaveState({savePath : getInventoryItemPath(getCurrentSave())});
+                updateSaveState({chapterPath : getInventoryItemPath(getCurrentChapter())});
             }
             
             setGameTimeout(function() {
@@ -31,16 +31,16 @@ function mapTransition(mapname, warpPositionM) {
  */
 
 class MapWarper extends Interactor {
-    constructor(mapname, warpPositionM = [0, 0]) {
+    constructor(mapName, warpPositionM = [0, 0]) {
         super();
         this.setId("mapwarp");
         
-        this.mapname = mapname;
+        this.mapName = mapName;
         this.warpPositionM = warpPositionM;
     }
     
     interact(interrecipient) {
-        mapTransition(this.mapname, this.warpPositionM);
+        mapTransition(this.mapName, this.warpPositionM);
         removeEntity(interrecipient.getRecipient());
         
         return this;

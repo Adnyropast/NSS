@@ -67,7 +67,7 @@ class Item {
     }
     
     static destroySimple() {
-        save_getCurrentInventory().items.remove(this);
+        chapter_getCurrentInventory().items.remove(this);
     }
     
     static destroyComplicated() {
@@ -83,7 +83,7 @@ class ConsumableItem extends Item {
         
         this.mainCommand = this.commands["consume"] = function consume() {
             consumable.consumeBy(PLAYERS[0].entity);
-            save_getCurrentInventory().items.remove(consumable);
+            chapter_getCurrentInventory().items.remove(consumable);
         };
         this.commands["destroy"] = Item.destroySimple;
         for(let i = 0; i < 0; ++i) {
@@ -194,7 +194,7 @@ IC["inventory"] = class InventoryItem extends Item {
         let inventory = this;
         
         this.mainCommand = this.commands["open"] = function open() {
-            getCurrentSave().inventoryPath += inventory.id + "/";
+            getCurrentChapter().inventoryPath += inventory.id + "/";
         };
         this.commands["destroy"] = Item.destroyComplicated;
     }
@@ -308,7 +308,7 @@ IC["characterIdentifier"] = class CharacterIdentifier extends Item {
             let characterData = characterIdentifier.characterData;
             let character = EC[characterData.classId].fromData(characterData);
             
-            getCurrentSave().playerIdPath = getCurrentSave().inventoryPath + characterIdentifier.id + "/";
+            getCurrentChapter().playerIdPath = getCurrentChapter().inventoryPath + characterIdentifier.id + "/";
             setPlayer(character);
             
             PLAYERS[0].entity.initPositionM(positionM);
@@ -356,7 +356,7 @@ IC["characterIdentifier"] = class CharacterIdentifier extends Item {
     }
 };
 
-IC["saveIdentifier"] = class SaveIdentifier extends Item {
+IC["chapterIdentifier"] = class ChapterIdentifier extends Item {
     constructor() {
         super();
         
@@ -369,13 +369,26 @@ IC["saveIdentifier"] = class SaveIdentifier extends Item {
         this.saveOnQuit = true;
         this.saveOnWarp = true;
         
-        let saveIdentifier = this;
+        this.chapterName = null;
+        
+        let chapterIdentifier = this;
         
         this.mainCommand = this.commands["load"] = function() {
+            const previousChapter = getCurrentChapter();
+            
+            previousChapter.playerPositionM = PLAYERS[0].entity.getPositionM();
+            updateCurrentCharacter();
+            saveMapState();
+            
             ESCAPELOOP.pathsItemIndexes = {};
             
-            currentSave = saveIdentifier;
-            loadMap(getCurrentSave().lastMap);
+            currentChapter = chapterIdentifier;
+            loadMap(chapter_getLastMap());
+            
+            if(previousChapter.saveOnQuit) {
+                saveGameState();
+                updateSaveState({chapterPath : getInventoryItemPath(getCurrentChapter())});
+            }
         };
         
         this.commands["settings"] = function() {
@@ -390,20 +403,22 @@ IC["saveIdentifier"] = class SaveIdentifier extends Item {
     }
     
     static fromData(data) {
-        let saveIdentifier = super.fromData(data);
+        const chapterIdentifier = super.fromData(data);
         
-        saveIdentifier.playerPositionM = data.playerPositionM;
-        saveIdentifier.lastMap = data.lastMap;
-        saveIdentifier.maps = data.maps;
-        saveIdentifier.inventoryPath = data.inventoryPath;
-        saveIdentifier.playerIdPath = data.playerIdPath;
+        chapterIdentifier.chapterName = data.chapterName;
+        chapterIdentifier.playerPositionM = data.playerPositionM;
+        chapterIdentifier.lastMap = data.lastMap;
+        chapterIdentifier.maps = data.maps;
+        chapterIdentifier.inventoryPath = data.inventoryPath;
+        chapterIdentifier.playerIdPath = data.playerIdPath;
         
-        return saveIdentifier;
+        return chapterIdentifier;
     }
     
     getData() {
         let data = super.getData();
         
+        data.chapterName = this.chapterName;
         data.playerPositionM = this.playerPositionM;
         data.lastMap = this.lastMap;
         data.maps = this.maps;

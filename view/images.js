@@ -175,6 +175,6 @@ IMGBG["skyblur7"] = loadImage("images/background/skyblur7.png");
 
 const IMGITEM = {
     apple : loadImage("images/items/apple.png"),
-    saveIdentifier : loadImage("images/items/saveIdentifier.png"),
+    chapterIdentifier : loadImage("images/items/chapterIdentifier.png"),
     inventory : loadImage("images/items/inventory.png")
 };

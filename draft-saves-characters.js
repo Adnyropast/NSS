@@ -22,5 +22,5 @@ function updateCurrentCharacter() {
 }
 
 function getCurrentCharacterData() {
-    return getInventoryFromPath(getCurrentSave().playerIdPath).characterData;
+    return getInventoryFromPath(getCurrentChapter().playerIdPath).characterData;
 }

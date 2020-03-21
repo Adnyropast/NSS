@@ -754,3 +754,5 @@ function localStorage_isUsable() {
         return false;
     }
 }
+
+function rv() {return Math.random() * 255;}

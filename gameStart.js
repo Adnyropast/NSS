@@ -7,11 +7,11 @@ if(INVENTORY === null && fileSystem_isUsable()) {
         
         INVENTORY = IC["inventory"].fromData(data);
         
-        currentSave = getInventoryFromPath(getSaveState().savePath);
+        currentChapter = getInventoryFromPath(getSaveState().chapterPath);
         
-        if(currentSave == undefined) {
-            currentSave = findItem(function(item) {
-                return item instanceof IC["saveIdentifier"];
+        if(currentChapter == undefined) {
+            currentChapter = findItem(function(item) {
+                return item instanceof IC["chapterIdentifier"];
             });
         }
     } catch(e) {
@@ -27,11 +27,11 @@ if(INVENTORY === null && localStorage_isUsable()) {
         
         INVENTORY = IC["inventory"].fromData(data);
         
-        currentSave = getInventoryFromPath(getSaveState().savePath);
+        currentChapter = getInventoryFromPath(getSaveState().chapterPath);
         
-        if(currentSave == undefined) {
-            currentSave = findItem(function(item) {
-                return item instanceof IC["saveIdentifier"];
+        if(currentChapter == undefined) {
+            currentChapter = findItem(function(item) {
+                return item instanceof IC["chapterIdentifier"];
             });
         }
     } catch(e) {
@@ -59,28 +59,18 @@ if(INVENTORY === null) {
         ]},
         {"classId" : "inventory", "id" : "2", "displayWidth" : 16, "items" : []}
     ]});
-
+    
     INVENTORY.addItem(IC["characterIdentifier"].fromCharacter(new EC["adnyropast"]()));
-    INVENTORY.addItem(IC["characterIdentifier"].fromCharacter(new EC["haple"]()));
     INVENTORY.addItem(IC["characterIdentifier"].fromCharacter((new EC["haple"]()).setStats({"regeneration" : 2})));
     INVENTORY.addItem(IC["characterIdentifier"].fromCharacter((new EC["haple"]()).setStats({"action-costFactor" : 0, "energy.effective": 1, "energy.effectiveLock": true}).resetEnergy()));
-
     INVENTORY.addItem(IC["characterIdentifier"].fromCharacter(new EC["ten"]()));
-
-    /**/
-
-    for(let i = 3; i < 100; ++i) {
-        INVENTORY.addItem(IC["characterIdentifier"].fromCharacter(new EC["haple"]));
-    }
-
-    /**/
-
-    INVENTORY.addItem(currentSave = IC["saveIdentifier"].fromData(makeNewGame()));
-    INVENTORY.addItem(IC["saveIdentifier"].fromData(makeNewGame()));
-    INVENTORY.items[0].addItem(IC["saveIdentifier"].fromData(makeNewGame()));
-
-    for(let i = 0; i < 16*9; ++i) {
-        INVENTORY.addItem(new IC["apple"]());
+    
+    INVENTORY.addItem(currentChapter = IC["chapterIdentifier"].fromData(makeNewChapter("not_so_simple")));
+    INVENTORY.addItem(IC["chapterIdentifier"].fromData(makeNewChapter("the_endless_maze")));
+    INVENTORY.items[0].addItem(IC["chapterIdentifier"].fromData(makeNewChapter("not_so_simple")));
+    
+    for(let i = 0; i < 16*9 + 1; ++i) {
+        INVENTORY.items[2].addItem(new IC["apple"]());
     }
 }
 

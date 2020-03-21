@@ -1541,3 +1541,16 @@ function optimizeEntities(entities) {
     
     return optimized;
 }
+
+function entitiesToData(entities) {
+    const dataSet = [];
+    
+    for(let i = 0; i < entities.length; ++i) {
+        const entity = entities[i];
+        const data = entity.getData();
+        
+        dataSet.push(data);
+    }
+    
+    return dataSet;
+}

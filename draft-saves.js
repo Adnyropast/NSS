@@ -1,16 +1,8 @@
 
-function makeNewGame() {
-    return {
-        "playerPositionM" : [0, 0],
-        "lastMap" : "hub",
-        "maps" : makeNewSaveMaps(),
-        "inventoryPath" : "/",
-        "playerIdPath" : "/4/"
-    };
-}
-
 function saveMapState() {
-    getCurrentSave().maps[getCurrentSave().lastMap] = getCurrentMapState();
+    const chapter = getCurrentChapter();
+    
+    chapter.maps[chapter.lastMap] = getCurrentMapState();
 }
 
 function getCurrentMapState() {
@@ -22,38 +14,25 @@ function getCurrentMapState() {
     return map;
 }
 
-function entitiesToData(entities) {
-    let dataSet = [];
-    
-    for(let i = 0; i < entities.length; ++i) {
-        const entity = entities[i];
-        const data = entity.getData();
-        
-        dataSet.push(data);
-    }
-    
-    return dataSet;
+let currentChapter;
+
+function getCurrentChapter() {
+    return currentChapter;
 }
 
-function getCurrentSave() {
-    return currentSave;
-}
-
-function save_cdParentInventory(saveIdentifier = getCurrentSave()) {
-    let inventories = saveIdentifier.inventoryPath.split("/");
+function chapter_cdParentInventory(chapterIdentifier = getCurrentChapter()) {
+    let inventories = chapterIdentifier.inventoryPath.split("/");
     
     while(inventories.pop() === "");
     
-    saveIdentifier.inventoryPath = inventories.join("/") + "/";
+    chapterIdentifier.inventoryPath = inventories.join("/") + "/";
     
-    return saveIdentifier;
+    return chapterIdentifier;
 }
 
-function save_getCurrentInventory(saveIdentifier = getCurrentSave()) {
-    return getInventoryFromPath(saveIdentifier.inventoryPath);
+function chapter_getCurrentInventory(chapterIdentifier = getCurrentChapter()) {
+    return getInventoryFromPath(chapterIdentifier.inventoryPath);
 }
-
-let currentSave;
 
 function getSaveState() {
     if(fileSystem_isUsable()) {
@@ -97,6 +76,10 @@ function updateSaveState(properties) {
     }
 }
 
-function save_getCurrentInventoryPath(saveIdentifier = getCurrentSave()) {
-    return saveIdentifier.inventoryPath;
+function chapter_getCurrentInventoryPath(chapterIdentifier = getCurrentChapter()) {
+    return chapterIdentifier.inventoryPath;
+}
+
+function chapter_getLastMap(chapter = getCurrentChapter()) {
+    return chapter.lastMap;
 }
