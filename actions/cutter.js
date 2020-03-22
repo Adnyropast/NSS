@@ -86,7 +86,7 @@ class Cutter extends TrailerEntity {
         if(this.previousPositionM != null) {positionTransition = new ColorTransition(this.previousPositionM, positionM)}
         
         let rotation = 2*Math.PI/6;
-        let det = 6;
+        let det = 3;
         
         for(let i = 0; i < det; ++i) {
             this.angle += rotation/det;
@@ -594,20 +594,28 @@ class CutterWave extends Hitbox {
         
         this.setLifespan(24);
         
+        const avgsz = rectangle_averageSize(this);
+        
         for(let i = 0; i < 2; ++i) {
             let drawable = PolygonDrawable.from(makeSpikePolygon(7, new VectorTransition([-Math.PI/4], [+Math.PI/4]), function() {return irandom(8, 10)}, function() {return irandom(12, 20)}, 6));
-            drawable.multiplySize(2);
+            drawable.multiplySize(avgsz/polygon_averageSize(drawable));
+            drawable.initImaginarySize(avgsz);
+            drawable.multiplySize(0.75);
+            
             drawable.rotate(Math.PI);
-            drawable.setStyle(new ColorTransition([255, 255, 0, 1], [255, 127, 0, 0], 16, powt(6)));
+            drawable.setStyle(new ColorTransition([255, 255, 0, 1], [255, 127, 0, 0], this.lifespan, powt(6)));
             
             this.drawables.add(drawable);
         }
         
         for(let i = 0; i < 2; ++i) {
             let drawable = PolygonDrawable.from(makeSpikePolygon(7, new VectorTransition([-Math.PI/4], [+Math.PI/4]), function() {return irandom(8, 10)}, function() {return irandom(12, 20)}, 6));
-            drawable.multiplySize(1.5);
+            drawable.multiplySize(avgsz/polygon_averageSize(drawable));
+            drawable.initImaginarySize(avgsz);
+            drawable.multiplySize(0.75/1.333333);
+            
             drawable.rotate(Math.PI);
-            drawable.setStyle(new ColorTransition([0, 255, 255, 1], [0, 127, 255, 0], 16, powt(6)));
+            drawable.setStyle(new ColorTransition([0, 255, 255, 1], [0, 127, 255, 0], this.lifespan, powt(6)));
             
             this.drawables.add(drawable);
         }
@@ -685,16 +693,14 @@ class FinalCutter5 extends FinalCutter4 {
             if(this.user.findState("grounded") === undefined && !this.user.getGravityDirection().isZero()) {
                 this.bladeAngleTransition = new VectorTransition([Math.acos(this.face0)], [Math.acos(this.face0)]);
                 this.phase = 3;
-                // repaceLoop(1000);
             } else {
                 this.bladeAngleTransition = this.sbat;
-                // repaceLoop(16);
                 let direction = new Vector(this.face0, 0);
                 
-                let hitbox = CutterWave.fromMiddle(direction.normalize(rectangle_averageSize(this.user)/4).plus(this.user.getPositionM()), [16, 16]);
+                let hitbox = CutterWave.fromMiddle(Vector.from(this.user.getPositionM()).plus([0, this.user.getHeight()/2]).plus(direction.normalized(rectangle_averageSize(this.user)/4)), [32, 32]);
                 hitbox.shareBlacklist(this.user.getBlacklist());
                 
-                hitbox.setSpeed(direction.normalize(6));
+                hitbox.setSpeed(direction.normalized(6));
                 hitbox.launchDirection = direction.normalized(6);
                 
                 addEntity(hitbox);

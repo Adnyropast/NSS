@@ -85,6 +85,8 @@ function loadFromData(data) {
     }
     
     loadFromLists(lists);
+    
+    optimizeEntities(ENTITIES);
 }
 
 function loadFromLists(lists) {

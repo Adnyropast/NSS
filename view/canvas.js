@@ -128,11 +128,8 @@ function makeTextCanvas(content, fontHeight = 75, fontFamily = "Luckiest Guy", f
     ctx.textBaseline = "top";
     ctx.font = fontHeight + "px " + fontFamily;
     
-    let offset = 0;
-    if(window.module) {offset = -fontHeight/3;}
-    
     ctx.fillStyle = fillStyle;
-    ctx.fillText(content, 0, offset);
+    ctx.fillText(content, 0, 0);
     
     if(strokeStyle !== undefined) {
         ctx.strokeStyle = strokeStyle;

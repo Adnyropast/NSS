@@ -155,11 +155,28 @@ class MazeLevelBuilder {
         // 
         
         if(this.mode === "topdown") {
+            /**/
+            
             this.mapState.variable_entities.push({
                 "classId": "mazeGroundArea",
                 "position": [0, 0],
                 "size": this.actualMazeSize
             });
+            
+            /**
+            
+            for(let x = 0; x < this.actualMazeSize[0]; x += this.fullCellSize[0]) {
+                for(let y = 0; y < this.actualMazeSize[1]; y += this.fullCellSize[1]) {
+                    this.mapState.variable_entities.push({
+                        "classId": "mazeGroundArea",
+                        "position": [x, y],
+                        "size": this.fullCellSize
+                    });
+                }
+            }
+            
+            /**/
+            
             this.mapState.variable_entities.push({
                 "classId": "sunlightDecoration",
                 "position": [0, 0]
@@ -384,6 +401,28 @@ class MazeLevelBuilder {
                 position: wallPosition,
                 size: wallSize
             });
+        }
+        
+        // Other
+        
+        if(this.mode === "topdown") {
+            for(let i = 0, plantCount = irandom(1, 5); i < plantCount; ++i) {
+                const position = [
+                    this.cX + this.wallSize[0] + random(0, this.cellSize[0] - 16),
+                    this.cY + this.wallSize[1] + random(0, this.cellSize[1] - 16)
+                ];
+                
+                let classId = "grassPatch";
+                
+                if(irandom(0, 1)) {
+                    classId = "topdownTree";
+                }
+                
+                this.mapState.variable_entities.push({
+                    "classId": classId,
+                    "position": position
+                });
+            }
         }
         
         // 

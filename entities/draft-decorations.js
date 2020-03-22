@@ -138,10 +138,10 @@ EC["treeBackground"] = class TreeBackground extends Entity {
     }
 };
 
-EC["tree2"] = class Tree2 extends Decoration {
+EC["tree"] = class Tree extends Decoration {
     constructor() {
         super(...arguments);
-        this.setStyle(IMG_TREE2);
+        this.setStyle(IMG_TREE);
     }
 };
 
@@ -257,5 +257,13 @@ EC["nightSkyDecoration"] = class NightSkyDecoration extends EC["skyDecoration"] 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         /**/
+    }
+};
+
+EC["grassPatch"] = class GrassPatch extends Decoration {
+    constructor(position, size = [16, 16]) {
+        super(position, size);
+        
+        this.getDrawable().setStyle(IMG_GRASSPATCH);
     }
 };

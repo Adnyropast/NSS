@@ -167,6 +167,12 @@ class GameLoop {
         array_bubbleSort(this.drawables, function(a, b) {
             if(a.getZIndex() > b.getZIndex()) {return -1;}
             if(a.getZIndex() < b.getZIndex()) {return +1;}
+            
+            if(a instanceof Rectangle && b instanceof Rectangle) {
+                if(a.getY2() > b.getY2()) {return +1;}
+                if(a.getY2() < b.getY2()) {return -1;}
+            }
+            
             return 0;
         });
         
@@ -640,6 +646,19 @@ function setPlayer(entity) {
         cover.drawable.setStyle(new ColorTransition([255, 0, 0, 1], [255, 0, 0, 0], cover.lifespan, powt(1/2)));
         
         addEntity(cover);
+        
+        const linework = new ConcentratedLineworkFrameDrawable();
+        linework.setLifespan(32);
+        linework.setStyle(new ColorTransition([255, 0, 0, 1], [255, 0, 0, 0], linework.lifespan, powt(4)));
+        
+        const newCenter = Vector.from(this.getPositionM());
+        newCenter.subtract(CAMERA.getOffset());
+        newCenter.multiply(CAMERA.getSizeProp());
+        newCenter.multiply(640/CANVAS.width);
+        
+        linework.setPositionM(newCenter);
+        
+        addDrawable(linework);
     });
     
     addEntity(entity);

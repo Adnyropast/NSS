@@ -1389,6 +1389,10 @@ class Entity extends Rectangle {
         
         return false;
     }
+    
+    canMergeWith(entity) {
+        return false;
+    }
 }
 
 function stunOnhit(event) {
@@ -1493,29 +1497,31 @@ function optimizeEntities(entities) {
         let i = 0;
         
         while(!changed && i < optimized.length) {
-            let entity0 = optimized[i];
+            const entity0 = optimized[i];
             
             let j = i + 1;
             
             while(!changed && j < optimized.length) {
-                let entity1 = optimized[j];
+                const entity1 = optimized[j];
                 
-                if(entity0.constructor === entity1.constructor && entity0.getDimension() === entity1.getDimension()) {
+                if(entity0.canMergeWith(entity1) && entity0.constructor === entity1.constructor && entity0.getDimension() === entity1.getDimension()) {
                     if(
                     entity0.getX1() === entity1.getX1() && entity0.getX2() === entity1.getX2() && entity0.getY1() <= entity1.getY2() && entity1.getY1() <= entity0.getY2()
                     || entity0.getY1() === entity1.getY1() && entity0.getY2() === entity1.getY2() && entity0.getX1() <= entity1.getX2() && entity1.getX1() <= entity0.getX2()
                     ) {
-                        let dimension = entity0.getDimension();
+                        const dimension = entity0.getDimension();
                         
-                        let position = new Vector(dimension);
-                        let size = new Vector(dimension);
+                        const position = new Vector(dimension);
+                        const size = new Vector(dimension);
                         
                         for(let dim = 0; dim < dimension; ++dim) {
                             position[dim] = Math.min(entity0.getPosition1(dim), entity1.getPosition1(dim));
                             size[dim] = Math.max(entity0.getPosition2(dim), entity1.getPosition2(dim)) - position[dim];
                         }
                         
-                        let newEntity = new (entity0.constructor)(position, size);
+                        const newEntity = new (entity0.constructor)(position, size);
+                        
+                        newEntity.mapVariable = entity0.mapVariable && entity1.mapVariable;
                         
                         /**
                         optimized.push(newEntity);

@@ -366,8 +366,8 @@ IC["chapterIdentifier"] = class ChapterIdentifier extends Item {
         this.inventoryPath = "";
         this.playerIdPath = "";
         
-        this.saveOnQuit = true;
-        this.saveOnWarp = true;
+        this.saveOnQuit = false;
+        this.saveOnWarp = false;
         
         this.chapterName = null;
         
@@ -490,3 +490,14 @@ IC["controlsIdentifier"] = class ControlsIdentifier extends Item {
         return data;
     }
 };
+
+function dropItems(position, items) {
+    for(let i = 0; i < items.length; ++i) {
+        let pickableItem = PickableItem.fromMiddle(position, [8, 8]);
+        pickableItem.addItem(items[i]);
+        
+        pickableItem.setSpeed((new Vector(1.5, 0)).rotate(Math.random() * 2*Math.PI));
+        
+        addEntity(pickableItem);
+    }
+}

@@ -84,7 +84,7 @@ function loadImage(src) {
 
 var IMG_SEED = loadImage("images/seed.png");
 
-var IMG_GRASSTILE = loadImage("images/grass_tile.png");
+var IMG_GRASSTILE = loadImage("images/grasstile.png");
 
 const IMGCHAR = {};
 
@@ -144,8 +144,11 @@ const IMG_TREEBACKGROUND = loadImage("images/treebackground.png");
 
 const IMG_DEFBLOCK = loadImage("images/def_block.png");
 const IMG_SKYTILE = loadImage("images/sky_tile.png");
-const IMG_TREE2 = loadImage("images/tree2.png");
-const IMG_TREE3 = loadImage("images/tree3.png");
+const IMG_TREE = loadImage("images/tree.png");
+
+const IMG_ROPELADDER = loadImage("images/ropeladder.png");
+
+const IMG_GRASSPATCH = loadImage("images/grasspatch.png");
 
 IMGCHAR["adnyropast"] = {
     "icon" : loadImage("images/adnyropast/icon.png"),

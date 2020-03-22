@@ -305,11 +305,8 @@ SKILLS["attack"] = class AttackSkill extends Skill {
                 ;
             }
             
-            repaceLoop(32);
-            
             // this.user.hurt(8);
         } if(this.phase == 64) {
-            repaceLoop(16);
             this.end();
         }
         

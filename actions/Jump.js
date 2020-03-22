@@ -19,9 +19,9 @@ class Jump extends Action {
     use() {
         /**/
         if(this.phase == 0) {
-            const averagesize = rectangle_averageSize(this.user);
+            const avgsz = rectangle_averageSize(this.user);
             const positionM = this.user.getPositionM();
-            const feetPositionM = Vector.addition(positionM, this.direction.normalized(-averagesize/2));
+            const feetPositionM = Vector.addition(positionM, this.direction.normalized(-avgsz/2));
             
             // 
             
@@ -30,17 +30,15 @@ class Jump extends Action {
             entityExplode.xRadius = 0.375;
             entityExplode.initialAngle = Math.PI / count;
             entityExplode.radiusRotate = this.direction.getAngle();
-            entityExplode(count, SmokeParticle, feetPositionM, [8, 8], 1)
+            entityExplode(count, SmokeParticle, feetPositionM, [avgsz/2, avgsz/2], 1)
             .forEach(function(entity) {
-                // entity.speed.normalize(Math.random());
-                entity.speed.multiply(random(1.0, 1.5));
-                // entity.removeInterrecipientWithId("replace");
+                entity.speed.multiply(random(1.25, 1.375));
             });
             
             // 
             
             entityExplode.initialAngle = this.direction.getAngle() + Math.PI/2;
-            entityExplode(2, SpikeSmokeParticle, feetPositionM, [averagesize, averagesize], 2)
+            entityExplode(2, SpikeSmokeParticle, feetPositionM, [avgsz, avgsz], 2)
             .forEach(function(entity) {
                 removeDrawable(entity.drawable);
                 // entity.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), 8, 16, 6);
@@ -296,33 +294,37 @@ class WallJump extends Action {
             this.user.removeState("wall");
             
             const avgsz = rectangle_averageSize(this.user);
-            const positionM = Vector.addition(this.user.getPositionM(), this.direction.normalized(-avgsz/2));
+            const positionM = Vector.from(this.user.getPositionM());
+            positionM.add([-wallState.side * this.user.getWidth()/2, 0]);
+            
+            const angle = Math.PI/2 - wallState.side * 2 * Math.abs(-Math.PI/2 - this.direction.getAngle());
+            const vector = Vector.fromAngle(angle);
             
             // 
             
-            angledSparks.initialAngle = this.direction.getAngle() + Math.PI;
-            angledSparks(2, SpikeSmokeParticle, positionM, [avgsz, avgsz], new NumberTransition(-Math.PI/4, +Math.PI/4))
-            .forEach(function(entity) {
-                entity.speed.multiply(2);
-                removeDrawable(entity.drawable);
-                // entity.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), 8, 16, 6);
-                entity.resetSpikeDrawable(irandom(3, 5), new ColorTransition([-Math.PI/5], [+Math.PI/5]), function() {return irandom(8, 10);}, function() {return irandom(12, 18);}, 6);
-                addDrawable(entity.drawable);
+            const spikeSmokeParticle = SpikeSmokeParticle.fromMiddle(positionM, [avgsz, avgsz]);
+            spikeSmokeParticle.setSpeed(vector.normalized(2));
+            addEntity(spikeSmokeParticle);
+            
+            // 
+            
+            const smokeCount = irandom(4, 6);
+            
+            angledSparks.initialDistance = avgsz/2;
+            angledSparks(smokeCount, SmokeParticle, positionM, [avgsz/2, avgsz/2], new NumberTransition(angle - 0.375, angle + 0.375))
+            .forEach(function(entity, index) {
+                let speedNorm = 1.375 + backForthTiming(index/(smokeCount-1)) * 0.375;
+                speedNorm = random(0.9375 * speedNorm, 1.0625 * speedNorm);
+                
+                entity.speed.multiply(speedNorm);
             });
             
             // 
             
-            directionSparks.initialDistance = avgsz/2;
-            directionSparks.randomAngleVariation = 0.5;
-            directionSparks(irandom(2, 3), SmokeParticle, positionM, undefined, this.direction.rotated(-3*Math.PI/4).normalize())
+            directionSparks.randomAngleVariation = Math.PI/3;
+            directionSparks(3, PebbleParticle, positionM, [avgsz/6, avgsz/6], this.direction.rotated(wallState.side * Math.PI/4).divide(1.5))
             .forEach(function(entity) {
-                entity.speed.multiply(random(0.75, 1.75));
-            });
-            directionSparks.initialDistance = avgsz/2;
-            directionSparks.randomAngleVariation = 0.5;
-            directionSparks(irandom(2, 3), SmokeParticle, positionM, undefined, this.direction.rotated(+3*Math.PI/4).normalize())
-            .forEach(function(entity) {
-                entity.speed.multiply(random(0.75, 1.75));
+                
             });
         }
         

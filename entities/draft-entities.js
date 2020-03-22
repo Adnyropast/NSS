@@ -74,6 +74,7 @@ class GravityField extends EC["forceField"] {
         
         this.addInteraction(new GravityActor(force));
         
+        this.order = +2;
         this.collide_priority = +2;
     }
 }
@@ -93,6 +94,8 @@ class Ground extends EC["obstacle"] {
         
         this.addInteraction(new WallActor());
     }
+    
+    canMergeWith(entity) {return true;}
 }
 
 EC["ground"] = Ground;
@@ -241,7 +244,7 @@ EC["autoDoor"] = class AutoDoor extends Entity {
         this.setStyle("#000000BF");
         this.setZIndex(+10);
         
-        this.enablerTimeout = 8;
+        this.enablerTimeout = 2;
     }
     
     static fromData(data) {
@@ -279,7 +282,7 @@ EC["autoDoor"] = class AutoDoor extends Entity {
         const foundMapWarpable = this.collidedWith.find(function(entity) {return entity.findInterrecipientWithId("mapwarp") !== null;}) !== undefined;
         
         if(foundMapWarpable) {
-            this.enablerTimeout = 8;
+            this.enablerTimeout = 2;
         }
         
         if(this.enablerTimeout <= 0) {
@@ -317,14 +320,15 @@ class Collectible extends Entity {
 EC["ladder"] = class Ladder extends Entity {
     constructor(position, size) {
         super(position, size);
-        this.setStyle(makeCTile(INVISIBLE, "#7F3F00"));
-        
-        this.setZIndex(+1);
         
         this.addInteraction(new LadderActor());
         // this.addInteraction(new BrakeActor(1.25));
         // this.addInteraction(new ThrustRecipient(0.5));
-        // this.collide_priority = -1;
+        
+        this.getDrawable().setZIndex(+1);
+        makeRepeatedTileFrom.multiplier = 16;
+        this.getDrawable().setStyle(makeRepeatedTileFrom(IMG_ROPELADDER, this.getWidth(), this.getHeight()));
+        makeRepeatedTileFrom.multiplier = 2;
     }
 };
 
@@ -550,6 +554,8 @@ EC["breakableWood"] = class BreakableWood extends EC["treeTrunk"] {
         
         return super.ondefeat();
     }
+    
+    canMergeWith(entity) {return false;}
 };
 
 EC["mazeGroundArea"] = class MazeGroundArea extends GroundArea {
@@ -559,7 +565,9 @@ EC["mazeGroundArea"] = class MazeGroundArea extends GroundArea {
         
         this.drawable.setZIndex(16)//.setStyle(makeStyledCanvas(mazeStyle, groundArea.getWidth(), groundArea.getHeight()));
         
+        makeRepeatedTileFrom.multiplier = 8;
         this.drawable.setStyle(makeRepeatedTileFrom(IMG_GRASSTILE, this.getWidth(), this.getHeight()));
+        makeRepeatedTileFrom.multiplier = 2;
     }
 };
 
@@ -703,5 +711,69 @@ EC["mazeEntrance"] = class MazeEntrance extends EC["autoDoor"] {
         super(...arguments);
         
         this.getDrawable().setStyle("#7FFFFFBF");
+    }
+};
+
+EC["topdownTree"] = class TopdownTree extends Obstacle {
+    constructor(position, size = [8, 8]) {
+        super(position, size);
+        
+        this.addInteraction(new TypeDamageable());
+        
+        this.setStats({
+            "energy": {
+                "real": 100,
+                "effective": 20,
+                "effectiveLock": false
+            }
+        });
+        
+        this.resetEnergy();
+        
+        this.items = [];
+        
+        for(let i = 0, count = irandom(1, 4); i < count; ++i) {
+            this.items.push(new IC["apple"]());
+        }
+        
+        const drawable = new RectangleDrawable(this.position, [56, 56]);
+        drawable.setStyle(IMG_TREE);
+        this.setDrawable(drawable);
+    }
+    
+    updateDrawable() {
+        const drawable = this.getDrawable();
+        
+        drawable.setXM(this.getXM());
+        drawable.setY2(this.getY2() + 4);
+        
+        return this;
+    }
+    
+    ondefeat() {
+        const positionM = this.getPositionM();
+        const size = Vector.multiplication(this.size, 2);
+        
+        entityExplode(32, Entity, positionM, size, 1)
+        .forEach(function(entity) {
+            entity.setLifespan(irandom(16, 64));
+            entity.setSelfBrake(1.0625);
+            entity.speed.multiply(random(1, 2));
+            entity.setSizeTransition(new VectorTransition(Array.from(entity.size), [0, 0], entity.lifespan, powt(1/4)));
+            
+            const drawable = entity.getDrawable();
+            
+            if(irandom(0, 1)) {
+                drawable.setStyle("#01FF0C");
+                drawable.setStrokeStyle("#007F05");
+            } else {
+                drawable.setStyle("#CC7F26");
+                drawable.setStrokeStyle("#874800");
+            }
+        });
+        
+        dropItems(positionM, this.items);
+        
+        return this;
     }
 };

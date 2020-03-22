@@ -1100,6 +1100,12 @@ class MultiPolygon extends Array {
         
         return this;
     }
+    
+    addPolygon(polygon) {
+        this.push(polygon);
+        
+        return this;
+    }
 }
 
 function makeSwordMultiPolygon() {

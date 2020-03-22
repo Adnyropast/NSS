@@ -43,10 +43,6 @@ class Enemy extends Character {
         
         this.items = [];
         
-        for(let i = 0, count = irandom(1, 4); i < count; ++i) {
-            this.items.push(new IC["apple"]());
-        }
-        
         this.setEventListener("defeat", "vanish", function() {
             const positionM = this.getPositionM();
             const size = this.size;
@@ -66,14 +62,7 @@ class Enemy extends Character {
     }
     
     ondefeat() {
-        for(let i = 0; i < this.items.length; ++i) {
-            let pickableItem = PickableItem.fromMiddle(this.getPositionM(), [8, 8]);
-            pickableItem.addItem(this.items[i]);
-            
-            pickableItem.setSpeed((new Vector(1.5, 0)).rotate(Math.random() * 2*Math.PI));
-            
-            addEntity(pickableItem);
-        }
+        dropItems(this.getPositionM(), this.items);
         
         return this;
     }

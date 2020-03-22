@@ -248,12 +248,19 @@ class PlayableCharacter extends Character {
             
             /**/
             
+            const smokeCount = irandom(4, 6);
+            const angleRange = random(0.75, 0.875);
+            
             angledSparks.initialAngle = this.speed.getAngle() + Math.PI;
-            angledSparks(5, SmokeParticle, position, smokeSize, new NumberTransition(-0.625, 0.625))
+            angledSparks.initialDistance = avgsz/2;
+            angledSparks(smokeCount, SmokeParticle, position, smokeSize, new NumberTransition(-angleRange/2, angleRange/2))
             .forEach(function(entity, index) {
-                let speedNorm = 1.5 - Math.abs(index - 2) * 0.125;
+                let speedNorm = 1.375 + backForthTiming(index/(smokeCount-1)) * 0.375;
+                speedNorm = random(0.9375 * speedNorm, 1.0625 * speedNorm);
                 
                 entity.speed.multiply(speedNorm);
+                
+                entity.accelerators.add([0, -random(0, 0.0078125)]);
             });
             
             /**/
@@ -316,7 +323,7 @@ class CursorSmoke extends Entity {
         
         const avgsz = rectangle_averageSize(this);
         
-        this.setLifespan(irandom(12, 24));
+        this.setLifespan(12);
         this.addInteraction(new DragRecipient(0.03125));
         
         this.setSizeTransition(new VectorTransition(Array.from(this.size), [0, 0], this.lifespan, powt(2)));

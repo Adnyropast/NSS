@@ -1,5 +1,5 @@
 
-let shadowBlurOn = true;
+let shadowBlurOn = false;
 
 class Drawable {
     constructor() {
@@ -176,6 +176,18 @@ function styleNext(style) {
         style.getNext();
     } else if(style instanceof ColorTransition) {
         style.getNext();
+    }
+    
+    return style;
+}
+
+function style_clone(style) {
+    if(style instanceof ColorTransition) {
+        return style.copy();
+    }
+    
+    else if(style instanceof AnimatedImages) {
+        return style.copy();
     }
     
     return style;

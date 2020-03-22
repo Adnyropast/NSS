@@ -163,74 +163,47 @@ class Character extends Entity {
     onbump(event) {
         const obstacle = event.obstacle;
         
-        let norm = this.speed.getNorm();
+        const norm = this.speed.getNorm();
         
-        let avgsz = rectangle_averageSize(this);
+        const avgsz = rectangle_averageSize(this);
         
         const vector = vector_fromDirections(getDD(this.locate(obstacle)), this.getDimension()).normalize(avgsz/2);
         
-        let positionM = Vector.addition(this.getPositionM(), vector);
+        let position = Vector.addition(this.getPositionM(), vector);
         
-        let particle = SpikeSmokeParticle.fromMiddle(positionM, [norm, norm]);
-        
-        particle.setSpeed(this.speed.normalized(-0.5));
-        
-        // particle.resetSpikeDrawable(irandom(6, 9), new ColorTransition([-Math.PI/2], [+Math.PI/2]), irandom(8, 10), irandom(16, 18), 6);
-        particle.resetSpikeDrawable(irandom(7, 9), new ColorTransition([-Math.PI/2], [+Math.PI/2]), function() {return irandom(8, 10);}, function() {return irandom(14, 18);}, 6);
-        
-        // addEntity(particle);
-        
-        /**
-        
-        let count = irandom(2, 3);
-        let direction = this.speed.rotated(Math.PI/2).normalize(avgsz/2);
-        
-        for(let i = 0; i < count; ++i) {
-            let d = direction.rotated(random(-0.5, +0.5));
+        if(norm > 2) {
+            // 
             
-            let smokeParticle = SmokeParticle.fromMiddle(Vector.addition(positionM, d), [norm, norm]);
-            smokeParticle.drawable.setStyle("black");
+            const particle = SpikeSmokeParticle.fromMiddle(position, [norm, norm]);
             
-            smokeParticle.setSpeed(d.normalized(random(0.75, 1.75)));
+            particle.setSpeed(this.speed.normalized(-0.5));
             
-            addEntity(smokeParticle);
+            // particle.resetSpikeDrawable(irandom(6, 9), new ColorTransition([-Math.PI/2], [+Math.PI/2]), irandom(8, 10), irandom(16, 18), 6);
+            particle.resetSpikeDrawable(irandom(7, 9), new ColorTransition([-Math.PI/2], [+Math.PI/2]), function() {return irandom(8, 10);}, function() {return irandom(14, 18);}, 6);
+            particle.drawable.multiplySize(avgsz/polygon_averageSize(particle.drawable));
+            particle.drawable.setStyle(new ColorTransition([255, 255, 255, 1], [255, 255, 255, 0], particle.lifespan));
+            
+            addEntity(particle);
+            
+            // 
+            
+            entityExplode.initialDistance = this.getWidth()/2;
+            entityExplode.initialAngle = Math.PI/12;
+            entityExplode.xRadius = 0.25;
+            entityExplode.radiusRotate = this.speed.getAngle();
+            entityExplode(Math.min(12, 2 * Math.floor(norm)), SmokeParticle, position, [norm, norm], 1)
+            .forEach(function(entity) {
+                entity.speed.multiply(random(norm * 0.25, norm * 0.5));
+            });
+            
+            // 
+            
+            directionSparks.randomAngleVariation = 0.5;
+            directionSparks(Math.min(16, Math.floor(norm)), PebbleParticle, position, [norm/3, norm/3], this.speed.normalized(-1))
+            .forEach(function(entity) {
+                entity.speed.multiply(random(1, 2));
+            });
         }
-        
-        direction = this.speed.rotated(-Math.PI/2).normalize(avgsz/2);
-        
-        for(let i = 0; i < count; ++i) {
-            let d = direction.rotated(random(-0.5, +0.5));
-            
-            let smokeParticle = SmokeParticle.fromMiddle(Vector.addition(positionM, d), [norm, norm]);
-            smokeParticle.drawable.setStyle("black");
-            
-            smokeParticle.setSpeed(d.normalized(random(0.75, 1.75)));
-            
-            addEntity(smokeParticle);
-        }
-        
-        /**/
-        
-        entityExplode.initialDistance = this.getWidth()/2;
-        entityExplode.initialAngle = Math.PI/12;
-        entityExplode.xRadius = 0.25;
-        entityExplode.radiusRotate = this.speed.getAngle();
-        entityExplode(12, SmokeParticle, positionM, [norm, norm], 1)
-        .forEach(function(entity) {
-            // entity.speed.multiply(random(1.25, 1.75));
-            entity.speed.multiply(random(norm * 0.25, norm * 0.5));
-            // entity.drawable.style = "blue";
-        });
-        
-        /**/
-        
-        directionSparks.randomAngleVariation = 0.5;
-        directionSparks(8, PebbleParticle, positionM, [norm/3, norm/3], this.speed.normalized(-1))
-        .forEach(function(entity) {
-            entity.speed.multiply(random(1, 2));
-        });
-        
-        /**/
         
         return this;
     }

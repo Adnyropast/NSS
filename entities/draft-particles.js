@@ -58,9 +58,9 @@ class SmokeParticle extends Particle {
     constructor(position, size = [8, 8]) {
         super(position, size);
         
-        this.setLifespan(48);
+        this.setLifespan(irandom(32, 48));
         
-        this.collidable = true;
+        this.collidable = false;
         // this.forceFactor = 0.5;
         // this.setSelfBrake(1.0625);
         
@@ -70,7 +70,7 @@ class SmokeParticle extends Particle {
         
         // this.setSizeTransition(new ColorTransition(size, [0, 0], 32));
         this.setSizeTransition(new MultiColorTransition([Vector.multiplication(size, 1/2), size, Vector.multiplication(size, 1/2), [0, 0]], this.lifespan));
-        this.setSelfBrake(1.03125);
+        this.setSelfBrake(1.0546875);
         
         const avgsz = rectangle_averageSize(this);
         
@@ -80,7 +80,7 @@ class SmokeParticle extends Particle {
         this.drawable.multiplySize(avgsz/polygon_averageSize(this.drawable));
         this.drawable.initImaginarySize(avgsz);
         
-        this.drawable.setZIndex(random(-1, +1));
+        // this.drawable.setZIndex(random(-1, +1));
         
         this.drawable.setStyle(ColorTransition.from(smokeColorTransition));
         this.drawable.setStrokeStyle("lightGray");

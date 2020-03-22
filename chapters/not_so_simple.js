@@ -14,14 +14,9 @@ chapters["not_so_simple"].maps["test-background"] = {
 };
 
 chapters["not_so_simple"].maps["hub"] = {
-    "camera" : {"positionM" : [0, 0]},
+    "camera" : {"positionM" : [0, 0], "size": [368, 207]},
     "fixed_entities" : [
         {"classId" : "cameraBoundaryAround", "position" : [-240, -135], "size" : [480, 270]},
-        
-        // {"classId" : "invisibleWall", "positionM" : ["-Infinity", -135], "size" : ["Infinity", 0]},
-        // {"classId" : "invisibleWall", "positionM" : ["-Infinity", +135], "size" : ["Infinity", 0]},
-        // {"classId" : "invisibleWall", "positionM" : [-240-320, "-Infinity"], "size" : [640, "Infinity"]},
-        // {"classId" : "invisibleWall", "positionM" : [+240+320, "-Infinity"], "size" : [640, "Infinity"]},
         {"classId" : "invisibleWallAround", "position" : [-240, -135], "size" : [480, 270]},
         
         {"classId" : "softPlatform", "position" : [-240, -48], "size" : [112, 1]},
@@ -32,9 +27,9 @@ chapters["not_so_simple"].maps["hub"] = {
         {"classId" : "ground", "position" : [-256, 56], "size" : [128, 16], "style" : "#0000FF"},
         {"classId" : "ground", "position" : [128, 56], "size" : [128, 16], "style" : "#0000FF"},
         
-        {"classId" : "tree2", "position" : [36, 64-56], "size" : [56, 56]},
-        {"classId" : "tree2", "position" : [4, 64-56], "size" : [56, 56]},
-        {"classId" : "tree2", "position" : [68, 64-56], "size" : [56, 56]},
+        {"classId" : "tree", "position" : [36, 64-56], "size" : [56, 56]},
+        {"classId" : "tree", "position" : [4, 64-56], "size" : [56, 56]},
+        {"classId" : "tree", "position" : [68, 64-56], "size" : [56, 56]},
         
         {"classId" : "ground", "position" : [-128, -96], "size" : [16, 80]},
         {"classId" : "ground", "position" : [-112, -32], "size" : [224, 16]},
@@ -46,7 +41,7 @@ chapters["not_so_simple"].maps["hub"] = {
         {"classId" : "sidewaysSetter", "position" : [-640, -360], "size" : [1280, 720]},
         
         {"classId" : "skyDecoration"/*, "position" : [-240, -135], "size" : [480, 270]*/},
-        // {"classId" : "sunlightDecoration", "position" : [0, 0]}
+        {"classId" : "sunlightDecoration", "position" : [0, 0]}
     ],
     "variable_entities": [
         {"classId" : "lookupDoor", "position" : [-120, 32], "size" : [16, 32], "mapName" : "hpp0", "warpPositionM" : [40, 248]/*[-176, 70]*/},
@@ -320,6 +315,14 @@ chapters["not_so_simple"].maps["hpp1"] = {
         {"classId" : "treeTrunk", "position" : [208, 112], "size" : [16, 16]},
         {"classId" : "treeTrunk", "position" : [208, 128], "size" : [16, 16]},
         
+        // {"classId" : "sidewaysSetter", "position" : [-224, -126], "size" : [448, 252]},
+        {"classId" : "sidewaysSetter", "position" : [0, 0], "size" : [512, 288]},
+        
+        {"classId" : "sunlightDecoration", "position" : [0, 0]},
+        // {"classId" : "treeBackground", "position" : [-224, -126], "size" : [448, 252]}
+        {"classId" : "treeBackground", "position" : [0, 0], "size" : [512, 288]}
+    ],
+    "variable_entities": [
         {"classId" : "breakableWood", "position" : [64, 224], "size" : [16, 16]},
         {"classId" : "breakableWood", "position" : [64, 240], "size" : [16, 16]},
         {"classId" : "breakableWood", "position" : [128, 128], "size" : [16, 16]},
@@ -342,14 +345,7 @@ chapters["not_so_simple"].maps["hpp1"] = {
         {"classId" : "sniperEnemy", "position" : [128, 240], "size" : [16, 16]},
         {"classId" : "sniperEnemy", "position" : [240, 176], "size" : [16, 16]},
         {"classId" : "sniperEnemy", "position" : [352, 240], "size" : [16, 16]},
-        {"classId" : "sniperEnemy", "position" : [304, 48], "size" : [16, 16]},
-        
-        // {"classId" : "sidewaysSetter", "position" : [-224, -126], "size" : [448, 252]},
-        {"classId" : "sidewaysSetter", "position" : [0, 0], "size" : [512, 288]},
-        
-        {"classId" : "sunlightDecoration", "position" : [0, 0]},
-        // {"classId" : "treeBackground", "position" : [-224, -126], "size" : [448, 252]}
-        {"classId" : "treeBackground", "position" : [0, 0], "size" : [512, 288]}
+        {"classId" : "sniperEnemy", "position" : [304, 48], "size" : [16, 16]}
     ]
 };
 
@@ -547,6 +543,11 @@ chapters["not_so_simple"].maps["hpp2"] = {
         {"classId" : "treeTrunk", "position" : [448, 64], "size" : [16, 16]},
         {"classId" : "treeTrunk", "position" : [432, 64], "size" : [16, 16]},
         
+        {"classId" : "sidewaysSetter", "position" : [0, 0], "size" : [512, 288]},
+        {"classId" : "sunlightDecoration", "position" : [0, 0]},
+        {"classId" : "treeBackground", "position" : [0, 0], "size" : [512, 288]}
+    ],
+    "variable_entities": [
         {"classId" : "breakableWood", "position" : [16, 192], "size" : [16, 16]},
         {"classId" : "breakableWood", "position" : [32, 192], "size" : [16, 16]},
         {"classId" : "breakableWood", "position" : [80, 128], "size" : [16, 16]},
@@ -572,11 +573,7 @@ chapters["not_so_simple"].maps["hpp2"] = {
         {"classId" : "breakableWood", "position" : [128, 256], "size" : [16, 16]},
         {"classId" : "breakableWood", "position" : [128, 272], "size" : [16, 16]},
         {"classId" : "breakableWood", "position" : [144, 256], "size" : [16, 16]},
-        {"classId" : "breakableWood", "position" : [144, 272], "size" : [16, 16]},
-        
-        {"classId" : "sidewaysSetter", "position" : [0, 0], "size" : [512, 288]},
-        {"classId" : "sunlightDecoration", "position" : [0, 0]},
-        {"classId" : "treeBackground", "position" : [0, 0], "size" : [512, 288]}
+        {"classId" : "breakableWood", "position" : [144, 272], "size" : [16, 16]}
     ]
 };
 
@@ -714,6 +711,11 @@ chapters["not_so_simple"].maps["hpp3"] = {
         {"classId" : "treeTrunk", "position" : [384, 256], "size" : [16, 16]},
         {"classId" : "treeTrunk", "position" : [400, 256], "size" : [16, 16]},
         
+        {"classId" : "sidewaysSetter", "position" : [0, 0], "size" : [512, 288]},
+        {"classId" : "sunlightDecoration", "position" : [0, 0]},
+        {"classId" : "skyDecoration", "position" : [0, 0], "size" : [512, 288]}
+    ],
+    "variable_entities": [
         {"classId" : "breakableWood", "position" : [16, 64], "size" : [16, 16]},
         {"classId" : "breakableWood", "position" : [32, 64], "size" : [16, 16]},
         {"classId" : "breakableWood", "position" : [48, 64], "size" : [16, 16]},
@@ -761,11 +763,7 @@ chapters["not_so_simple"].maps["hpp3"] = {
         {"classId" : "breakableWood", "position" : [144, 208], "size" : [48, 48]},
         {"classId" : "breakableWood", "position" : [208, 208], "size" : [48, 48]},
         {"classId" : "breakableWood", "position" : [272, 208], "size" : [48, 48]},
-        {"classId" : "breakableWood", "position" : [336, 208], "size" : [48, 48]},
-        
-        {"classId" : "sidewaysSetter", "position" : [0, 0], "size" : [512, 288]},
-        {"classId" : "sunlightDecoration", "position" : [0, 0]},
-        {"classId" : "skyDecoration", "position" : [0, 0], "size" : [512, 288]}
+        {"classId" : "breakableWood", "position" : [336, 208], "size" : [48, 48]}
     ]
 };
 

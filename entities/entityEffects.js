@@ -411,11 +411,12 @@ function angledSparks(count, entityClass, position, size, angleTransition) {
     const entities = new SetArray();
     
     for(let i = 0; i < count; ++i) {
-        const entity = entityClass.fromMiddle(position, size);
         const angle = angleTransition.at(i/(count-1));
         
         const direction = Vector.fromAngle(angledSparks.initialAngle);
         direction.rotate(angle);
+        
+        const entity = entityClass.fromMiddle(Vector.addition(position, direction.normalized(angledSparks.initialDistance)), size);
         
         entity.setSpeed(direction);
         
@@ -429,8 +430,10 @@ function angledSparks(count, entityClass, position, size, angleTransition) {
 }
 
 angledSparks.initialAngle = 0;
+angledSparks.initialDistance = 0;
 angledSparks.reset = function reset() {
     this.initialAngle = 0;
+    this.initialDistance = 0;
 };
 
 function drawableExplode() {

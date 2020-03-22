@@ -324,9 +324,9 @@ class MultiPolygonDrawable extends MultiPolygon {
     }
     getCamera() {return this.camera;}
     
-    setStyle() {
+    setStyle(style) {
         for(let i = 0; i < this.size(); ++i) {
-            this.getPolygon(i).setStyle(...arguments);
+            this.getPolygon(i).setStyle(style_clone(style));
         }
         
         return this;
@@ -364,3 +364,29 @@ class MultiPolygonDrawable extends MultiPolygon {
 }
 
 let flamedrawable = PolygonDrawable.from(flameparticle);
+
+class ConcentratedLineworkFrameDrawable extends MultiPolygonDrawable {
+    constructor(lineCount = irandom(64, 128)) {
+        super();
+        
+        const center = [320, 180], size = [640, 360];
+        const screen = Rectangle.fromMiddle(center, size);
+        
+        for(let i = 0; i < lineCount; ++i) {
+            const angle = i/lineCount * 2*Math.PI;
+            const cos = size[0]/2 * Math.cos(angle);
+            const sin = size[1]/2 * Math.sin(angle);
+            const vector = new Vector(cos, sin);
+            
+            const polygon = makePathPolygon([[0, 0], vector, vector.times(2)], random(2, 4));
+            
+            polygon.setPositionM(Vector.addition(center, vector.times(random(1.5, 1.75))));
+            
+            this.addPolygon(PolygonDrawable.from(polygon));
+        }
+        
+        this.setCameraMode("reproportion");
+        this.setLifespan(8);
+        this.setStyle(new ColorTransition(CV_BLACK, [0, 0, 0, 0], this.lifespan, powt(1)));
+    }
+}
