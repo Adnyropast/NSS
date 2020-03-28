@@ -1362,6 +1362,8 @@ function switchPhase(phase) {
     gamePhase = phase;
 }
 
+let gameLoop;
+
 function switchLoop(loopF, pace = gamePace) {
     gameLoop = loopF;
     gamePace = pace;

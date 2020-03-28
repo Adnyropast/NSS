@@ -185,6 +185,8 @@ EC["airArea"] = AirArea;
 class WaterArea extends Area {
     constructor(position, size) {
         super(position, size);
+        this.order = +1;
+        
         // this.setOtherBrake(BRK_WATER);
         // this.otherThrust = THRUST_WATER;
         this.setStyle("#007FFF7F");

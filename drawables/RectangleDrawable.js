@@ -143,8 +143,14 @@ class RectangleDrawable extends Rectangle {
             context.strokeRect(0, 0, width, height);
         }
         
-        } catch(error) {
-            console.error(error, style);
+        } catch(e) {
+            if(style instanceof HTMLCanvasElement && (style.width === 0 || style.height === 0)) {
+                
+            }
+            
+            else {
+                console.warn(e, style);
+            }
         }
         
         context.translate(-x, -y);

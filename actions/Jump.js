@@ -59,9 +59,9 @@ class Jump extends Action {
             }
         }
         
-        if(this.phase > 0 && this.user.hasState("grounded")) {
-            return this.end("grounded");
-        }
+        // if(this.phase > 0 && this.user.hasState("grounded")) {
+            // return this.end("grounded");
+        // }
         
         if(this.direction.isZero()) {
             return this.end("direction zero");
