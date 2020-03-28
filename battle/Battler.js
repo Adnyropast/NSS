@@ -22,7 +22,7 @@ class Battler {
         
         this.energyBar = new EnergyBarDrawable([0, 0]);
         this.energyBar.setProperWidth(rectangle_averageSize(this.drawable), 10/36, 3/36);
-        this.energyBar.setEnergyTransition(ENETRA_DEFMAX);
+        this.energyBar.setEnergyTransition(ENETRA_DEFMAX2);
         
         this.moves = new SetArray();
         

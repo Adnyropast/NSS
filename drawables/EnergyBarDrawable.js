@@ -8,6 +8,15 @@ const ENETRA_DEFMAX = new MultiColorTransition([[255, 0, 0, 1], [0, 255, 0, 1], 
     return t / 2;
 });
 
+const ENETRA_DEF2 = new MultiColorTransition([[255, 0, 0, 1], [255, 255, 0, 1], [0, 255, 0, 1]]);
+const ENETRA_DEFMAX2 = new MultiColorTransition([[255, 0, 0, 1], [255, 255, 0, 1], [0, 255, 0, 1], [0, 255, 255, 1]], 1, function(t) {
+    if(t === 1) {
+        return 1;
+    }
+    
+    return 3/4 * t;
+});
+
 const EBAR_HEIGHTPROP = 12/36;
 const EBAR_BORDERPROP = 4/36;
 
@@ -16,7 +25,7 @@ class EnergyBarDrawable extends RectangleDrawable {
         super(position, size);
         this.setZIndex(-200);
         this.setStyle("#00003F");
-        this.colorTransition = ENETRA_DEF;
+        this.colorTransition = ENETRA_DEFMAX2;
         this.borderWidth = 4;
         this.energyRatio = 1;
         
