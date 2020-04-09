@@ -526,6 +526,7 @@ class GamepadEventsRecorder {
         Object.defineProperty(this, "limit", {value : 255, enumerable : false, writable : true});
         
         this.gamepadIndex = gamepadIndex;
+        this.directionHoldValue = 0;
     }
     
     value(button) {
@@ -558,6 +559,14 @@ class GamepadEventsRecorder {
                         delete this.buttons[i];
                     }
                 }
+            }
+            
+            const direction = gamepad_getDirection(gamepad);
+            
+            if(direction.isZero()) {
+                this.directionHoldValue = 0;
+            } else {
+                ++this.directionHoldValue;
             }
         }
         
@@ -612,7 +621,9 @@ function getDPADDirection(dpadValue) {
     return getDPADDirection(roundedValue);
 }
 
-function getJoyStickDirection(x, y) {
+let joystickAngleCount = 64;
+
+function getJoystickDirection(x, y) {
     if(x === undefined && y === undefined) {
         let gamepad = getGamepad(0);
         
@@ -633,10 +644,17 @@ function getJoyStickDirection(x, y) {
         if(y === undefined) {y = 0;}
     }
     
-    if(Math.abs(x) < 0.5) {x = 0;}
-    if(Math.abs(y) < 0.5) {y = 0;}
+    let direction = new Vector(x, y);
+    let norm = direction.getNorm();
     
-    return new Vector(x, y);
+    if(norm > 1) {norm = 1;}
+    else if(norm < 0.125) {norm = 0;}
+    
+    const roundedAngle = Math.round((direction.getAngle()) * joystickAngleCount / (2*Math.PI)) / joystickAngleCount * 2*Math.PI;
+    
+    direction = Vector.fromAngle(roundedAngle).normalize(norm);
+    
+    return direction;
 }
 
 function getGamepad(index = 0) {
@@ -645,7 +663,7 @@ function getGamepad(index = 0) {
 
 function gamepad_getDirection(gamepad) {
     if(gamepad instanceof Gamepad) {
-        return Vector.addition(getDPADDirection(gamepad), getJoyStickDirection(gamepad)).normalize();
+        return Vector.addition(getDPADDirection(gamepad), getJoystickDirection(gamepad)).normalize();
     }
     
     return new Vector(0, 0);

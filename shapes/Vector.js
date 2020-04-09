@@ -227,6 +227,20 @@ class Vector extends Array {
      */
     
     static fromAngle(angle) {
+        angle = mod(angle, 2*Math.PI);
+        
+        if(angle === Math.PI/2) {
+            return new this(0, +1);
+        }
+        
+        if(angle === Math.PI) {
+            return new this(-1, 0);
+        }
+        
+        if(angle === 3/2*Math.PI) {
+            return new this(0, -1);
+        }
+        
         return new this(Math.cos(angle), Math.sin(angle));
     }
     

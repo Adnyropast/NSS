@@ -1010,8 +1010,6 @@ function engageBattle(battlers = EMPTYSET) {
 //// ESCAPELOOP ////
 // -------------- //
 
-let gpdSave = [];
-
 const ESCDRAWABLES = ESCAPELOOP.drawables;
 
 function escapeMenu() {
@@ -1033,21 +1031,15 @@ function escapeMenu() {
     
     let gamepadDirection = gamepad_getDirection(getGamepad(0));
     
-    if(Math.sign(gpdSave[0]) === Math.sign(gamepadDirection[0])) {gamepadDirection[0] = 0;}
-    else {gpdSave[0] = gamepadDirection[0];}
-    
-    if(Math.sign(gpdSave[1]) === Math.sign(gamepadDirection[1])) {gamepadDirection[1] = 0;}
-    else {gpdSave[1] = gamepadDirection[1];}
-    
     // Moving the cursor
     
-    if(poh(keyList.value(K_LEFT)) || gamepadDirection[0] < 0) {
+    if(poh(keyList.value(K_LEFT)) || (gamepadDirection[0] < 0 && poh(gamepadRec.directionHoldValue))) {
         if(this.getItemIndex() > 0) {
             this.setItemIndex(this.getItemIndex() - 1);
         }
         
         this.cancelMenu();
-    } if(poh(keyList.value(K_RIGHT)) || gamepadDirection[0] > 0) {
+    } if(poh(keyList.value(K_RIGHT)) || (gamepadDirection[0] > 0 && poh(gamepadRec.directionHoldValue))) {
         if(this.getItemIndex() < inventory.items.length - 1) {
             this.setItemIndex(this.getItemIndex() + 1);
         }
@@ -1055,13 +1047,13 @@ function escapeMenu() {
         this.cancelMenu();
     }
     
-    if((poh(keyList.value(K_UP)) || gamepadDirection[1] < 0) && !this.menuOpen()) {
+    if((poh(keyList.value(K_UP)) || (gamepadDirection[1] < 0 && poh(gamepadRec.directionHoldValue))) && !this.menuOpen()) {
         if(this.getItemIndex() >= displayWidth) {
             this.setItemIndex(this.getItemIndex() - displayWidth);
         }
         
         this.cancelMenu();
-    } if((poh(keyList.value(K_DOWN)) || gamepadDirection[1] > 0) && !this.menuOpen()) {
+    } if((poh(keyList.value(K_DOWN)) || (gamepadDirection[1] > 0 && poh(gamepadRec.directionHoldValue))) && !this.menuOpen()) {
         if(this.getItemIndex() < inventory.items.length - displayWidth) {
             this.setItemIndex(this.getItemIndex() + displayWidth);
         }
@@ -1069,13 +1061,13 @@ function escapeMenu() {
         this.cancelMenu();
     }
     
-    if((poh(keyList.value(K_UP)) || gamepadDirection[1] < 0) && this.menuOpen()) {
+    if((poh(keyList.value(K_UP)) || (gamepadDirection[1] < 0 && poh(gamepadRec.directionHoldValue))) && this.menuOpen()) {
         this.menuDrawables[this.menuIndex].setStyle("white");
         
         if(this.menuIndex > 0) {--this.menuIndex;}
         
         this.menuDrawables[this.menuIndex].setStyle("yellow");
-    } if((poh(keyList.value(K_DOWN)) || gamepadDirection[1] > 0) && this.menuOpen()) {
+    } if((poh(keyList.value(K_DOWN)) || (gamepadDirection[1] > 0 && poh(gamepadRec.directionHoldValue))) && this.menuOpen()) {
         this.menuDrawables[this.menuIndex].setStyle("white");
         
         if(this.menuIndex < this.menuDrawables.length - 1) {++this.menuIndex;}
@@ -1193,7 +1185,7 @@ function escapeMenu() {
     
     // Go back to parent inventory
     
-    if(poh(keyList.value(222)) || gamepadRec.value(BUTTON_L) === 1 || gamepadRec.value(BUTTON_B) === 1) {
+    if(poh(keyList.value(222)) || poh(gamepadRec.value(BUTTON_L)) || poh(gamepadRec.value(BUTTON_B))) {
         if(!this.menuOpen()) {
             chapter_cdParentInventory();
             

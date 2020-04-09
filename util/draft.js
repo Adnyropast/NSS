@@ -793,3 +793,10 @@ function class_forName(className) {
 function class_extends(childClass, parentClass) {
     return childClass.prototype instanceof parentClass || childClass === parentClass;
 }
+
+function modulo(a, b) {
+    return a - b * Math.floor(a / b);
+    return ((a % b) + b) % b;
+}
+
+let mod = modulo;

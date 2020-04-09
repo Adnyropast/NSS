@@ -273,6 +273,7 @@ let ctrljson = {
         {"button" : 2, "actionClassName" : "AutoSword"},
         {"button" : 0, "actionClassName" : "AutoCutter"},
         {"button" : 1, "actionClassName" : "RocketPunch"},
+        {"button" : 6, "actionClassName" : "Still"},
     ],
     "buttonToggle" : [
         {"button" : -1, "actionClassName" : "Flamethrower"},
@@ -413,34 +414,20 @@ function gameEventController() {
         }
     }
     
-    for(let i = 0; i < eventControllers.length; ++i) {
-        eventControllers[i]();
-    }
-    
-    let gamepad = getGamepad(0);
+    const gamepad = getGamepad(0);
     
     if(gamepad instanceof Gamepad) {
-        let entity = PLAYERS[0].entity;
+        const entity = PLAYERS[0].entity;
         
-        if(true) {
-            let vector = getDPADDirection();
-            vector.add(getJoyStickDirection());
+        const vector = gamepad_getDirection(gamepad);
+        
+        entity.removeActionsWithConstructor(Movement);
+        
+        if(!vector.isZero()) {
+            entity.route = Vector.addition(entity.getPositionM(), vector.normalized(BIG));
             
-            if(vector.isZero()) {
-                for(let i = 0; i < movementActions.length; ++i) {
-                    entity.removeAction(movementActions[i]);
-                }
-                
-                movementActions.length = 0;
-            } else {
-                entity.route = Vector.addition(entity.getPositionM(), vector.normalized(BIG));
-                
-                entity.addAction(new MoveFocus());
-                
-                let movementAction = (new Movement()).setUseCost(movementCost);
-                movementActions.push(movementAction);
-                entity.addAction(movementAction);
-            }
+            entity.addAction(new MoveFocus());
+            entity.addAction((new Movement()).setUseCost(movementCost));
         }
         
         for(let i = 0; i < gamepad.buttons.length; ++i) {
@@ -459,6 +446,8 @@ function gameEventController() {
             }
         }
     }
+    
+    for(let i = 0; i < eventControllers.length; ++i) {
+        eventControllers[i]();
+    }
 }
-
-let movementActions = [];

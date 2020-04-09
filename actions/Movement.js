@@ -66,11 +66,11 @@ class Movement extends Action {
                 if(gravityDirection[dim] != 0 && direction[dim] != 0) {
                     if(Math.sign(gravityDirection[dim]) == Math.sign(direction[dim])) {
                         if(Math.abs(direction.angleBetween(gravityDirection)) < Math.PI/4) {
-                            this.user.addAction(this.crouch);
+                            this.user.addImmediateAction(this.crouch);
                         }
                     } else {
                         if(Math.abs(direction.angleBetween(gravityDirection.times(-1))) < Math.PI/4) {
-                            this.user.addAction(this.lookup);
+                            this.user.addImmediateAction(this.lookup);
                         }
                     }
                     
