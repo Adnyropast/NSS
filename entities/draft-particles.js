@@ -315,6 +315,14 @@ class WaterDroplet extends Entity {
     }
 }
 
+class PaintDroplet extends WaterDroplet {
+    constructor() {
+        super(...arguments);
+        
+        this.drawable.setStyle(MultiColorTransition.from(CT_RAINBOW).setDuration(24).setStep(irandom(0, 23)));
+    }
+}
+
 class OvalWaveParticle extends Entity {
     constructor() {
         super(...arguments);
@@ -473,6 +481,61 @@ class PebbleParticle extends Entity {
         const drawable = this.getDrawable();
         
         drawable.setPositionM(this.getPositionM());
+        
+        return this;
+    }
+}
+
+class StarParticle extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.setLifespan(32);
+        this.setDrawable(PolygonDrawable.from(makeStarPolygon()).multiplySize(rectangle_averageSize(this)/16));
+        this.drawable.setStyle(new ColorTransition([0, 0, 255, 1], [0, 255, 255, 1], 32, powt(1/2)));
+        this.drawable.setShadowBlur(8);
+        
+        this.setSelfBrake(1.125);
+        
+        this.rotationTransition = new ColorTransition([Math.PI/64], [0], 32);
+    }
+    
+    updateDrawable() {
+        this.drawable.setPositionM(this.getPositionM());
+        this.drawable.rotate(this.rotationTransition.getNext()[0]);
+        this.drawable.multiplySize(1/1.0625);
+        
+        return this;
+    }
+}
+
+class StarParticle2 extends Entity {
+    constructor(position, size = [random(2, 4), random(2, 4)]) {
+        super(position, size);
+        
+        this.setLifespan(irandom(16, 64));
+        this.addInteraction(new DragRecipient(1));
+        this.addInteraction(new ReplaceRecipient());
+        this.addInteraction(new BrakeRecipient());
+        
+        const avgsz = rectangle_averageSize(this);
+        
+        this.setDrawable(PolygonDrawable.from(makeStarPolygon()).multiplySize(avgsz/16));
+        this.drawable.initImaginarySize(avgsz);
+        this.drawable.setShadowBlur(8);
+        this.drawable.setStyle(new ColorTransition([191, 127, 0, 1], [255, 255, 0, 1], this.lifespan, powt(1/2)));
+        
+        this.rotationTransition = new NumberTransition(1, 0, this.lifespan, powt(1/4));
+        
+        this.setSizeTransition(new VectorTransition(Array.from(size), [0, 0], this.lifespan, powt(2)));
+    }
+    
+    updateDrawable() {
+        const avgsz = rectangle_averageSize(this);
+        
+        this.drawable.setPositionM(this.getPositionM());
+        this.drawable.rotate(this.rotationTransition.getNext());
+        this.drawable.setImaginarySize(avgsz);
         
         return this;
     }

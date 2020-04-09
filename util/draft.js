@@ -756,3 +756,40 @@ function localStorage_isUsable() {
 }
 
 function rv() {return Math.random() * 255;}
+
+function returnTrue() {return true;}
+function returnFalse() {return false;}
+
+function str_firstToLowerCase(string) {
+    return string.charAt(0).toLowerCase() + string.substring(1);
+}
+
+function str_firstToUpperCase(string) {
+    return string.charAt(0).toUpperCase() + string.substring(1);
+}
+
+function str_isIdentifier(string) {
+    return !!string.match(/^[a-zA-Z$_][a-zA-Z$_\d]*$/);
+}
+
+function emptyFn() {}
+
+function class_forName(className) {
+    if(typeof className === "string" && str_isIdentifier(className)) {
+        try {
+            const resClass = eval(className);
+            
+            if(typeof resClass === "function") {
+                return resClass;
+            }
+        } catch(e) {
+            
+        }
+    }
+    
+    return Object;
+}
+
+function class_extends(childClass, parentClass) {
+    return childClass.prototype instanceof parentClass || childClass === parentClass;
+}

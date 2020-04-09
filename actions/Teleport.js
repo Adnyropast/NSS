@@ -6,7 +6,6 @@ class TransitionVector extends Vector {
 class Teleportation extends Action {
     constructor(t1 = 10, t2 = 20) {
         super();
-        this.id = "teleportation";
         this.setUseCost(10);
         
         this.t1 = t1;

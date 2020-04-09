@@ -45,12 +45,9 @@ var K_CRIGHT = [75];
 /**/
 var K_DIRECTION = K_LEFT.concat(K_UP).concat(K_RIGHT).concat(K_DOWN);
 var K_JUMP = [32];
-var K_FOCUS = [223];
-var K_PRESSFOCUS = [191];
 
 var K_CDIRECTION = K_CLEFT.concat(K_CUP).concat(K_CDOWN).concat(K_CRIGHT);
 
-var K_FLURRY = [70];
 /**/
 
 class KeyboardEventsRecorder {

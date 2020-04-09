@@ -1,5 +1,5 @@
 
-const AS_SWORD = set_gather("overheadSlash", "multiswordAttack1", "multiswordAttack2", "multiswordAttackFinish", "upwardArcSlash", "downwardArcSlash", "autoSword");
+const AS_SWORD = set_gather("OverheadSlash", "MultiswordAttack1", "MultiswordAttack2", "MultiswordAttackFinish", "UpwardArcSlash", "DownwardArcSlash", "AutoSword");
 
 class SwordAbility extends BusyAction {
     constructor() {
@@ -152,7 +152,6 @@ class SwordSlashAction extends SlashAction {
 class OverheadSlash extends SwordSlashAction {
     constructor() {
         super();
-        this.setId("overheadSlash");
         
         this.effect = null;
         this.face = null;
@@ -190,7 +189,7 @@ class OverheadSlash extends SwordSlashAction {
     }
     
     preventsAddition(action) {
-        if(this.phase > 7 && AS_SWORD.includes(action.getId())) {
+        if(this.phase > 7 && AS_SWORD.includes(action.getClassName())) {
             this.nextAction = new MultiswordAttack1();
         }
         
@@ -211,7 +210,6 @@ class OverheadSlash extends SwordSlashAction {
 class UpwardArcSlash extends SwordSlashAction {
     constructor() {
         super();
-        this.setId("upwardArcSlash");
         
         this.slashDuration = 9;
         // this.startlag = 6;
@@ -263,7 +261,6 @@ function makeFullOvalTiming(rad1 = 1, rad2 = 1) {
 class MultiswordAttack1 extends SwordSlashAction {
     constructor() {
         super();
-        this.setId("multiswordAttack1");
         
         this.slashDuration = 6;
         this.det = 6;
@@ -308,7 +305,7 @@ class MultiswordAttack1 extends SwordSlashAction {
     }
     
     preventsAddition(action) {
-        if(this.phase > 0 && AS_SWORD.includes(action.getId()) && typeof this.followup == "function") {
+        if(this.phase > 0 && AS_SWORD.includes(action.getClassName()) && typeof this.followup == "function") {
             this.nextAction = new this.followup();
         }
         
@@ -331,7 +328,6 @@ class MultiswordAttack1 extends SwordSlashAction {
 class MultiswordAttack2 extends MultiswordAttack1 {
     constructor() {
         super();
-        this.setId("multiswordAttack2");
         
         this.followup = MultiswordAttack1;
     }
@@ -361,7 +357,6 @@ class MultiswordAttack2 extends MultiswordAttack1 {
 class MultiswordAttackFinish extends MultiswordAttack2 {
     constructor() {
         super();
-        this.setId("multiswordAttackFinish");
         
         this.slashDuration = 8;
         this.endlag = 12;
@@ -396,7 +391,6 @@ class MultiswordAttackFinish extends MultiswordAttack2 {
 class DownwardArcSlash extends SwordSlashAction {
     constructor() {
         super();
-        this.setId("downwardArcSlash");
         
         this.hitbox.launchDirection = [0, +4];
         
@@ -419,7 +413,6 @@ class DownwardArcSlash extends SwordSlashAction {
 class AutoSword extends SwordAbility {
     constructor() {
         super();
-        this.setId("autoSword");
     }
     
     use() {
@@ -430,11 +423,11 @@ class AutoSword extends SwordAbility {
                 let cursorDirection = this.user.getCursorDirection();
                 
                 if(Math.abs(cursorDirection[0]) >= Math.abs(cursorDirection[1])) {
-                    this.user.addAction(new OverheadSlash());
+                    this.user.addImmediateAction(new OverheadSlash());
                 } else if(cursorDirection[1] < 0) {
-                    this.user.addAction(new UpwardArcSlash());
+                    this.user.addImmediateAction(new UpwardArcSlash());
                 } else if(cursorDirection[1] > 0) {
-                    this.user.addAction(new DownwardArcSlash());
+                    this.user.addImmediateAction(new DownwardArcSlash());
                 } else {
                     this.end();
                 }
@@ -445,8 +438,6 @@ class AutoSword extends SwordAbility {
     }
     
     allowsReplacement(action) {
-        return AS_SWORD.includes(action.getId()) && !this.sharesId(action);
+        return AS_SWORD.includes(action.getClassName()) && this.getClassName() !== action.getClassName();
     }
 }
-
-AC["autoSword"] = AutoSword;

@@ -1,5 +1,5 @@
 
-const AS_HEART = set_gather("bloodShot", "heartBlowout", "veinSweep");
+const AS_HEART = set_gather("BloodShot", "BlowoutShots", "VeinSweep");
 
 class BloodProjectile extends Projectile {
     constructor() {
@@ -45,7 +45,6 @@ class BloodProjectile extends Projectile {
 class BloodShot extends Action {
     constructor() {
         super();
-        this.id = "bloodShot";
         this.setUseCost(4);
         
         this.initialPosition = null;
@@ -82,12 +81,9 @@ class BloodShot extends Action {
     }
 }
 
-AC["bloodShot"] = BloodShot;
-
 class BlowoutShots extends Action {
     constructor() {
         super();
-        this.id = "heartBlowout";
         this.setUseCost(0.5);
         
         this.angle = 0;
@@ -136,12 +132,9 @@ class BlowoutShots extends Action {
     }
 }
 
-AC["blowoutShots"] = BlowoutShots;
-
 class VeinSweep extends SlashAction {
     constructor() {
         super();
-        this.setId("veinSweep");
         
         this.slashDuration = 12;
         this.det = 3;
@@ -207,8 +200,6 @@ class VeinSweep extends SlashAction {
         return this;
     }
 }
-
-AC["veinSweep"] = VeinSweep;
 
 class HeartBloodDroplet extends WaterDroplet {
     constructor() {

@@ -17,8 +17,10 @@ class ItemPickable extends Interrecipient {
         let recipient = this.getRecipient();
         let items = [];
         
-        if(IC[recipient.itemClassId]) {
-            items.push(new IC[recipient.itemClassId]());
+        const itemClass = itemClass_forName(recipient.itemClassName);
+        
+        if(itemClass !== Item) {
+            items.push(new itemClass());
         }
         
         if(Array.isArray(recipient.items)) {

@@ -4,11 +4,7 @@ class PlayableCharacter extends Character {
         super(position, size);
         
         this.setStats({
-            "energy": {
-                "real": 50,
-                "effective": 50,
-                "effectiveLock": false
-            }
+            "energy": new ScaleValue(50)
         });
         
         this.resetEnergy();
@@ -86,8 +82,10 @@ class PlayableCharacter extends Character {
             let action;
             
             if(this.hasState("hurt")) {
-                this.onstatehurt();
-            } else if((action = this.actions.find(function(a) {return a instanceof BusyAction})) && action.phase > 0) {
+                this.setStyleHurt();
+            }
+            
+            else if((action = this.actions.find(function(a) {return a instanceof BusyAction})) && action.phase > 0) {
                 let direction = this.getCursorDirection();
                 
                 if(Math.abs(direction[0]) >= Math.abs(direction[1])) {
@@ -107,33 +105,31 @@ class PlayableCharacter extends Character {
                 this.setAnimStyle("attack-up");
             } else if(this.hasState("water")) {
                 if(this.hasState("moving")) {
-                    this.onstateswim();
+                    this.setStyleSwim();
                 } else {
-                    this.onstatewater();
+                    this.setStyleWater();
                 }
             } else if(!this.hasState("actuallyGrounded")) {
-                let wallState = this.findState("wall");
-                
-                if(typeof wallState != "undefined") {
-                    this.onstatewall(wallState);
+                if(this.hasState("wall")) {
+                    this.setStyleWall();
                 } else if(this.speed[1] < 0) {
-                    this.onstatejump();
+                    this.setStyleJump();
                 } else {
-                    this.onstatefall();
+                    this.setStyleFall();
                 }
             } else if(this.hasState("moving")) {
-                this.onstatewalk();
+                this.setStyleWalk();
             } else if(this.hasState("crouch")) {
-                this.onstatecrouch();
+                this.setStyleCrouch();
             } else {
-                this.onstatestd();
+                this.setStyleStd();
             }
         }
         
         return this;
     }
     
-    onstatehurt() {
+    setStyleHurt() {
         if(this.faceSave === FRIGHT) {
             this.setAnimStyle("hurt-right");
         } else {
@@ -143,7 +139,7 @@ class PlayableCharacter extends Character {
         return this;
     }
     
-    onstateswim() {
+    setStyleSwim() {
         if(this.route[0] > this.getPositionM(0)) {
             this.faceSave = FRIGHT;
         } else if(this.route[0] < this.getPositionM(0)) {
@@ -159,7 +155,7 @@ class PlayableCharacter extends Character {
         return this;
     }
     
-    onstatewater() {
+    setStyleWater() {
         if(this.faceSave === FRIGHT) {
             this.setAnimStyle("water-right");
         } else {
@@ -169,7 +165,9 @@ class PlayableCharacter extends Character {
         return this;
     }
     
-    onstatewall(wallState) {
+    setStyleWall() {
+        let wallState = this.findState("wall");
+        
         if(wallState.side < 0) {
             this.setAnimStyle("cling-right");
         } else if(wallState.side > 0) {
@@ -179,7 +177,7 @@ class PlayableCharacter extends Character {
         return this;
     }
     
-    onstatejump() {
+    setStyleJump() {
         /**
         if(this.route[0] > this.getPositionM(0)) {
             this.faceSave = "right";
@@ -196,7 +194,7 @@ class PlayableCharacter extends Character {
         return this;
     }
     
-    onstatefall() {
+    setStyleFall() {
         /**
         if(this.route[0] > this.getPositionM(0)) {
             this.faceSave = "right";
@@ -213,7 +211,7 @@ class PlayableCharacter extends Character {
         return this;
     }
     
-    onstatewalk() {
+    setStyleWalk() {
         // if(this.route[0] > this.getPositionM(0)) {
         if(this.speed[0] > 0) {
             this.faceSave = FRIGHT;
@@ -269,7 +267,7 @@ class PlayableCharacter extends Character {
         return this;
     }
     
-    onstatecrouch() {
+    setStyleCrouch() {
         if(this.faceSave === FRIGHT) {
             this.setAnimStyle("crouch-right");
         } else {
@@ -279,7 +277,7 @@ class PlayableCharacter extends Character {
         return this;
     }
     
-    onstatestd() {
+    setStyleStd() {
         if(this.faceSave === FRIGHT) {
             this.setAnimStyle("std-right");
         } else {
@@ -293,7 +291,6 @@ class PlayableCharacter extends Character {
 class ComposedAction extends Action {
     constructor() {
         super();
-        this.setId("composedAction");
         
         this.actions = [];
     }

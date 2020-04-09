@@ -1,21 +1,8 @@
 
-var actionid = -1;
-const ACT_JUMP = ++actionid;
-const ACT_TELEPORT = ++actionid;
-const ACT_PROJECTILE = ++actionid;
-const ACT_TARGETATTACK = ++actionid;
-const ACT_MOVEMENT = ++actionid;
-
-const AC = {};
-
-function getActionClass(actionId) {
-    if(AC.hasOwnProperty(actionId)) {
-        return AC[actionId];
-    }
+function actionClass_forName(className) {
+    const actionClass = class_forName(className);
     
-    console.warn(actionId + " not registered in AC.");
-    
-    return Action;
+    return class_extends(actionClass, Action) ? actionClass : Action;
 }
 
 /**
@@ -36,7 +23,6 @@ class Action {
     constructor() {
         this.user = null;
         this.phase = 0;
-        this.id = -1;
         this.useCost = 0;
         this.order = 0;
         
@@ -44,6 +30,8 @@ class Action {
         this.phaseLimit = 255;
         
         this.removable = true;
+        
+        this.className = this.constructor.name;
     }
     
     getUser() {
@@ -66,16 +54,6 @@ class Action {
         if(this.phase > this.phaseLimit) {
             this.phase = this.phaseLimit;
         }
-        
-        return this;
-    }
-    
-    getId() {
-        return this.id;
-    }
-    
-    setId(id) {
-        this.id = id;
         
         return this;
     }
@@ -115,11 +93,15 @@ class Action {
     }
     
     end(endId = 0) {
-        if(this.user != null && this.isRemovable()) {
+        if(this.endId === undefined && this.isRemovable()) {
+            const user = this.user;
+        
             this.endId = endId;
-            this.onend();
             
-            var user = this.user;
+            if(user != null) {
+                this.onend();
+            }
+            
             this.user = null;
             
             if(user != null) {
@@ -143,22 +125,18 @@ class Action {
     }
     
     preventsAddition(action) {
-        return this.id === action.id;
+        return this.getClassName() === action.getClassName();
     }
     
     isRemovable() {return this.removable;}
     setRemovable(removable) {this.removable = removable; return this;}
     
-    matchId(id) {
-        return this.id === id;
-    }
-    
-    sharesId(action) {
-        return action instanceof Action && this.id === action.id;
-    }
-    
     hasEnded() {
         return this.endId !== undefined;
+    }
+    
+    getClassName() {
+        return this.className;
     }
 }
 
@@ -166,7 +144,9 @@ const busyBannedActions = new SetArray();
 
 class BusyAction extends Action {
     onadd() {
-        this.user.removeActionsWithId(ACT_MOVEMENT);
+        this.user.removeActions(function(action) {
+            return busyBannedActions.includes(action.constructor);
+        });
         
         return this;
     }

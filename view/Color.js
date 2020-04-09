@@ -333,15 +333,13 @@ function colorVector_brighten(colorVector, value) {
 }
 
 function makeRandomSaturatedColor() {
-    let color = [
+    const color = [
         irandom(191, 255),
         irandom(0, 255),
         irandom(0, 63)
     ];
     
-    array_swap(color, 0, irandom(0, 2));
-    array_swap(color, 1, irandom(0, 2));
-    array_swap(color, 2, irandom(0, 2));
+    array_shuffle(color);
     
     color[3] = 1;
     

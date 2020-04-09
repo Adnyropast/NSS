@@ -74,7 +74,7 @@ function entityShake(entity, duration) {
             name: "shake",
             positionM: entity.getPositionM(),
             timeout: duration,
-            vector: Vector.fromAngle(random(0, 2*Math.PI)).normalize(rectangle_averageSize(entity)/16)
+            vector: Vector.fromAngle(random(0, 2*Math.PI)).normalize(entityShake.intensity * rectangle_averageSize(entity))
         };
         
         entity.addStateObject(state);
@@ -86,7 +86,15 @@ function entityShake(entity, duration) {
     }
     
     state.saveSpeed = Vector.from(entity.speed);
+    
+    entityShake.reset();
 }
+
+entityShake.intensity = 1/16;
+
+entityShake.reset = function reset() {
+    this.intensity = 1/16;
+};
 
 /**
  *

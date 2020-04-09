@@ -103,11 +103,7 @@ class Camera extends Entity {
         
         this.accVal = 4;
         
-        this.addActset(AS_MOVEMENT);
-        
         this.addInteraction(new CameraReplaceRecipient());
-        
-        this.movementTo = (new MovementTo(this.accVal)).setUseCost(0);
         
         this.range = Math.pow(2, 10.15);// Math.pow(2, 9) + Math.pow(2, 8);
         this.direction = new Vector(0, 0, this.range);
@@ -330,8 +326,6 @@ class CameraBoundary extends Entity {
     }
 }
 
-EC["cameraBoundary"] = CameraBoundary;
-
 function gaussianElimination(matrix) {
     // Square matrix
     
@@ -361,20 +355,19 @@ function gaussianElimination(matrix) {
     return matrix;
 }
 
-EC["cameraBoundaryAround"] = class CameraBoundaryAround extends EntityAround {
+class CameraBoundaryAround extends EntityAround {
     constructor() {
         super(...arguments);
         
         this.entityClass = CameraBoundary;
     }
-};
+}
 
 /**
 
 class FollowMe extends Action {
     constructor() {
         super();
-        this.setId("followMe");
     }
     
     use() {

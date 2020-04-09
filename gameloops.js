@@ -178,6 +178,10 @@ class GameLoop {
         
         return this;
     }
+    
+    onresume() {
+        return this;
+    }
 }
 
 class WorldLoop extends GameLoop {
@@ -283,6 +287,10 @@ class WorldLoop extends GameLoop {
     
     draw() {
         return super.draw(this.loadedDrawables);
+    }
+    
+    onresume() {
+        return this;
     }
 }
 
@@ -419,6 +427,10 @@ class BattleLoop extends GameLoop {
         
         return priorityTies;
     }
+    
+    onresume() {
+        return this;
+    }
 }
 
 class EscapeLoop extends GameLoop {
@@ -466,6 +478,10 @@ class EscapeLoop extends GameLoop {
         
         this.pathsItemIndexes[inventoryPath] = itemIndex;
         
+        return this;
+    }
+    
+    onresume() {
         return this;
     }
 }
@@ -966,7 +982,7 @@ function engageBattle(battlers = EMPTYSET) {
     BATTLELOOP.sortBattlers();
     
     addEntity(BATTLELOOP.camera);
-    addEntity(new EC["skyDecoration"]([0, 0], [640, 360]));
+    addEntity(new SkyDecoration([0, 0], [640, 360]));
     const ground0 = new Entity([-640, BATTLEMAXY2], [1280, 360]);
     ground0.getDrawable()
     .setZIndex(+0.5)
@@ -1215,7 +1231,7 @@ function escapeMenu() {
                     try {
                         let data = JSON.parse(decodeURIComponent(escape(atob(b64))));
                         
-                        INVENTORY = IC["inventory"].fromData(data);
+                        INVENTORY = Inventory.fromData(data);
                     } catch(error) {
                         
                     }
@@ -1360,6 +1376,7 @@ var gamePace = WORLD_PACE;
 
 function switchPhase(phase) {
     gamePhase = phase;
+    gamePhase.onresume();
 }
 
 let gameLoop;

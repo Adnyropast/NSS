@@ -1,5 +1,5 @@
 
-const AS_CHARACTER = set_gather(AS_FOCUS, "followMe", AS_MOVEMENT, AS_ROUTE, AS_JUMP, "stunState", "smoke", "regeneration");
+const AS_CHARACTER = set_gather(AS_FOCUS, "FollowMe", AS_MOVEMENT, AS_JUMP, "StunState", "Smoke", "Regeneration");
 
 class Character extends Entity {
     constructor(position, size) {
@@ -24,8 +24,6 @@ class Character extends Entity {
         
         this.setBattler(Battler.fromEntity(this));
         
-        this.addActset(AS_CHARACTER);
-        
         this.addInteraction(new ContactVanishActor(CVF_CHARACTER));
         
         this.addInteraction(new WallRecipient());
@@ -35,33 +33,12 @@ class Character extends Entity {
         this.faceSave = FRIGHT;
         
         this.setStats({
-            "walk-speed": {
-                "real": 0.5,
-                "effective": 0.5,
-                "effectiveLock": false
-            },
-            "walk-speed-tired": {
-                // "real": 0.25,
-                "real": 0.5,
-                "effective": 0.5,
-                "effectiveLock": false
-            },
-            "air-speed": {
-                "real": 0.5,
-                "effective": 0.5,
-                "effectiveLock": false
-            },
-            "swim-speed": {
-                "real": 0.5,
-                "effective": 0.5,
-                "effectiveLock": false
-            },
+            "walk-speed": new ScaleValue(0.5),
+            "walk-speed-tired": new ScaleValue(0.5),
+            "air-speed": new ScaleValue(0.5),
+            "swim-speed": new ScaleValue(0.5),
             
-            "climb-speed": {
-                "real": 1,
-                "effective": 1,
-                "effectiveLock": false
-            },
+            "climb-speed": new ScaleValue(1),
             // "jump-force": 1.875,
             "jump-force": 1.5,
             "regeneration": 0.0625,
@@ -108,6 +85,32 @@ class Character extends Entity {
             .getDrawable()
             .setStyle(new ColorTransition(CV_WHITE, [0, 0, 0, 0], 48, powt(1/4)));
         });
+        
+        this.actionParams["MouseFocus"] = {};
+        this.actionParams["MoveFocus"] = {};
+        this.actionParams["TargetFocus"] = {};
+        
+        this.actionParams["Movement"] = {};
+        this.actionParams["WallCling"] = {};
+        this.actionParams["Crouch"] = {
+            "regeneration": 0
+        };
+        this.actionParams["LookUp"] = {};
+        this.actionParams["MovementLeft"] = {};
+        this.actionParams["MovementUp"] = {};
+        this.actionParams["MovementRight"] = {};
+        this.actionParams["MovementDown"] = {};
+        this.actionParams["Still"] = {};
+        
+        this.actionParams["Jump"] = {
+            "power": 1.5
+        };
+        this.actionParams["AutoJump"] = {};
+        this.actionParams["WallJump"] = {};
+        this.actionParams["MidairJump"] = {};
+        this.actionParams["EnergyJump"] = {};
+        
+        this.actionParams["StunState"] = {};
     }
     
     static fromData(data) {
@@ -223,6 +226,15 @@ class Character extends Entity {
         this.replaceStateObject({name:"midairJump", count:this.stats["midairJump-count"]});
         
         return this;
+    }
+    
+    getData() {
+        const data = super.getData();
+        
+        data.stats = this.stats;
+        data.energy = this.getEnergy();
+        
+        return data;
     }
 }
 

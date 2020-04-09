@@ -3,13 +3,13 @@ chapters["the_endless_maze"] = {
     "playerPositionM": [0, 0],
     "startMap": "0",
     "maps": {},
-    "protagonistClassId": "haple"
+    "protagonistClassName": "Haple"
 };
 
 chapters["the_endless_maze"].maps["0"] = {
     "camera": {"positionM": [0, 0]},
     "variable_entities": [
-        {"classId": "mazeGenerator"}
+        {"className": "MazeGenerator"}
     ]
 };
 
@@ -128,7 +128,7 @@ class MazeLevelBuilder {
         
         const boundaryWidth = Math.max(this.actualMazeSize[0], DEF_CAMSIZE[0]);
         const boundaryHeight = Math.max(this.actualMazeSize[1], DEF_CAMSIZE[1]);
-        this.mapState.variable_entities.push({"classId": "cameraBoundaryAround", "position": [0, 0], "size": [boundaryWidth, boundaryHeight]});
+        this.mapState.variable_entities.push({"className": "CameraBoundaryAround", "position": [0, 0], "size": [boundaryWidth, boundaryHeight]});
         
         // 
         
@@ -158,7 +158,7 @@ class MazeLevelBuilder {
             /**/
             
             this.mapState.variable_entities.push({
-                "classId": "mazeGroundArea",
+                "className": "MazeGroundArea",
                 "position": [0, 0],
                 "size": this.actualMazeSize
             });
@@ -168,7 +168,7 @@ class MazeLevelBuilder {
             for(let x = 0; x < this.actualMazeSize[0]; x += this.fullCellSize[0]) {
                 for(let y = 0; y < this.actualMazeSize[1]; y += this.fullCellSize[1]) {
                     this.mapState.variable_entities.push({
-                        "classId": "mazeGroundArea",
+                        "className": "MazeGroundArea",
                         "position": [x, y],
                         "size": this.fullCellSize
                     });
@@ -178,36 +178,36 @@ class MazeLevelBuilder {
             /**/
             
             this.mapState.variable_entities.push({
-                "classId": "sunlightDecoration",
+                "className": "SunlightDecoration",
                 "position": [0, 0]
             });
         }
         
         else if(this.mode === "sideways") {
             this.mapState.variable_entities.push({
-                "classId": "sidewaysSetter",
+                "className": "SidewaysSetter",
                 "position": [0, 0],
                 "size": this.actualMazeSize
             });
             this.mapState.variable_entities.push({
-                "classId": "skyDecoration",
+                "className": "SkyDecoration",
                 "position": [0, 0],
                 "size": this.actualMazeSize
             });
             this.mapState.variable_entities.push({
-                "classId": "sunlightDecoration",
+                "className": "SunlightDecoration",
                 "position": [0, 0]
             });
         }
         
         else if(this.mode === "sideways-water") {
             this.mapState.variable_entities.push({
-                "classId": "waterArea",
+                "className": "WaterArea",
                 "position": [0, 0],
                 "size": this.actualMazeSize
             });
             this.mapState.variable_entities.push({
-                "classId": "sunlightDecoration",
+                "className": "SunlightDecoration",
                 "position": [0, 0]
             });
         }
@@ -232,7 +232,7 @@ class MazeLevelBuilder {
         
         if(this.mode === "sideways" && !(this.cell.walls & 8)) {
             this.mapState.variable_entities.push({
-                "classId": "softPlatform",
+                "className": "SoftPlatform",
                 "positionM": [
                     this.cX + this.fullCellSize[0]/2,
                     this.cY + this.fullCellSize[1] - this.wallSize[1] + 4
@@ -259,14 +259,14 @@ class MazeLevelBuilder {
             this.cY + this.wallSize[1] + Math.floor(Math.random() * (this.cellSize[1] - enemySize[1]))
         ];
         
-        let classId = "enemy";
+        let className = "Enemy";
         
         if(irandom(0, 1) === 0) {
-            classId = "sniperEnemy";
+            className = "SniperEnemy";
         }
         
         this.mapState.variable_entities.push({
-            "classId": classId,
+            "className": className,
             "position": enemyPosition,
             "size": enemySize
         });
@@ -301,7 +301,7 @@ class MazeLevelBuilder {
                 // console.log("Generating a door with nextmapname: " + nextMapName);
                 
                 const doorData = {
-                    "classId": "mazeExit",
+                    "className": "MazeExit",
                     "position": [
                         this.cX + this.wallSize[0] + Math.floor(Math.random() * (this.cellSize[0] - doorSize[0])),
                         this.cY + this.wallSize[1] + Math.floor(Math.random() * (this.cellSize[1] - doorSize[1]))
@@ -317,7 +317,7 @@ class MazeLevelBuilder {
                 chapter.maps[nextMapName] = {
                     "camera": {"positionM": [0, 0]},
                     "variable_entities": [
-                        {"classId": "mazeGenerator", "previousMapName": chapter.lastMap, "entrancePositionM": Vector.addition(doorData.position, Vector.division(doorData.size, 2))}
+                        {"className": "MazeGenerator", "previousMapName": chapter.lastMap, "entrancePositionM": Vector.addition(doorData.position, Vector.division(doorData.size, 2))}
                     ]
                 };
             }
@@ -337,7 +337,7 @@ class MazeLevelBuilder {
             ];
             
             this.mapState.variable_entities.push({
-                "classId": "mazeWall",
+                "className": "MazeWall",
                 position: wallPosition,
                 size: wallSize
             });
@@ -357,7 +357,7 @@ class MazeLevelBuilder {
             ];
             
             this.mapState.variable_entities.push({
-                "classId": "mazeWall",
+                "className": "MazeWall",
                 position: wallPosition,
                 size: wallSize
             });
@@ -377,7 +377,7 @@ class MazeLevelBuilder {
             ];
             
             this.mapState.variable_entities.push({
-                "classId": "mazeWall",
+                "className": "MazeWall",
                 position: wallPosition,
                 size: wallSize
             });
@@ -397,7 +397,7 @@ class MazeLevelBuilder {
             ];
             
             this.mapState.variable_entities.push({
-                "classId": "mazeWall",
+                "className": "MazeWall",
                 position: wallPosition,
                 size: wallSize
             });
@@ -412,14 +412,14 @@ class MazeLevelBuilder {
                     this.cY + this.wallSize[1] + random(0, this.cellSize[1] - 16)
                 ];
                 
-                let classId = "grassPatch";
+                let className = "GrassPatch";
                 
                 if(irandom(0, 1)) {
-                    classId = "topdownTree";
+                    className = "TopdownTree";
                 }
                 
                 this.mapState.variable_entities.push({
-                    "classId": classId,
+                    "className": className,
                     "position": position
                 });
             }

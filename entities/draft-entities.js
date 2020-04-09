@@ -42,8 +42,6 @@ class Obstacle extends ActorCollidable {
     }
 }
 
-EC["obstacle"] = Obstacle;
-
 class Braker extends ActorCollidable {
     constructor(position, size, otherBrake = 1) {
         super(position, size);
@@ -53,8 +51,6 @@ class Braker extends ActorCollidable {
         this.addInteraction(new BrakeActor(otherBrake));
     }
 }
-
-EC["braker"] = Braker;
 
 class ForceField extends ActorCollidable {
     constructor(position, size, force = [0, 0]) {
@@ -66,9 +62,7 @@ class ForceField extends ActorCollidable {
     }
 }
 
-EC["forceField"] = ForceField;
-
-class GravityField extends EC["forceField"] {
+class GravityField extends ForceField {
     constructor(position, size, force = [0, +0.25]) {
         super(position, size, force);
         
@@ -79,9 +73,7 @@ class GravityField extends EC["forceField"] {
     }
 }
 
-EC["gravityField"] = GravityField;
-
-class Ground extends EC["obstacle"] {
+class Ground extends Obstacle {
     constructor(position, size) {
         super(position, size);
         // this.ground = true;
@@ -98,15 +90,11 @@ class Ground extends EC["obstacle"] {
     canMergeWith(entity) {return true;}
 }
 
-EC["ground"] = Ground;
-
 class MovingObstacle extends Ground {
     constructor(position, size) {
         super(position, size);
     }
 }
-
-EC["movingObstacle"] = MovingObstacle;
 
 class Bouncer extends Ground {
     constructor(position, size) {
@@ -117,8 +105,6 @@ class Bouncer extends Ground {
     }
 }
 
-EC["bouncer"] = Bouncer;
-
 class Director extends Area {
     constructor(position, size, route = [0, 0]) {
         super(position, size);
@@ -126,8 +112,6 @@ class Director extends Area {
         this.addInteraction(new DirectActor());
     }
 }
-
-EC["director"] = Director;
 
 class Hazard extends Ground {
     constructor(position, size) {
@@ -148,8 +132,6 @@ class Hazard extends Ground {
     }
 }
 
-EC["hazard"] = Hazard;
-
 class GroundArea extends Area {
     constructor(position, size) {
         super(position, size);
@@ -162,8 +144,6 @@ class GroundArea extends Area {
         this.addInteraction(new GroundAreaActor());
     }
 }
-
-EC["groundArea"] = GroundArea;
 
 class AirArea extends Area {
     constructor(position, size) {
@@ -179,8 +159,6 @@ class AirArea extends Area {
         this.addInteraction(new AirStateGranter());
     }
 }
-
-EC["airArea"] = AirArea;
 
 class WaterArea extends Area {
     constructor(position, size) {
@@ -198,8 +176,6 @@ class WaterArea extends Area {
         this.drawable.setZIndex(-10);
     }
 }
-
-EC["waterArea"] = WaterArea;
 
 class Target extends Entity {
     constructor(position, size) {
@@ -236,7 +212,7 @@ class Projectile extends Hitbox {
     }
 }
 
-EC["autoDoor"] = class AutoDoor extends Entity {
+class AutoDoor extends Entity {
     constructor(position, size, mapName = chapters[getCurrentChapter().chapterName].startMap, warpPositionM = chapters[getCurrentChapter().chapterName].playerPositionM) {
         super(position, size);
         
@@ -295,9 +271,9 @@ EC["autoDoor"] = class AutoDoor extends Entity {
         
         return this;
     }
-};
+}
 
-EC["lookupDoor"] = class LookupDoor extends EC["autoDoor"] {
+class LookupDoor extends AutoDoor {
     enableMapWarper()  {
         this.addInteraction(new LookupMapWarper(this.mapName, this.warpPositionM));
         
@@ -309,7 +285,7 @@ EC["lookupDoor"] = class LookupDoor extends EC["autoDoor"] {
         
         return this;
     }
-};
+}
 
 class Collectible extends Entity {
     constructor(position, size) {
@@ -319,7 +295,7 @@ class Collectible extends Entity {
     }
 }
 
-EC["ladder"] = class Ladder extends Entity {
+class Ladder extends Entity {
     constructor(position, size) {
         super(position, size);
         
@@ -332,9 +308,9 @@ EC["ladder"] = class Ladder extends Entity {
         this.getDrawable().setStyle(makeRepeatedTileFrom(IMG_ROPELADDER, this.getWidth(), this.getHeight()));
         makeRepeatedTileFrom.multiplier = 2;
     }
-};
+}
 
-EC["softPlatform"] = class SoftPlatform extends ActorCollidable {
+class SoftPlatform extends ActorCollidable {
     constructor(position, size) {
         super(position, size);
         
@@ -344,22 +320,20 @@ EC["softPlatform"] = class SoftPlatform extends ActorCollidable {
         this.addInteraction(new GroundActor());
         this.addInteraction(new SoftThrustRecipient());
     }
-};
+}
 
 class PitArea extends Area {
     constructor(position, size) {
         super(position, size);
         
-        this.addInteraction(new TypeDamager());
-        this.setStyle(makeStyledCanvas(makeCTile("#3F3F3F3F", "#0000007F", "FFFFFF3F"), this.getWidth(), this.getHeight()));
-        
         this.setTypeOffense("void", Infinity);
+        this.addInteraction(new TypeDamager());
+        
+        this.getDrawable().setStyle((new ColorTransition([63, 63, 63, 63/255], [0, 0, 0, 127/255], 32, powt(1/2))).setLoop(true));
     }
 }
 
-EC["pitArea"] = PitArea;
-
-EC["mazeGenerator"] = class MazeGenerator extends Entity {
+class MazeGenerator extends Entity {
     constructor(position, size) {
         super(position, size);
         this.mazeSize;
@@ -419,7 +393,7 @@ EC["mazeGenerator"] = class MazeGenerator extends Entity {
                 ];
                 
                 this.mapState.variable_entities.push({
-                    classId: "mazeEntrance",
+                    className: "MazeEntrance",
                     positionM: doorPositionM,
                     size: doorSize,
                     mapName: previousMapName,
@@ -429,7 +403,6 @@ EC["mazeGenerator"] = class MazeGenerator extends Entity {
                 // Previous map door/Exit.
                 
                 previousMap.variable_entities.forEach(function(data) {
-                    // if(data.classId === "mazeExit")
                     if(data.mapName === chapter.lastMap) {
                         data.warpPositionM = doorPositionM;
                     }
@@ -443,24 +416,26 @@ EC["mazeGenerator"] = class MazeGenerator extends Entity {
         
         return this;
     }
-};
+}
 
-EC["invisibleWall"] = class InvisibleWall extends ActorCollidable {
+class InvisibleWall extends ActorCollidable {
     constructor() {
         super(...arguments);
+        
+        this.order = +1;
         
         this.addInteraction(new ReplaceActor());
         this.addInteraction(new ContactVanishActor(CVF_OBSTACLE));
     }
-};
+}
 
-EC["sidewaysSetter"] = class SidewaysSetter extends Entity {
+class SidewaysSetter extends Entity {
     constructor() {
         super(...arguments);
         this.collidable = false;
         
-        this.gravityField = new EC["gravityField"](...arguments);
-        this.airArea = new EC["airArea"](...arguments);
+        this.gravityField = new GravityField(...arguments);
+        this.airArea = new AirArea(...arguments);
     }
     
     onadd() {
@@ -477,25 +452,25 @@ EC["sidewaysSetter"] = class SidewaysSetter extends Entity {
     }
 }
 
-EC["treeTrunk"] = class TreeTrunk extends EC["ground"] {
+class TreeTrunk extends Ground {
     constructor() {
         super(...arguments);
         
         this.drawable.setStyle(makeRepeatedTileFrom(IMG_TREETRUNK, this.getWidth(), this.getHeight()));
     }
-};
+}
 
-EC["treePlatform"] = class TreePlatform extends EC["softPlatform"] {
+class TreePlatform extends SoftPlatform {
     constructor(position, size = [64, 2]) {
         super(position, size);
         
         this.drawable.setStyle(makeRepeatedTileFrom(IMG_TREETRUNK, this.getWidth(), this.getHeight()));
     }
-};
+}
 
 const mazeWallCanvas = makeGradientCanvas(new ColorTransition(CV_WHITE, [127, 127, 127, 1]), 2, 2);
 
-class MazeWall extends EC["ground"] {
+class MazeWall extends Ground {
     constructor() {
         super(...arguments);
         
@@ -503,16 +478,14 @@ class MazeWall extends EC["ground"] {
     }
 }
 
-EC["mazeWall"] = MazeWall;
-
-EC["invisibleWallAround"] = class InvisibleWallAround extends EntityAround {
+class InvisibleWallAround extends EntityAround {
     constructor() {
         super(...arguments);
-        this.entityClass = EC["invisibleWall"];
+        this.entityClass = InvisibleWall;
     }
-};
+}
 
-EC["breakableWood"] = class BreakableWood extends EC["treeTrunk"] {
+class BreakableWood extends TreeTrunk {
     constructor() {
         super(...arguments);
         
@@ -558,9 +531,9 @@ EC["breakableWood"] = class BreakableWood extends EC["treeTrunk"] {
     }
     
     canMergeWith(entity) {return false;}
-};
+}
 
-EC["mazeGroundArea"] = class MazeGroundArea extends GroundArea {
+class MazeGroundArea extends GroundArea {
     constructor() {
         super(...arguments);
         
@@ -571,7 +544,7 @@ EC["mazeGroundArea"] = class MazeGroundArea extends GroundArea {
         this.drawable.setStyle(makeRepeatedTileFrom(IMG_GRASSTILE, this.getWidth(), this.getHeight()));
         makeRepeatedTileFrom.multiplier = 2;
     }
-};
+}
 
 class TrailerEntity extends Entity {
     constructor() {
@@ -700,23 +673,23 @@ class TextBubble extends Entity {
     }
 }
 
-EC["mazeExit"] = class MazeExit extends EC["autoDoor"] {
+class MazeExit extends AutoDoor {
     constructor() {
         super(...arguments);
         
         this.getDrawable().setStyle("#FF7FFFBF");
     }
-};
+}
 
-EC["mazeEntrance"] = class MazeEntrance extends EC["autoDoor"] {
+class MazeEntrance extends AutoDoor {
     constructor() {
         super(...arguments);
         
         this.getDrawable().setStyle("#7FFFFFBF");
     }
-};
+}
 
-EC["topdownTree"] = class TopdownTree extends Obstacle {
+class TopdownTree extends Obstacle {
     constructor(position, size = [8, 8]) {
         super(position, size);
         
@@ -735,7 +708,7 @@ EC["topdownTree"] = class TopdownTree extends Obstacle {
         this.items = [];
         
         for(let i = 0, count = irandom(1, 4); i < count; ++i) {
-            this.items.push(new IC["apple"]());
+            this.items.push(new Apple());
         }
         
         const drawable = new RectangleDrawable(this.position, [56, 56]);
@@ -778,4 +751,4 @@ EC["topdownTree"] = class TopdownTree extends Obstacle {
         
         return this;
     }
-};
+}

@@ -1,5 +1,5 @@
 
-const LGRID = 8;
+let LGRID = 8;
 
 function roundTo(value, grid = LGRID) {
     return Math.round(value / grid) * grid;
@@ -34,7 +34,6 @@ class LCreated extends Entity {
 class LCreate extends Action {
     constructor() {
         super();
-        this.setId("lcreate");
         
         this.roundFocus = new RoundFocus();
     }
@@ -124,7 +123,6 @@ class LMove extends Action {
 class LDelete extends Action {
     constructor() {
         super();
-        this.setId("ldelete");
     }
     
     use() {
@@ -139,7 +137,6 @@ class LDelete extends Action {
 class RoundFocus extends Action {
     constructor() {
         super();
-        this.id = "roundFocus";
         this.order = -0.5;
     }
     
@@ -157,7 +154,6 @@ class RoundFocus extends Action {
 class LSelect extends Action {
     constructor() {
         super();
-        this.setId("lselect");
     }
     
     use() {
@@ -202,7 +198,7 @@ function rsAddEntity(rectangle) {
 }
 
 function rsJSON(rectangle) {
-    return '{"classId" : "lcreated", "position" : [' + rectangle.position.join(", ") + '], "size" : [' + rectangle.size.join(", ") + ']}';
+    return '{"className": "' + rectangle.constructor.name + '", "position": [' + rectangle.position.join(", ") + '], "size": [' + rectangle.size.join(", ") + ']}';
 }
 
 function getCreatedMap(rectangles = CREATED_RECTANGLES, rsFunction = rsJSON) {
@@ -224,7 +220,6 @@ function getCreatedMap(rectangles = CREATED_RECTANGLES, rsFunction = rsJSON) {
 class LPlace extends Action {
     constructor() {
         super();
-        this.setId("lplace");
         
         this.entity = new Entity([NaN, NaN], [16, 16]);
     }
@@ -247,16 +242,14 @@ class LPlace extends Action {
     }
 }
 
-AC["lcreate"] = LCreate;
-AC["ldelete"] = LDelete;
-AC["lselect"] = LSelect;
-AC["lplace"] = LPlace;
-AC["lresize"] = LResize;
+let placeClass = Ground;
+let lgrid = LGRID;
+let lgridX = 16;
+let lgridY = 16;
 
 class AutoLCreate extends Action {
     constructor() {
         super();
-        this.setId("autoLcreate");
         
         this.area = new LCreated([NaN, NaN], [0, 0]);
     }
@@ -276,11 +269,7 @@ class AutoLCreate extends Action {
     }
     
     onend() {
-        // for(let dim = 0; dim < cursorPosition.length; ++dim) {
-            // cursorPosition[dim] = roundTo(cursorPosition[dim]);
-        // }
-        
-        let lgrid = 16;
+        // 
         
         let minX = roundTo(this.area.getX1(), lgrid);
         let minY = roundTo(this.area.getY1(), lgrid);
@@ -288,28 +277,39 @@ class AutoLCreate extends Action {
         let maxY = roundTo(this.area.getY2(), lgrid);
         
         if(maxX < minX) {
-            let x = minX;
+            const x = minX;
             minX = maxX;
             maxX = x;
-        } if(maxY < minY) {
-            let x = minY;
+        }
+        
+        if(maxY < minY) {
+            const x = minY;
             minY = maxY;
             maxY = x;
         }
         
-        for(let x = minX; x < maxX; x += lgrid) {
-            for(let y = minY; y < maxY; y += lgrid) {
-                let rectangle = new LCreated([x, y], [lgrid, lgrid]);
-                
-                CREATED_RECTANGLES.add(rectangle);
-                addEntity(rectangle);
+        // 
+        
+        if((new placeClass()).canMergeWith()) {
+            const rectangle = new placeClass([minX, minY], [maxX - minX, maxY - minY]);
+            CREATED_RECTANGLES.add(rectangle);
+            addEntity(rectangle);
+        } else {
+            for(let x = minX; x < maxX; x += lgrid) {
+                for(let y = minY; y < maxY; y += lgrid) {
+                    const rectangle = new placeClass([x, y], [lgrid, lgrid]);
+                    
+                    CREATED_RECTANGLES.add(rectangle);
+                    addEntity(rectangle);
+                }
             }
         }
         
-        if(maxX - minX < lgrid && maxY - minY < lgrid) {
-            console.log(minX, minY, maxX, maxY);
+        if(maxX - minX < lgridX && maxY - minY < lgrid) {
+            const x = roundTo(this.area.getXM() - lgrid/2, lgrid);
+            const y = roundTo(this.area.getYM() - lgrid/2, lgrid);
             
-            let rectangle = new LCreated([roundTo(this.area.getXM() - lgrid/2, lgrid), roundTo(this.area.getYM() - lgrid/2, lgrid)], [lgrid, lgrid]);
+            const rectangle = new placeClass([x, y], [lgrid, lgrid]);
             
             CREATED_RECTANGLES.add(rectangle);
             addEntity(rectangle);
@@ -324,7 +324,6 @@ class AutoLCreate extends Action {
 class AutoLDelete extends Action {
     constructor() {
         super();
-        this.setId("autoLdelete");
     }
     
     use() {
@@ -339,13 +338,9 @@ class AutoLDelete extends Action {
     }
 }
 
-AC["autoLcreate"] = AutoLCreate;
-AC["autoLdelete"] = AutoLDelete;
-
-AC["lSave"] = class LSave extends Action {
+class LSave extends Action {
     constructor() {
         super();
-        this.setId("lSave");
     }
     
     use() {

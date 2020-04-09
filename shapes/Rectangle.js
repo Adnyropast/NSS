@@ -1226,6 +1226,13 @@ class Rectangle {
         
         return p.collides(polygon);
     }
+    
+    getData() {
+        return {
+            position: this.position,
+            size: this.size
+        };
+    }
 }
 
 /**/

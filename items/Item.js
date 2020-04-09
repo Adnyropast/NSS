@@ -12,6 +12,8 @@ class Item {
         this.mainCommand = function() {};
         this.commands = {};
         this.stats = {};
+        
+        this.className = this.constructor.name;
     }
     
     static fromData(data) {
@@ -43,7 +45,7 @@ class Item {
     getData() {
         let date = this.date instanceof Date ? this.date.toJSON() : this.date;
         
-        return {classId : item_getClassId(this), date : date, id : this.id};
+        return {className: this.getClassName(), date: date, id: this.id};
     }
     
     toJSON() {return this.getData();}
@@ -51,7 +53,7 @@ class Item {
     setDate(date = new Date()) {this.date = date;}
     
     getImage() {
-        return IMGITEM[item_getClassId(this)];
+        return IMGITEM[this.getClassName()];
     }
     
     useCommand(commandName) {
@@ -72,6 +74,10 @@ class Item {
     
     static destroyComplicated() {
         
+    }
+    
+    getClassName() {
+        return this.className;
     }
 }
 
@@ -125,10 +131,6 @@ class WeaponItem extends Item {
     
 }
 
-const IC = {
-    "apple" : Apple
-};
-
 class PickableItem extends Entity {
     constructor() {
         super(...arguments);
@@ -143,7 +145,7 @@ class PickableItem extends Entity {
         this.addInteraction(new BrakeRecipient());
         this.addInteraction(new ReplaceRecipient());
         
-        this.itemClassId = "";
+        this.itemClassName = "";
     }
     
     onremove() {
@@ -162,28 +164,28 @@ class PickableItem extends Entity {
         return super.onremove();
     }
     
-    setItemClassId(itemClassId) {
-        this.itemClassId = itemClassId;
-        this.setItemImage(itemClassId);
+    setItemClassName(itemClassName) {
+        this.itemClassName = itemClassName;
+        this.setItemImage(itemClassName);
         
         return this;
     }
     
-    setItemImage(itemClassId) {
-        this.drawable.setStyle(IMGITEM[itemClassId]);
+    setItemImage(itemClassName) {
+        this.drawable.setStyle(IMGITEM[itemClassName]);
         
         return this;
     }
     
     addItem(item) {
         this.items.add(item);
-        this.setItemImage(item_getClassId(item));
+        this.setItemImage(item.getClassName());
         
         return this;
     }
 }
 
-IC["inventory"] = class InventoryItem extends Item {
+class Inventory extends Item {
     constructor() {
         super();
         
@@ -206,9 +208,10 @@ IC["inventory"] = class InventoryItem extends Item {
         // inventory.displayHeight = data.displayHeight;
         
         for(let i = 0; i < data.items.length; ++i) {
-            let itemData = data.items[i];
+            const itemData = data.items[i];
+            const itemClass = itemClass_forName(itemData.className);
             
-            inventory.items.push(IC[itemData.classId].fromData(itemData));
+            inventory.items.push(itemClass.fromData(itemData));
         }
         
         return inventory;
@@ -274,21 +277,9 @@ IC["inventory"] = class InventoryItem extends Item {
         
         return this;
     }
-};
-
-function item_getClassId(item) {
-    for(let i in IC) {
-        if(item.constructor === IC[i]) {
-            return i;
-        }
-    }
-    
-    console.warn(item.constructor.name, "not found in items list IC.");
-    
-    return "nf";
 }
 
-IC["characterIdentifier"] = class CharacterIdentifier extends Item {
+class CharacterIdentifier extends Item {
     constructor() {
         super();
         
@@ -306,7 +297,8 @@ IC["characterIdentifier"] = class CharacterIdentifier extends Item {
             removeEntity(PLAYERS[0].entity);
             
             let characterData = characterIdentifier.characterData;
-            let character = EC[characterData.classId].fromData(characterData);
+            const characterClass = entityClass_forName(characterData.className);
+            let character = characterClass.fromData(characterData);
             
             getCurrentChapter().playerIdPath = getCurrentChapter().inventoryPath + characterIdentifier.id + "/";
             setPlayer(character);
@@ -329,7 +321,6 @@ IC["characterIdentifier"] = class CharacterIdentifier extends Item {
     static fromData(data) {
         let characterIdentifier = super.fromData(data);
         
-        // characterIdentifier.character = EC[data.character.classId].fromData(data.character);
         characterIdentifier.characterData = data.character;
         
         return characterIdentifier;
@@ -338,7 +329,7 @@ IC["characterIdentifier"] = class CharacterIdentifier extends Item {
     static fromCharacter(character) {
         const characterIdentifier = new this();
         
-        characterIdentifier.characterData = getCharacterData(character);
+        characterIdentifier.characterData = character.getData();
         
         return characterIdentifier;
     }
@@ -352,11 +343,11 @@ IC["characterIdentifier"] = class CharacterIdentifier extends Item {
     }
     
     getImage() {
-        return IMGCHAR[this.characterData.classId]["icon"];
+        return IMGCHAR[this.characterData.className]["icon"];
     }
-};
+}
 
-IC["chapterIdentifier"] = class ChapterIdentifier extends Item {
+class ChapterIdentifier extends Item {
     constructor() {
         super();
         
@@ -427,9 +418,9 @@ IC["chapterIdentifier"] = class ChapterIdentifier extends Item {
         
         return data;
     }
-};
+}
 
-IC["controlsIdentifier"] = class ControlsIdentifier extends Item {
+class ControlsIdentifier extends Item {
     constructor() {
         super();
         
@@ -489,7 +480,7 @@ IC["controlsIdentifier"] = class ControlsIdentifier extends Item {
         
         return data;
     }
-};
+}
 
 function dropItems(position, items) {
     for(let i = 0; i < items.length; ++i) {
@@ -500,4 +491,10 @@ function dropItems(position, items) {
         
         addEntity(pickableItem);
     }
+}
+
+function itemClass_forName(className) {
+    const itemClass = class_forName(className);
+    
+    return class_extends(itemClass, Item) ? itemClass : Item;
 }

@@ -1,5 +1,5 @@
 
-const AS_FIRE = ["flamethrower","burningAttack"];
+const AS_FIRE = ["Flamethrower","BurningAttack"];
 
 class FireEffect extends Hitbox {
     constructor() {
@@ -49,7 +49,6 @@ class FireEffect extends Hitbox {
 class Flamethrower extends BusyAction {
     constructor() {
         super();
-        this.setId("flamethrower");
         
         this.setUseCost(4);
     }
@@ -85,8 +84,6 @@ class Flamethrower extends BusyAction {
         return this;
     }
 }
-
-AC["flamethrower"] = Flamethrower;
 
 class BurningHitbox extends Hitbox {
     constructor() {
@@ -168,7 +165,6 @@ class BurningHitbox extends Hitbox {
 class BurningAttack extends BusyAction {
     constructor() {
         super();
-        this.setId("burningAttack");
         
         this.setUseCost(16);
         this.saveTypeDamageable = null;
@@ -229,5 +225,3 @@ class BurningAttack extends BusyAction {
         return super.onend();
     }
 }
-
-AC["burningAttack"] = BurningAttack;

@@ -2,7 +2,6 @@
 class Regeneration extends Action {
     constructor(value = 0) {
         super();
-        this.setId("regeneration");
         
         this.value = value;
     }
@@ -15,7 +14,6 @@ class Regeneration extends Action {
     
     allowsReplacement(action) {
         return false;
-        // return action.getId() == "regeneration";
     }
     
     preventsAddition(action) {return false;}

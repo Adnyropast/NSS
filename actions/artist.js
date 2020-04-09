@@ -1,18 +1,9 @@
 
-const AS_ARTIST = set_gather("brushSlash", "paintBomb", "paintSpray");
-
-class PaintDroplet extends WaterDroplet {
-    constructor() {
-        super(...arguments);
-        
-        this.drawable.setStyle(MultiColorTransition.from(CT_RAINBOW).setDuration(24).setStep(irandom(0, 23)));
-    }
-}
+const AS_ARTIST = set_gather("BrushSlash", "PaintBomb", "PaintSpray");
 
 class BrushSlash extends SlashAction {
     constructor() {
         super();
-        this.setId("brushSlash");
         
         this.trailDrawable.trailStyle = MultiColorTransition.from(CT_RAINBOW).setDuration(12);
         this.trailDrawable.curveFunction = powt(1/4);
@@ -67,8 +58,6 @@ class BrushSlash extends SlashAction {
     }
 }
 
-AC["brushSlash"] = BrushSlash;
-
 class PaintBombEntity extends Hitbox {
     constructor() {
         super(...arguments);
@@ -111,7 +100,6 @@ class PaintBombEntity extends Hitbox {
 class PaintBomb extends BusyAction {
     constructor() {
         super();
-        this.setId("paintBomb");
     }
     
     use() {
@@ -131,8 +119,6 @@ class PaintBomb extends BusyAction {
         return this;
     }
 }
-
-AC["paintBomb"] = PaintBomb;
 
 class PaintCloud extends Hitbox {
     constructor(position, size) {
@@ -185,7 +171,6 @@ class PaintCloud extends Hitbox {
 class PaintSpray extends BusyAction {
     constructor() {
         super();
-        this.setId("paintSpray");
     }
     
     use() {
@@ -204,5 +189,3 @@ class PaintSpray extends BusyAction {
         return this;
     }
 }
-
-AC["paintSpray"] = PaintSpray;

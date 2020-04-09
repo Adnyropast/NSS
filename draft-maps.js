@@ -1,18 +1,6 @@
 
 // 
 
-function makeEntityFromData(entityData) {
-    let entityClass = Entity;
-    
-    if(EC.hasOwnProperty(entityData.classId)) {
-        entityClass = EC[entityData.classId];
-    } else {
-        console.warn(entityData.classId + " not registered in EC.");
-    }
-    
-    return entityClass.fromData(object_clone(entityData));
-}
-
 function makeNewMapState(map) {
     let camera = undefined;
     
@@ -265,7 +253,7 @@ function stringToMaps(string, width = 32, height = 18) {
                 ++y;
                 x = -1;
             } else if(str.charAt(j) !== '-') {
-                maps[i].push({classId : str.charAt(j), position : [16*x, 16*y], size : [16, 16]});
+                maps[i].push({className : str.charAt(j), position : [16*x, 16*y], size : [16, 16]});
             }
             
             ++x;
@@ -285,7 +273,8 @@ function makeNewChapter(chapterName) {
     if(chapters.hasOwnProperty(chapterName)) {
         const chapter = chapters[chapterName];
         
-        const characterIdentifier = IC["characterIdentifier"].fromCharacter(new EC[chapter.protagonistClassId]());
+        const characterClass = entityClass_forName(chapter.protagonistClassName);
+        const characterIdentifier = CharacterIdentifier.fromCharacter(new characterClass());
         INVENTORY.addItem(characterIdentifier);
         
         const chapterData = {

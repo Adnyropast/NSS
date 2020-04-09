@@ -1371,3 +1371,25 @@ function makeOvalPath(pointsCount, radius1, radius2) {
     
     return points;
 }
+
+function makeSimpleStarPolygon(count = 5, minDistance = 8, maxDistance = 16) {
+    const polygon = new Polygon();
+    
+    for(let i = 0; i < count; ++i) {
+        const angle = i/count * 2*Math.PI;
+        
+        polygon.push([
+            maxDistance * Math.cos(angle),
+            maxDistance * Math.sin(angle)
+        ]);
+        
+        const angle2 = (i+0.5)/count * 2*Math.PI;
+        
+        polygon.push([
+            minDistance * Math.cos(angle2),
+            minDistance * Math.sin(angle2)
+        ]);
+    }
+    
+    return polygon;
+}

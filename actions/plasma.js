@@ -1,5 +1,5 @@
 
-const AS_PLASMA = set_gather("plasmaLightning");
+const AS_PLASMA = set_gather("PlasmaLightning");
 
 class PlasmaEffect extends Hitbox {
     constructor() {
@@ -37,7 +37,6 @@ class PlasmaEffect extends Hitbox {
 class PlasmaLightning extends BusyAction {
     constructor() {
         super();
-        this.setId("plasmaLightning");
         
         this.maxRange = 128;
         this.setUseCost(12);
@@ -84,5 +83,3 @@ class PlasmaLightning extends BusyAction {
         return this;
     }
 }
-
-AC["plasmaLightning"] = PlasmaLightning;

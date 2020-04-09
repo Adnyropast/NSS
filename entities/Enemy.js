@@ -1,6 +1,4 @@
 
-const ENETRA_ENEMY = new ColorTransition([0, 255, 255, 1], [255, 0, 255, 1]);
-
 class Enemy extends Character {
     constructor(position, size) {
         super(position, size).setStyle("#7F007F");
@@ -13,9 +11,6 @@ class Enemy extends Character {
         this.cursorDistance = 256;
         
         this.energyBar.setEnergyTransition(ENETRA_ENEMY);
-        
-        this.addActset("enemyCharge");
-        this.removeActset("crouch");
         
         this.addInteraction(new ThrustActor(0.25));
         
@@ -51,6 +46,9 @@ class Enemy extends Character {
             
             entityExplode(12, EnemyVanishParticle, positionM, size, 6);
         });
+        
+        this.actionParams["EnemyCharge"] = {};
+        this.actionParams["EnemySnipe"] = {};
     }
     
     onadd() {
@@ -73,8 +71,6 @@ class Enemy extends Character {
         return super.onremove();
     }
 }
-
-EC["enemy"] = Enemy;
 
 class EnemyVanishParticle extends Particle {
     constructor() {
@@ -111,7 +107,6 @@ class EnemyVanishParticle2 extends CharacterVanishParticle {
 class EnemyCharge extends BusyAction {
     constructor() {
         super();
-        this.setId("enemyCharge");
         
         this.hitbox = new Hitbox([0, 0], [0, 0]);
         this.hitbox.addInteraction(new VacuumDragActor(-2));
@@ -182,7 +177,6 @@ class SniperProjectile extends Hitbox {
 class EnemySnipe extends BusyAction {
     constructor() {
         super();
-        this.setId("enemySnipe");
     }
     
     use() {
@@ -207,7 +201,6 @@ class SniperEnemy extends Enemy {
     constructor() {
         super(...arguments);
         
-        this.addActset("enemySnipe");
         this.controllers.clear().add(function() {
             var targets = [];
             
@@ -251,5 +244,3 @@ class SniperEnemy extends Enemy {
         });
     }
 }
-
-EC["sniperEnemy"] = SniperEnemy;

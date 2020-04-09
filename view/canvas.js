@@ -262,3 +262,8 @@ function canvas_clear(canvas) {
     
     return canvas;
 }
+
+function canvas_setResolution(resolution = 80) {
+    CANVAS.width = resolution * 16;
+    CANVAS.height = resolution * 9;
+}

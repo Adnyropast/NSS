@@ -6,7 +6,7 @@ class Decoration extends Entity {
     }
 }
 
-EC["skyDecoration"] = class SkyDecoration extends Entity {
+class SkyDecoration extends Entity {
     constructor(position = [0, 0], size = [640, 360]) {
         super(position, size);
         
@@ -90,9 +90,9 @@ EC["skyDecoration"] = class SkyDecoration extends Entity {
     }
     
     /**/
-};
+}
 
-EC["sunlightDecoration"] = class SunlightDecoration extends Entity {
+class SunlightDecoration extends Entity {
     constructor(position = [0, 0], size = [640, 360]) {
         super(position, size);
         
@@ -127,23 +127,23 @@ EC["sunlightDecoration"] = class SunlightDecoration extends Entity {
         
         /**/
     }
-};
+}
 
-EC["treeBackground"] = class TreeBackground extends Entity {
+class TreeBackground extends Entity {
     constructor() {
         super(...arguments);
         
         this.drawable.setStyle(makeRepeatedTileFrom(IMG_TREEBACKGROUND, this.getWidth(), this.getHeight(), TILEWIDTH/2, 4.5/2*TILEWIDTH));
         this.drawable.setZIndex(+16);
     }
-};
+}
 
-EC["tree"] = class Tree extends Decoration {
+class Tree extends Decoration {
     constructor() {
         super(...arguments);
         this.setStyle(IMG_TREE);
     }
-};
+}
 
 class CloudDrawable extends MultiPolygonDrawable {
     constructor() {
@@ -205,7 +205,7 @@ class DarkerCloud extends Cloud {
     }
 }
 
-EC["moonlightDecoration"] = class MoonlightDecoration extends Entity {
+class MoonlightDecoration extends Entity {
     constructor(position = [0, 0], size = [640, 360]) {
         super(position, size);
         
@@ -229,9 +229,9 @@ EC["moonlightDecoration"] = class MoonlightDecoration extends Entity {
         
         this.drawable.setStyle(canvas);
     }
-};
+}
 
-EC["nightSkyDecoration"] = class NightSkyDecoration extends EC["skyDecoration"] {
+class NightSkyDecoration extends SkyDecoration {
     // constructor(position = [0, 0], size = [640, 360]) {
         // super(position, size);
     constructor() {
@@ -258,12 +258,12 @@ EC["nightSkyDecoration"] = class NightSkyDecoration extends EC["skyDecoration"] 
         
         /**/
     }
-};
+}
 
-EC["grassPatch"] = class GrassPatch extends Decoration {
+class GrassPatch extends Decoration {
     constructor(position, size = [16, 16]) {
         super(position, size);
         
         this.getDrawable().setStyle(IMG_GRASSPATCH);
     }
-};
+}

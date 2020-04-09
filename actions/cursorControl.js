@@ -1,5 +1,5 @@
 
-const AS_FOCUS = set_gather("holdFocus", "pressFocus", "mouseFocus", "moveFocus", "freeKeyFocus", "positionCursorTarget", "targetFocus");
+const AS_FOCUS = set_gather("HoldFocus", "PressFocus", "MouseFocus", "MoveFocus", "FreeKeyFocus", "PositionCursorTarget", "TargetFocus");
 
 class FocusAction extends Action {
     constructor() {
@@ -10,7 +10,6 @@ class FocusAction extends Action {
 class HoldFocus extends FocusAction {
     constructor() {
         super();
-        this.id = "holdFocus";
         this.order = -1;
     }
     
@@ -39,7 +38,6 @@ class HoldFocus extends FocusAction {
 class PressFocus extends FocusAction {
     constructor() {
         super();
-        this.id = "pressFocus";
         this.order = -1;
     }
     
@@ -59,14 +57,13 @@ class PressFocus extends FocusAction {
             this.end();
         }
         
-        return AS_FOCUS.includes(action.getId()) || super.preventsAddition(action);
+        return AS_FOCUS.includes(action.getClassName()) || super.preventsAddition(action);
     }
 }
 
 class MouseFocus extends FocusAction {
     constructor() {
         super();
-        this.id = "mouseFocus";
         this.order = -1;
         this.allowMoveFocus = false;
     }
@@ -88,14 +85,13 @@ class MouseFocus extends FocusAction {
     }
     
     preventsAddition(action) {
-        return action.getId() == "moveFocus" || super.preventsAddition(action);
+        return action instanceof MoveFocus || super.preventsAddition(action);
     }
 }
 
 class KeySteer extends Action {
     constructor() {
         super();
-        this.setId("keySteer");
     }
     
     use() {
@@ -112,7 +108,6 @@ class KeySteer extends Action {
 class MoveFocus extends FocusAction {
     constructor() {
         super();
-        this.id = "moveFocus";
         this.order = -1;
         
         this.keySteer = new KeySteer();
@@ -155,7 +150,7 @@ class MoveFocus extends FocusAction {
     }
     
     allowsReplacement(action) {
-        return AS_FOCUS.includes(action.getId()) && !(action instanceof MoveFocus);
+        return AS_FOCUS.includes(action.getClassName()) && !(action instanceof MoveFocus);
     }
     
     onend() {
@@ -168,7 +163,6 @@ class MoveFocus extends FocusAction {
 class FreeKeyFocus extends FocusAction {
     constructor() {
         super();
-        this.id = "freeKeyFocus";
         this.order = -1;
     }
     
@@ -183,7 +177,6 @@ class FreeKeyFocus extends FocusAction {
 class PositionCursorTarget extends FocusAction {
     constructor() {
         super();
-        this.setId("positionCursorTarget");
     }
     
     use() {
@@ -216,10 +209,9 @@ class FocusClosest extends FocusAction {
     }
 }
 
-AC["targetFocus"] = class TargetFocus extends FocusAction {
+class TargetFocus extends FocusAction {
     constructor() {
         super();
-        this.setId("targetFocus");
     }
     
     use() {
@@ -277,6 +269,6 @@ AC["targetFocus"] = class TargetFocus extends FocusAction {
     }
     
     preventsAddition(action) {
-        return AS_FOCUS.includes(action.id) || super.preventsAddition(...arguments);
+        return AS_FOCUS.includes(action.getClassName()) || super.preventsAddition(...arguments);
     }
-};
+}

@@ -1,5 +1,5 @@
 
-const AS_CUTTER = set_gather("cutterBoomerang", "cutterDash", "finalCutter1", "finalCutter2", "finalCutter3", "autoCutter", "finalCutter4", "finalCutter5");
+const AS_CUTTER = set_gather("CutterBoomerang", "CutterDash", "FinalCutter1", "FinalCutter2", "FinalCutter3", "AutoCutter", "FinalCutter4", "FinalCutter5");
 
 class CutterAbility extends BusyAction {
     constructor() {
@@ -34,8 +34,6 @@ class Cutter extends TrailerEntity {
         // this.setStyle("cyan");
         this.addInteraction((new TypeDamager()).setRehit(9));
         this.addInteraction(new ContactVanishRecipient(CVF_OBSTACLE));
-        
-        this.addActset(AS_MOVEMENT);
         
         // this.trailDrawable = new TrailDrawable();
         this.trailDrawable.edgeStyle = cutterEdgeStyle;
@@ -76,6 +74,10 @@ class Cutter extends TrailerEntity {
         this.addEventListener("hit", stunOnhit);
         
         this.drawables.add(this.bladeDrawable);
+        
+        this.controllers.add(function directionMovement() {
+            this.drag(this.direction);
+        });
     }
     
     updateDrawable() {
@@ -125,7 +127,6 @@ class Cutter extends TrailerEntity {
 class CutterBoomerang extends CutterAbility {
     constructor() {
         super();
-        this.setId("cutterBoomerang");
         
         this.setUseCost(2);
     }
@@ -147,8 +148,7 @@ class CutterBoomerang extends CutterAbility {
             let speed = this.user.getCursorDirection().normalize(8);
             
             boomerang.setSpeed(speed);
-            boomerang.route = this.user.getPositionM();
-            boomerang.addAction(new LinearMovement(speed.normalized(-0.5)));
+            boomerang.direction = speed.normalized(-0.5);
             boomerang.shareBlacklist(this.user.getBlacklist());
             
             addEntity(boomerang);
@@ -165,7 +165,6 @@ class CutterBoomerang extends CutterAbility {
 class CutterDash extends SlashAction {
     constructor() {
         super();
-        this.setId("cutterDash");
         
         this.direction = null;
         this.damageableSave = null;
@@ -286,7 +285,6 @@ function finalCutter1BladeTransition(t) {
 class FinalCutter1 extends SlashAction {
     constructor() {
         super();
-        this.setId("finalCutter1");
         
         this.trailDrawable.edgeStyle = cutterEdgeStyle;
         
@@ -380,7 +378,7 @@ class FinalCutter1 extends SlashAction {
     }
     
     preventsAddition(action) {
-        if(this.phase > this.startlag + this.slashDuration && AS_CUTTER.includes(action.getId()) && typeof this.followup == "function") {
+        if(this.phase > this.startlag + this.slashDuration && AS_CUTTER.includes(action.getClassName()) && typeof this.followup == "function") {
             this.nextAction = new this.followup();
         }
         
@@ -434,7 +432,6 @@ function fc2Timing(t) {
 class FinalCutter2 extends FinalCutter1 {
     constructor() {
         super();
-        this.setId("finalCutter2");
         
         this.face = null;
         this.type = "";
@@ -487,7 +484,6 @@ class FinalCutter2 extends FinalCutter1 {
 class FinalCutter3 extends FinalCutter2 {
     constructor() {
         super();
-        this.setId("finalCutter3");
         
         this.slashDuration = 8;
         
@@ -548,7 +544,6 @@ class FinalCutter3 extends FinalCutter2 {
 class FinalCutter4 extends FinalCutter3 {
     constructor() {
         super();
-        this.setId("finalCutter4");
         
         this.slashDuration = 12;
         this.nextAction = FinalCutter5;
@@ -636,7 +631,6 @@ class CutterWave extends Hitbox {
 class FinalCutter5 extends FinalCutter4 {
     constructor() {
         super();
-        this.setId("finalCutter5");
         
         this.slashDuration = 12;
         this.endlag = 16;
@@ -714,39 +708,30 @@ class FinalCutter5 extends FinalCutter4 {
 class AutoCutter extends CutterAbility {
     constructor() {
         super();
-        this.setId("autoCutter");
         
         this.detectionBox = null;
     }
     
     use() {
-        if(this.phase == 0) {
-            this.detectionBox = Entity.fromMiddle(Vector.addition(this.user.getPositionM(), this.user.getCursorDirection().normalize((this.user.getWidth() + this.user.getHeight()) / 2)), this.user.size);
-            
-            this.detectionBox.setLifespan(1);
-            
-            addEntity(this.detectionBox);
-        } else if(this.phase == 2) {
-            let user = this.user;
-            
-            // if(this.detectionBox.collidedWith.find(function(entity) {return user.opponents.includes(entity);})) {
-            if(this.detectionBox.collidedWith.find(function(entity) {return entity !== user && entity.findInterrecipientWithId("damage");}) && this.user.getCursorDirection()[0] != 0) {
-                this.user.addAction(new FinalCutter1());
-            } else {
-                this.user.addAction(new CutterBoomerang());
-            }
-            
-            return this;
+        const user = this.user;
+        const avgsz = rectangle_averageSize(this.user);
+        
+        const detectionBox = DetectionBox.fromMiddle(Vector.addition(this.user.getPositionM(), this.user.getCursorDirection().normalize(avgsz)), [avgsz, avgsz]);
+        
+        // addEntity(detectionBox);
+        
+        if(detectionBox.detectsDamageable(function(entity) {return entity !== user && entity.findInterrecipientWithId("damage");}) && this.user.getCursorDirection()[0] != 0) {
+            this.user.addImmediateAction(new FinalCutter1());
+        }
+        
+        else {
+            this.user.addImmediateAction(new CutterBoomerang());
         }
         
         return this;
     }
     
     allowsReplacement(action) {
-        return AS_CUTTER.includes(action.getId()) && !action.matchId("autoCutter");
+        return AS_CUTTER.includes(action.getClassName()) && action.getClassName !== "AutoCutter";
     }
 }
-
-AC["autoCutter"] = AutoCutter;
-
-AC["cutterDash"] = CutterDash;

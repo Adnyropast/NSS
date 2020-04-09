@@ -38,7 +38,7 @@ function getInventoryItemPath(searchItem, inventory = INVENTORY, path = "/") {
         
         if(item === searchItem) {
             return path + item.id;
-        } else if(item instanceof IC["inventory"]) {
+        } else if(item instanceof Inventory) {
             let r = getInventoryFromPath(searchItem, item, path + item.id + "/");
             
             if(r) {
@@ -125,7 +125,7 @@ function inventory_findItem(inventory, predicate) {
     for(let i = 0; i < inventory.items.length; ++i) {
         const item = inventory.items[i];
         
-        if(item instanceof IC["inventory"]) {
+        if(item instanceof Inventory) {
             const foundItem = inventory_findItem(item, predicate);
             
             if(foundItem !== null) {
@@ -143,6 +143,6 @@ function findItem(predicate) {
 
 function findCharacterIdentifier() {
     return findItem(function(item) {
-        return item instanceof IC["characterIdentifier"];
+        return item instanceof CharacterIdentifier;
     });
 }

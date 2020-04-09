@@ -88,7 +88,7 @@ var IMG_GRASSTILE = loadImage("images/grasstile.png");
 
 const IMGCHAR = {};
 
-IMGCHAR["haple"] = {
+IMGCHAR["Haple"] = {
     "std-right" : new AnimatedImages([loadImage("images/haple/std-right.png")]),
     "std-left" : new AnimatedImages([loadImage("images/haple/std-left.png")]),
     "run-right" : (new AnimatedImages([loadImage("images/haple/run-right0.png"), loadImage("images/haple/run-right1.png"), loadImage("images/haple/run-right2.png"), loadImage("images/haple/run-right3.png")])).setIcpf(12),
@@ -117,7 +117,7 @@ IMGCHAR["haple"] = {
 
 let CT_TEN = (new ColorTransition(CV_WHITE, [0, 255, 255, 1], 32)).setLoop(true);
 
-IMGCHAR["ten"] = {
+IMGCHAR["Ten"] = {
     "std-right" : CT_TEN,
     "std-left" : CT_TEN,
     "run-right" : ColorTransition.from(CT_TEN).setDuration(8),
@@ -150,7 +150,7 @@ const IMG_ROPELADDER = loadImage("images/ropeladder.png");
 
 const IMG_GRASSPATCH = loadImage("images/grasspatch.png");
 
-IMGCHAR["adnyropast"] = {
+IMGCHAR["Adnyropast"] = {
     "icon" : loadImage("images/adnyropast/icon.png"),
 };
 
@@ -177,7 +177,7 @@ IMGBG["skyblur6"] = loadImage("images/background/skyblur6.png");
 IMGBG["skyblur7"] = loadImage("images/background/skyblur7.png");
 
 const IMGITEM = {
-    apple : loadImage("images/items/apple.png"),
-    chapterIdentifier : loadImage("images/items/chapterIdentifier.png"),
-    inventory : loadImage("images/items/inventory.png")
+    Apple : loadImage("images/items/apple.png"),
+    ChapterIdentifier : loadImage("images/items/chapterIdentifier.png"),
+    Inventory : loadImage("images/items/inventory.png")
 };

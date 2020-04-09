@@ -1,18 +1,16 @@
 
 var entityId = -1;
 
-const EC = {};
+function makeEntityFromData(entityData) {
+    const entityClass = entityClass_forName(entityData.className);
+    
+    return entityClass.fromData(object_clone(entityData));
+}
 
-function entity_getClassId(entity) {
-    for(let i in EC) {
-        if(entity.constructor === EC[i]) {
-            return i;
-        }
-    }
+function entityClass_forName(className) {
+    const entityClass = class_forName(className);
     
-    console.warn(entity.constructor.name, "not found in EC.");
-    
-    return "nf";
+    return class_extends(entityClass, Entity) ? entityClass : Entity;
 }
 
 let ACTIONADDED = false;
@@ -77,8 +75,8 @@ class Entity extends Rectangle {
         this.energy = 1;
         // this.effects = [];
         
-        this.actions = [];
-        this.actset = [];
+        this.actions = new SetArray();
+        this.actionParams = {};
         
         this.state = {};
         
@@ -109,11 +107,7 @@ class Entity extends Rectangle {
         this.presize = Vector.from(this.size);
         
         this.stats = {
-            "energy": {
-                "effective": 1,
-                "real": 1,
-                "effectiveLock": false
-            },
+            "energy": new ScaleValue(1),
             
             "regeneration": 0,
             
@@ -147,6 +141,8 @@ class Entity extends Rectangle {
         this.stateimg = {};
         
         this.accelerators = new SetArray();
+        
+        this.className = this.constructor.name;
     }
     
     static fromData(data) {
@@ -154,6 +150,12 @@ class Entity extends Rectangle {
         
         if(data.stats) {entity.setStats(data.stats);}
         if(data.energy) {entity.setEnergy(data.energy);}
+        if(data.style) {
+            if(typeof data.style === "string") {
+                entity.getDrawable().setStyle(data.style);
+                entity.dataStyle = data.style;
+            }
+        }
         
         return entity;
     }
@@ -741,8 +743,16 @@ class Entity extends Rectangle {
             return null;
         }
         
-        for(var i = this.actions.length - 1; i >= 0; --i) {
+        if(this.actions.includes(action)) {
+            ACTIONADDED = false;
+            
+            return null;
+        }
+        
+        // for(var i = this.actions.length - 1; i >= 0; --i) {
+        for(let i = 0; i < this.actions.length; ++i) {
             if(this.actions[i].allowsReplacement(action)) {
+                this.actions[i].setRemovable(true);
                 this.removeActionAt(i, "Replaced from user with another action.");
                 
                 action.setUser(this);
@@ -755,7 +765,7 @@ class Entity extends Rectangle {
             }
             
             if(this.actions[i].preventsAddition(action)) {
-                action.setEndId("Blocked from user by action.");
+                action.setEndId("Blocked from user by action " + action.getClassName() + ".");
                 
                 ACTIONADDED = false;
                 
@@ -772,10 +782,10 @@ class Entity extends Rectangle {
         return this;
     }
     
-    removeActionAt(index, endId = "Removed from user.") {
-        if(this.actions[index] instanceof Action && this.actions[index].isRemovable()) {
-            var action = this.actions[index];
-            
+    removeActionAt(index, endId = "user.removeActionAt(" + index + ")") {
+        const action = this.actions[index];
+        
+        if(action instanceof Action && action.isRemovable()) {
             this.actions.splice(index, 1);
             action.end(endId);
         }
@@ -784,9 +794,11 @@ class Entity extends Rectangle {
     }
     
     removeAction(action) {
-        for(var i = this.actions.length - 1; i >= 0; --i) {
-            if(this.actions[i] == action) {
-                this.removeActionAt(i, "Removed specifically from user (removeAction).");
+        for(let i = 0, found = false; i < this.actions.length && !found; ++i) {
+            if(this.actions[i] === action) {
+                this.removeActionAt(i, "user.removeAction(action)");
+                
+                found = true;
             }
         }
         
@@ -794,56 +806,41 @@ class Entity extends Rectangle {
     }
     
     removeActionsWithConstructor(constructor) {
-        for(var i = this.actions.length - 1; i >= 0; --i) {
-            if(this.actions[i] instanceof Action && this.actions[i].constructor == constructor) {
-                this.removeActionAt(i, "Removed from user with a constructor match (removeActionsWithConstructor).");
-            }
-        }
-        
-        return this;
+        return this.removeActions(
+            function(a) {return a.constructor === constructor;},
+            "user.removeActionsWithConstructor(" + constructor.name + ")"
+        );
     }
     
-    removeActionsInstanceof(constructor) {
-        for(var i = this.actions.length - 1; i >= 0; --i) {
-            if(this.actions[i] instanceof constructor) {
-                this.removeActionAt(i, "Removed from user as instanceof (removeActionsInstanceof).");
-            }
-        }
-        
-        return this;
+    removeActionsInstancesOf(constructor) {
+        return this.removeActions(
+            function(a) {return a instanceof constructor;},
+            "user.removeActionsInstancesOf(" + constructor.name + ")"
+        );
     }
     
-    removeActionsWithId(id) {
-        for(var i = this.actions.length - 1; i >= 0; --i) {
-            if(this.actions[i] instanceof Action)/**/
-            if(this.actions[i].getId() == id) {
-                this.removeActionAt(i, "Removed from user with id (removeActionsWithId).");
-            }
-        }
-        
-        return this;
+    removeActionsWithClassName(className) {
+        return this.removeActions(
+            function(a) {return a.getClassName() === className+""},
+            "removeActionsWithClassName(" + className + ")"
+        );
     }
     
     updateActions() {
         this.actions.sort(function(action1, action2) {
-            if(action1.order > action2.order) return -1;
-            if(action1.order < action2.order) return +1;
+            if(action1.getOrder() > action2.getOrder()) {return +1;}
+            if(action1.getOrder() < action2.getOrder()) {return -1;}
             return 0;
         });
         
-        let actions = Array.from(this.actions);
-        
-        for(var i = this.actions.length - 1; i >= 0; --i) {
-            var action = this.actions[i];
+        for(let i = 0, actions = Array.from(this.actions); i < actions.length; ++i) {
+            const action = actions[i];
             
-            if(action instanceof Action) {
-                if(action.user != this) {
-                    console.error("??? action.user is not entity that updates action ???");
-                    console.log(this, action);
-                }
-                
+            if(!action.hasEnded()) {
+                this.triggerEvent("actionbeforeuse", {action: action});
                 action.use();
                 action.incPhase();
+                this.triggerEvent("actionafteruse", {action: action});
             }
         }
         
@@ -851,97 +848,19 @@ class Entity extends Rectangle {
     }
     
     hasActionWithConstructor(constructor) {
-        for(var i = 0; i < this.actions.length; ++i) {
-            if(this.actions[i].constructor == constructor) {
-                return true;
-            }
-        }
-        
-        return false;
+        return this.findActionWithConstructor(constructor) !== null;
     }
     
-    hasActionWithId(id) {
-        for(let i = 0; i < this.actions.length; ++i) {
-            if(this.actions[i].getId() == id) {
-                return true;
-            }
-        }
-        
-        return false;
+    hasActionWithClassName(className) {
+        return this.findActionWithClassName(className) !== null;
     }
     
-    findActionWithId(id) {
-        for(let i = 0; i < this.actions.length; ++i) {
-            if(this.actions[i].getId() == id) {
-                return this.actions[i];
-            }
-        }
-        
-        return null;
+    findActionWithClassName(className) {
+        return this.findAction(function(action) {return action.getClassName() === className;});
     }
     
     canUseAction(action) {
-        return action instanceof Action && this.containsActset(action.getId());
-    }
-    
-    addActset() {
-        if(arguments.length > 1) {
-            for(var i = 0; i < arguments.length; ++i) {
-                this.addActset(arguments[i]);
-            }
-        } else if(arguments.length == 1) {
-            if(Array.isArray(arguments[0])) {
-                for(var i = 0; i < arguments[0].length; ++i) {
-                    this.addActset(arguments[0][i]);
-                }
-            } else {
-                var index = this.actset.indexOf(arguments[0]);
-                
-                if(index == -1) {
-                    this.actset.push(arguments[0]);
-                }
-            }
-        } 
-        
-        return this;
-    }
-    
-    clearActset() {
-        this.actset.splice(0, this.actset.length);
-        
-        return this;
-    }
-    
-    removeActset() {
-        if(arguments.length > 1) {
-            for(var i = 0; i < arguments.length; ++i) {
-                this.removeActset(arguments[i]);
-            }
-        } else if(arguments.length == 1) {
-            if(Array.isArray(arguments[0])) {
-                for(var i = 0; i < arguments[0].length; ++i) {
-                    this.removeActset(arguments[0][i]);
-                }
-            } else {
-                var index = this.actset.indexOf(arguments[0]);
-                
-                if(index != -1) {
-                    this.actset.splice(index, 1);
-                }
-            }
-        } 
-        
-        return this;
-    }
-    
-    containsActset(id) {
-        for(var i = 0; i < this.actset.length; ++i) {
-            if(this.actset[i] == id) {
-                return true;
-            }
-        }
-        
-        return false;
+        return action instanceof Action && this.actionParams.hasOwnProperty(action.getClassName());
     }
     
     // 
@@ -1142,17 +1061,27 @@ class Entity extends Rectangle {
     
     setStats(stats) {
         for(let i in stats) {
-            const propnames = i.split(".");
+            const propNames = i.split(".");
             let property = this.stats;
             
-            for(let j = 0; j < propnames.length; ++j) {
-                if(j === propnames.length - 1) {
-                    property[propnames[j]] = stats[i];
-                } else if(!property.hasOwnProperty(propnames[j])) {
-                    property[propnames[j]] = {};
+            for(let j = 0; j < propNames.length; ++j) {
+                const propName = propNames[j];
+                
+                if(j === propNames.length - 1) {
+                    let statValue = stats[i];
+                    
+                    if(statValue.className === "ScaleValue") {
+                        statValue = ScaleValue.fromData(statValue);
+                    }
+                    
+                    property[propName] = statValue;
                 }
                 
-                property = property[propnames[j]];
+                else if(!property.hasOwnProperty(propName)) {
+                    property[propName] = {};
+                }
+                
+                property = property[propNames[j]];
             }
             
             // this.stats[i] = stats[i];
@@ -1180,7 +1109,15 @@ class Entity extends Rectangle {
     }
     
     getData() {
-        return {classId: entity_getClassId(this), position : this.position, size : this.size};
+        const data = super.getData();
+        
+        data.className = this.getClassName();
+        
+        if(this.dataStyle) {
+            data.style = this.dataStyle;
+        }
+        
+        return data;
     }
     
     onhit(event) {
@@ -1393,6 +1330,67 @@ class Entity extends Rectangle {
     canMergeWith(entity) {
         return false;
     }
+    
+    removeActions(predicate = returnTrue, endId = undefined) {
+        for(let i = this.actions.length - 1; i >= 0; --i) {
+            if(predicate(this.actions[i], i, this.actions)) {
+                this.removeActionAt(i, endId);
+            }
+        }
+        
+        return this;
+    }
+    
+    findAction(predicate) {
+        for(let i = 0; i < this.actions.length; ++i) {
+            if(predicate(this.actions[i], i, this.actions)) {
+                return this.actions[i];
+            }
+        }
+        
+        return null;
+    }
+    
+    findActionWithConstructor(constructor) {
+        return this.findAction(function(action) {return action.constructor === constructor;});
+    }
+    
+    addImmediateAction(action) {
+        this.addAction(action);
+        
+        if(ACTIONADDED) {
+            this.triggerEvent("actionbeforeuse", {action: action});
+            action.use();
+            action.incPhase();
+            this.triggerEvent("actionafteruse", {action: action});
+        }
+        
+        return this;
+    }
+    
+    setBasicActionParams(actionClassNames___) {
+        const actionClassNames = set_gather(...arguments);
+        
+        for(let i = 0; i < actionClassNames.length; ++i) {
+            const actionClassName = actionClassNames[i];
+            
+            if(!this.actionParams.hasOwnProperty(actionClassName)) {
+                this.actionParams[actionClassName] = {};
+            }
+        }
+        
+        return this;
+    }
+    
+    stun(timeout) {
+        this.addAction(new StunState(timeout));
+        
+        return this;
+    }
+    
+    getClassName() {
+        return this.className;
+    }
 }
 
 function stunOnhit(event) {
@@ -1401,7 +1399,7 @@ function stunOnhit(event) {
     const negotiatedTimeout = recipient.negotiateStunTimeout(actor.stats["stun-timeout"]);
     
     if(negotiatedTimeout > 0) {
-        recipient.addAction(new StunState(negotiatedTimeout));
+        recipient.stun(negotiatedTimeout);
     }
 }
 
@@ -1559,4 +1557,46 @@ function entitiesToData(entities) {
     }
     
     return dataSet;
+}
+
+class DetectionBox extends Entity {
+    constructor() {
+        super(...arguments);
+        this.setLifespan(16);
+        this.getDrawable()
+        .setZIndex(-1024)
+        .setStyle(new ColorTransition([255, 0, 0, 1], [255, 0, 0, 0], this.getLifespan(), powt(6)));
+        
+        this.detected = new SetArray();
+    }
+    
+    detect(predicate = returnTrue) {
+        const entities = WORLDLOOP.entities;
+        
+        this.detected.clear();
+        
+        for(let i = 0; i < entities.length; ++i) {
+            const rectangle = entities[i];
+            
+            if(this.collides(rectangle) && predicate.bind(this)(rectangle)) {
+                this.detected.add(rectangle);
+            }
+        }
+        
+        return this.detected;
+    }
+    
+    detectDamageable(predicate = returnTrue) {
+        return this.detect(function(entity) {
+            return predicate(...arguments) && entity.findInterrecipientWithId("damage");
+        });
+    }
+    
+    detects(predicate) {
+        return this.detect(...arguments).length > 0;
+    }
+    
+    detectsDamageable(predicate) {
+        return this.detectDamageable(...arguments).length > 0;
+    }
 }

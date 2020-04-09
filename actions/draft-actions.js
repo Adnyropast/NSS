@@ -2,7 +2,6 @@
 class TargetAttack extends Action {
     constructor() {
         super();
-        this.id = 3;
         
         this.hit = null;
         this.t1 = 6;
@@ -59,7 +58,6 @@ class Counter extends Action {
 class BackSmoke extends Action {
     constructor() {
         super();
-        this.id = "smoke";
         
         this.t = 0;
         this.angleVariation = 0.5;
@@ -115,10 +113,26 @@ class BackSmoke extends Action {
     preventsAddition() {return false;}
 }
 
+function makeBackSmokeController(callbackfn = emptyFn) {
+    let t = 0;
+    const smokeClass = SmokeParticle;
+    
+    return function backSmokeController() {
+        if(t % 2 === 0 && this.speed.getNorm() > 2) {
+            const avgsz = rectangle_averageSize(this);
+            
+            entityExplode.randomAngleVariation = 1;
+            entityExplode(1, smokeClass, this.getPositionM(), [avgsz/2, avgsz/2], avgsz/24)
+            .forEach(callbackfn);
+        }
+        
+        ++t;
+    };
+}
+
 class DashKick extends Action {
     constructor() {
         super();
-        this.id = "dashkick";
         
         this.direction = null;
         this.force = 8;
@@ -144,7 +158,6 @@ class DashKick extends Action {
 class ZoneEngage extends BusyAction {
     constructor() {
         super();
-        this.id = "zoneEngage";
         
         this.zone = null;
         this.wind = null;
@@ -230,12 +243,9 @@ class ZoneEngage extends BusyAction {
     }
 }
 
-AC["zoneEngage"] = ZoneEngage;
-
 class Summon extends Action {
     constructor(entity) {
         super();
-        this.setId("summon");
         
         this.entity = entity;
     }
@@ -250,65 +260,15 @@ class Summon extends Action {
     }
 }
 
-const AS_ROUTE = set_gather("tmprRoute");
-
-class TmprRoute extends Action {
-    constructor(vector) {
-        super();
-        this.setId("tmprRoute");
-        this.setOrder(-100);
-        
-        this.vector = vector;
-    }
-    
-    use() {
-        if(this.user.route == null) {
-            this.user.route = this.user.getPositionM();
-        }
-        
-        let minDim = Math.min(this.user.route.length, this.vector.length);
-        
-        let difference = new Vector();
-        
-        for(let dim = 0; dim < minDim; ++dim) {
-            this.user.route[dim] += this.vector[dim];
-            
-            difference[dim] = this.user.route[dim] - this.user.getPositionM(dim);
-            
-            if(isAlmostZero(difference[dim])) {
-                this.user.route[dim] = this.user.getPositionM(dim);
-            }
-        }
-        
-        return this.end();
-    }
-    
-    preventsAddition(action) {return false;}
-}
-
-class TransitionSize extends Action {
-    constructor(sizeTransition) {
-        super();
-        this.setId("transitionSize");
-        this.sizeTransition = sizeTransition;
-    }
-    
-    use() {
-        this.user.setSizeM(this.sizeTransition.getNext());
-        
-        return this;
-    }
-}
-
 class StunState extends BusyAction {
     constructor(timeout = 1) {
         super();
-        this.setId("stunState");
         
         this.brakeRecipientSave = null;
         this.timeout = timeout;
         
         this.backSmoke = new BackSmoke();
+        this.backSmokeController = makeBackSmokeController();
     }
     
     onadd() {
@@ -320,6 +280,7 @@ class StunState extends BusyAction {
         this.user.setSelfBrake(1.125);
         
         // this.user.addAction(this.backSmoke);
+        // this.user.controllers.add(this.backSmokeController);
         
         return super.onadd();
     }
@@ -330,6 +291,7 @@ class StunState extends BusyAction {
         this.user.setSelfBrake(1);
         
         // this.user.removeAction(this.backSmoke);
+        // this.user.controllers.remove(this.backSmokeController);
         
         return super.onend();
     }
@@ -344,41 +306,15 @@ class StunState extends BusyAction {
         
         return this;
     }
-}
-
-class LifespanState extends Action {
-    constructor(lifespan = 1) {
-        super();
-        this.setId("lifespanState");
-        
-        this.lifespan = lifespan;
-    }
-    
-    use() {
-        --this.lifespan;
-        
-        if(this.lifespan == 0) {
-            this.end();
-        }
-        
-        return this;
-    }
     
     allowsReplacement(action) {
-        return action.sharesId(this);
-    }
-    
-    onend() {
-        removeEntity(this.user);
-        
-        return this;
+        return action instanceof StunState && action.timeout > this.timeout;
     }
 }
 
 class SlashAction extends BusyAction {
     constructor() {
         super();
-        this.setId("slashAction");
         
         this.hitbox = (new SlashEffect([NaN, NaN], [16, 16])).setLifespan(16);
         // this.hitbox.setStyle("orange");
@@ -500,7 +436,6 @@ class SlashAction extends BusyAction {
 class SpeechAction extends Action {
     constructor(content = randomText()) {
         super();
-        this.setId("speech");
         
         this.content = content;
         this.speechSpeed = 0.25;
@@ -549,5 +484,3 @@ class SpeechAction extends Action {
         return this;
     }
 }
-
-AC["speech"] = SpeechAction;

@@ -1,5 +1,5 @@
 
-EC["dummy"] = class Dummy extends Character {
+class Dummy extends Character {
     constructor() {
         super(...arguments);
         
@@ -31,4 +31,4 @@ EC["dummy"] = class Dummy extends Character {
         
         return super.onremove();
     }
-};
+}

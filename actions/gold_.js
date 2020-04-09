@@ -1,5 +1,5 @@
 
-const AS_GOLD = set_gather("goldFlurry", "rocketPunch", "multi-aimShots", "goldenJab");
+const AS_GOLD = set_gather("GoldFlurry", "RocketPunch", "MultiaimShots", "GoldenJab");
 
 class GoldAbility extends BusyAction {
     constructor() {
@@ -35,7 +35,6 @@ class GoldSolid extends Hitbox {
 class GoldFlurry extends GoldAbility {
     constructor() {
         super();
-        this.setId("goldFlurry");
         
         this.setUseCost(1);
     }
@@ -78,8 +77,6 @@ class GoldFlurry extends GoldAbility {
         return this;
     }
 }
-
-AC["goldFlurry"] = GoldFlurry;
 
 class RocketPunchProjectile extends Projectile {
     constructor(position, size) {
@@ -139,7 +136,6 @@ class RocketPunchProjectile extends Projectile {
 class RocketPunch extends GoldAbility {
     constructor() {
         super();
-        this.setId("rocketPunch");
         
         this.setUseCost(2);
     }
@@ -235,12 +231,9 @@ class RocketPunch extends GoldAbility {
     }
 }
 
-AC["rocketPunch"] = RocketPunch;
-
 class MultiaimShots extends GoldAbility {
     constructor() {
         super();
-        this.setId("multi-aimShots");
     }
     
     use() {
@@ -304,7 +297,6 @@ class GoldBurstHitbox extends Hitbox {
 class GoldenJab extends GoldAbility {
     constructor() {
         super();
-        this.setId("goldenJab");
     }
     
     use() {
@@ -325,5 +317,3 @@ class GoldenJab extends GoldAbility {
         return this;
     }
 }
-
-AC["goldenJab"] = GoldenJab;

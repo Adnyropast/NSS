@@ -1,10 +1,9 @@
 
-const AS_MOVEMENT = set_gather(ACT_MOVEMENT, "wallCling", "crouch", "lookup", "movementLeft", "movementUp", "movementRight", "movementDown", "linearMovement", "still");
+const AS_MOVEMENT = set_gather("Movement", "WallCling", "Crouch", "LookUp", "MovementLeft", "MovementUp", "MovementRight", "MovementDown", "LinearMovement", "Still");
 
 class Movement extends Action {
     constructor(power) {
         super();
-        this.id = ACT_MOVEMENT;
         // this.setUseCost(0.125);
         
         this.direction = new Vector(0, 0);
@@ -95,7 +94,11 @@ class Movement extends Action {
             this.user.drag(direction);
             
             if(!direction.isZero()) {
-                this.user.addState("moving");
+                this.user.addStateObject({
+                    name: "moving",
+                    countdown: 1,
+                    direction: direction
+                });
                 
                 if(isHanging) {
                     this.user.triggerEvent("climb", {action: this});
@@ -151,7 +154,6 @@ busyBannedActions.add(Movement);
 class DirectionMovement extends Movement {
     constructor() {
         super();
-        this.setId("directionMovement");
     }
     
     use() {
@@ -166,7 +168,6 @@ class DirectionMovement extends Movement {
 class Still extends Action {
     constructor() {
         super();
-        this.setId("still");
         this.setUseCost(0);
     }
     
@@ -186,8 +187,6 @@ class Still extends Action {
         return action instanceof Movement;
     }
 }
-
-AC["still"] = Still;
 
 class MovementTo extends Movement {
     constructor(power) {
@@ -240,7 +239,6 @@ class ImmediateMovement extends Movement {
 class RunToggle extends Action {
     constructor() {
         super();
-        this.setId("runToggle");
     }
     
     use() {
@@ -259,7 +257,6 @@ class RunToggle extends Action {
 class WallCling extends Action {
     constructor(side) {
         super();
-        this.setId("wallCling");
     }
     
     use() {
@@ -272,7 +269,6 @@ class WallCling extends Action {
 class Crouch extends Action {
     constructor() {
         super();
-        this.setId("crouch");
         
         this.regeneration = new Regeneration(0.0625);
         this.saveSize = null;
@@ -312,7 +308,6 @@ class Crouch extends Action {
 class LookUp extends Action {
     constructor() {
         super();
-        this.setId("lookup");
     }
     
     use() {
@@ -326,7 +321,6 @@ class LookUp extends Action {
 class LinearMovement extends Action {
     constructor(direction = new Vector(0, 0)) {
         super();
-        this.setId("linearMovement");
         
         this.direction = direction;
     }
@@ -340,16 +334,36 @@ class LinearMovement extends Action {
 
 let movementCost = 0.09375;
 
-class MovementLeft extends Action {
-    constructor() {
+class PlusMovement extends Action {
+    constructor(direction) {
         super();
-        this.setId("movementLeft");
+        this.setOrder(-1);
+        this.direction = direction;
     }
     
     use() {
-        this.user.addAction(new TmprRoute([-BIG, 0]));
-        this.user.addAction(new MoveFocus());
-        this.user.addAction(new Movement().setUseCost(movementCost));
+        let state = this.user.findState("plusMovement");
+        
+        if(!state) {
+            this.user.addStateObject(state = {
+                name: "plusMovement",
+                direction: Vector.from(this.direction),
+                countdown: 1
+            });
+        } else {
+            state.direction.add(this.direction);
+        }
+        
+        for(let dim = 0; dim < state.direction.getDimension(); ++dim) {
+            if(isAlmostZero(state.direction.get(dim))) {
+                state.direction.set(dim, 0);
+            }
+        }
+        
+        this.user.route = Vector.addition(this.user.getPositionM(), state.direction);
+        
+        this.user.addImmediateAction(new MoveFocus());
+        this.user.addImmediateAction(new Movement().setUseCost(movementCost));
         
         return this;
     }
@@ -361,70 +375,26 @@ class MovementLeft extends Action {
     }
 }
 
-class MovementUp extends Action {
+class MovementLeft extends PlusMovement {
     constructor() {
-        super();
-        this.setId("movementUp");
-    }
-    
-    use() {
-        this.user.addAction(new TmprRoute([0, -BIG]));
-        this.user.addAction(new MoveFocus());
-        this.user.addAction(new Movement().setUseCost(movementCost));
-        
-        return this;
-    }
-    
-    onend() {
-        this.user.removeActionsWithConstructor(Movement);
-        
-        return this;
+        super([-BIG, 0]);
     }
 }
 
-class MovementRight extends Action {
+class MovementUp extends PlusMovement {
     constructor() {
-        super();
-        this.setId("movementRight");
-    }
-    
-    use() {
-        this.user.addAction(new TmprRoute([+BIG, 0]));
-        this.user.addAction(new MoveFocus());
-        this.user.addAction(new Movement().setUseCost(movementCost));
-        
-        return this;
-    }
-    
-    onend() {
-        this.user.removeActionsWithConstructor(Movement);
-        
-        return this;
+        super([0, -BIG]);
     }
 }
 
-class MovementDown extends Action {
+class MovementRight extends PlusMovement {
     constructor() {
-        super();
-        this.setId("movementDown");
-    }
-    
-    use() {
-        this.user.addAction(new TmprRoute([0, +BIG]));
-        this.user.addAction(new MoveFocus());
-        this.user.addAction(new Movement().setUseCost(movementCost));
-        
-        return this;
-    }
-    
-    onend() {
-        this.user.removeActionsWithConstructor(Movement);
-        
-        return this;
+        super([+BIG, 0]);
     }
 }
 
-AC["movementLeft"] = MovementLeft;
-AC["movementUp"] = MovementUp;
-AC["movementRight"] = MovementRight;
-AC["movementDown"] = MovementDown;
+class MovementDown extends PlusMovement {
+    constructor() {
+        super([0, +BIG]);
+    }
+}

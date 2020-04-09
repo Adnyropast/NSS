@@ -1,5 +1,6 @@
 
 const ENETRA_DEF = new ColorTransition([255, 0, 0, 1], [0, 255, 0, 1]);
+const ENETRA_ENEMY = new ColorTransition([0, 255, 255, 1], [255, 0, 255, 1]);
 const ENETRA_DEFMAX = new MultiColorTransition([[255, 0, 0, 1], [0, 255, 0, 1], [0, 255, 255, 1]], 1, function(t) {
     if(t === 1) {
         return 1;

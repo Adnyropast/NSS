@@ -10,7 +10,6 @@ class HitboxTrail extends Entity {
 class HitboxTrailing extends Action {
     constructor() {
         super();
-        this.setId("hitboxTrail");
         
         this.lastPosition = null;
         this.i = 0;
@@ -63,7 +62,7 @@ class Bullet extends Hitbox {
         
         this.setTypeOffense(FX_PIERCING, 1);
         
-        this.addActset("hitboxTrail");
+        this.setBasicActionParams("HitboxTrailing");
         this.addAction(new HitboxTrailing());
     }
 }
@@ -98,7 +97,7 @@ class BulletShot extends Action {
     }
 }
 
-EC["adnyropast"] = class Adnyropast extends PlayableCharacter {
+class Adnyropast extends PlayableCharacter {
     constructor(position, size) {
         super(position, size);
         
@@ -117,4 +116,4 @@ EC["adnyropast"] = class Adnyropast extends PlayableCharacter {
     canUseAction() {
         return true;
     }
-};
+}
