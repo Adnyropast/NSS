@@ -490,6 +490,7 @@ const GAMELOOP = new GameLoop();
 const WORLDLOOP = new WorldLoop();
 const BATTLELOOP = new BattleLoop();
 const ESCAPELOOP = new EscapeLoop();
+const TRANSITIONLOOP = new GameLoop();
 
 const EMPTYSET = new SetArray();
 const ENTITIES = WORLDLOOP.entities;
@@ -541,10 +542,6 @@ function removeDrawable(drawable) {
     WORLDLOOP.removeDrawable(drawable);
     BATTLELOOP.removeDrawable(drawable);
     GAMELOOP.removeDrawable(drawable);
-    
-    if(drawable === COVERDRAWABLE) {
-        COVERDRAWABLE = null;
-    }
 }
 
 function addInteractor(interactor) {
@@ -667,9 +664,7 @@ function setPlayer(entity) {
         linework.setLifespan(32);
         linework.setStyle(new ColorTransition([255, 0, 0, 1], [255, 0, 0, 0], linework.lifespan, powt(4)));
         
-        const newCenter = Vector.from(this.getPositionM());
-        newCenter.subtract(CAMERA.getOffset());
-        newCenter.multiply(CAMERA.getSizeProp());
+        const newCenter = gamePoint_positionOnCanvas(this.getPositionM());
         newCenter.multiply(640/CANVAS.width);
         
         linework.setPositionM(newCenter);
@@ -807,10 +802,14 @@ function battleUpdate() {
         
         actorIndex = -1;
         
-        transitionIn();
-        switchPhase(WORLDLOOP);
-        battlePhase = "act";
-        transitionOut();
+        transitionIn(16);
+        switchPhase(TRANSITIONLOOP);
+        
+        setGameTimeout(function() {
+            switchPhase(WORLDLOOP);
+            battlePhase = "act";
+            transitionOut(16);
+        }, 16);
         
         return;
     }
@@ -974,36 +973,38 @@ function battleUpdate() {
 BATTLELOOP.controllers.add(battleUpdate);
 
 function engageBattle(battlers = EMPTYSET) {
-    transitionIn();
-    
-    switchPhase(BATTLELOOP);
-    
-    addBattlers(battlers);
-    BATTLELOOP.sortBattlers();
-    
-    addEntity(BATTLELOOP.camera);
-    addEntity(new SkyDecoration([0, 0], [640, 360]));
-    const ground0 = new Entity([-640, BATTLEMAXY2], [1280, 360]);
-    ground0.getDrawable()
-    .setZIndex(+0.5)
-    .setStyle("#7F5F00");
-    addEntity(ground0);
-    const ground1 = new Entity([-640, BATTLEMINY2 - 4], [1280, 360]);
-    ground1.getDrawable()
-    .setZIndex(+1)
-    .setStyle("#3F3F00");
-    addEntity(ground1);
-    
-    for(let i = 0; i < battlers.length; ++i) {
-        const battler = battlers[i].getBattler();
+    transitionIn(16);
+    switchPhase(TRANSITIONLOOP);
+    setGameTimeout(function() {
+        switchPhase(BATTLELOOP);
         
-        if(battler.isPlayable()) {
-            battler.makeCenter();
-            break;
+        addBattlers(battlers);
+        BATTLELOOP.sortBattlers();
+        
+        addEntity(BATTLELOOP.camera);
+        addEntity(new SkyDecoration([0, 0], [640, 360]));
+        const ground0 = new Entity([-640, BATTLEMAXY2], [1280, 360]);
+        ground0.getDrawable()
+        .setZIndex(+0.5)
+        .setStyle("#7F5F00");
+        addEntity(ground0);
+        const ground1 = new Entity([-640, BATTLEMINY2 - 4], [1280, 360]);
+        ground1.getDrawable()
+        .setZIndex(+1)
+        .setStyle("#3F3F00");
+        addEntity(ground1);
+        
+        for(let i = 0; i < battlers.length; ++i) {
+            const battler = battlers[i].getBattler();
+            
+            if(battler.isPlayable()) {
+                battler.makeCenter();
+                break;
+            }
         }
-    }
-    
-    transitionOut();
+        
+        transitionOut(16);
+    }, 16);
 }
 
 // -------------- //
@@ -1301,19 +1302,35 @@ function escapeMenu() {
 
 ESCAPELOOP.controllers.add(escapeMenu);
 
-let COVERDRAWABLE = null;
+let transitionCoverDrawableClass = TransitionCoverDrawable;
+transitionCoverDrawableClass = ScreenWipeCoverDrawable;
+// transitionCoverDrawableClass = BookTransitionCoverDrawable;
+// transitionCoverDrawableClass = CartoonClosureCoverDrawable;
 
-function transitionIn(duration = 16) {
-    COVERDRAWABLE = new RectangleDrawable([0, 0], [CANVAS.width, CANVAS.height]);
-    COVERDRAWABLE.setCameraMode("none");
-    COVERDRAWABLE.setStyle(new ColorTransition(CV_INVISIBLE, CV_BLACK, duration));
+function transitionIn(duration = 16, focusPosition = undefined, direction = undefined) {
+    const coverDrawable = new transitionCoverDrawableClass([0, 0], [CANVAS.width, CANVAS.height]);
+    if(focusPosition) {coverDrawable.setFocusPosition(focusPosition);}
+    if(direction) {coverDrawable.setDirection(direction);}
+    coverDrawable.initTransitionIn(duration);
+    
+    GAMELOOP.drawables
+    .filter(function(d) {return d instanceof TransitionCoverDrawable;})
+    .forEach(function(d) {GAMELOOP.removeDrawable(d);});
+    GAMELOOP.addDrawable(coverDrawable);
+    
+    return coverDrawable;
 }
 
-function transitionOut(duration = 16) {
-    if(COVERDRAWABLE != null) {
-        COVERDRAWABLE.setStyle(new ColorTransition(CV_BLACK, CV_INVISIBLE, duration));
-        COVERDRAWABLE.lifespan = duration + 1;
+function transitionOut(duration = 16, focusPosition = undefined, direction = undefined) {
+    const coverDrawable = GAMELOOP.drawables.find(function(d) {return d instanceof TransitionCoverDrawable;});
+    
+    if(coverDrawable !== undefined) {
+        if(focusPosition) {coverDrawable.setFocusPosition(focusPosition);}
+        if(direction) {coverDrawable.setDirection(direction);}
+        coverDrawable.initTransitionOut(duration);
     }
+    
+    return coverDrawable;
 }
 
 function transitionInOut(durationIn = 16, durationOut = 16) {
@@ -1354,10 +1371,6 @@ function gameUpdate() {
     //// Drawing ////
     
     this.draw();
-    
-    if(COVERDRAWABLE != null) {
-        COVERDRAWABLE.update().draw(CANVAS.getContext("2d"));
-    }
 }
 
 GAMELOOP.controllers.add(gameUpdate);
@@ -1437,4 +1450,26 @@ const DEBUG = {
 
 function main() {
     GAMELOOP.update();
+}
+
+function gamePoint_positionOnCanvas(position) {
+    const positionOnCanvas = Vector.from(position);
+    
+    if(CAMERA !== null) {
+        positionOnCanvas.subtract(CAMERA.getOffset());
+        positionOnCanvas.multiply(CAMERA.getSizeProp());
+    }
+    
+    return positionOnCanvas;
+}
+
+function canvasPoint_positionInGame(position) {
+    const positionInGame = Vector.from(position);
+    
+    if(CAMERA !== null) {
+        positionInGame.divide(CAMERA.getSizeProp());
+        positionInGame.add(CAMERA.getOffset());
+    }
+    
+    return positionInGame;
 }

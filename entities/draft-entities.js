@@ -371,7 +371,11 @@ class MazeGenerator extends Entity {
         
         const generator = this;
         
+        let playerPositionM;
+        
         builder.playerCellFunctions.add(function() {
+            playerPositionM = [this.cellCenterX, this.cellCenterY];
+            
             const chapter = getCurrentChapter();
             const previousMapName = generator.previousMapName;
             
@@ -413,6 +417,10 @@ class MazeGenerator extends Entity {
         const mapState = builder.build();
         
         loadFromData(mapState);
+        
+        setGameTimeout(function() {
+            transitionOut(16, gamePoint_positionOnCanvas(playerPositionM));
+        }, 1);
         
         return this;
     }

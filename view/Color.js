@@ -367,3 +367,20 @@ function rgbaStringToVector(rgbaString) {
     
     return [red, blue, green, alpha];
 }
+
+function colorVector_setAlpha(color, value_callbackfn) {
+    color = Array.from(color);
+    
+    if(typeof value_callbackfn === "function") {
+        color[3] = value_callbackfn(color[3], color);
+    }
+    
+    else {
+        color[3] = value_callbackfn;
+    }
+    
+    if(color[3] < 0) {color[3] = 0;}
+    else if(color[3] > 1) {color[3] = 1;}
+    
+    return color;
+}

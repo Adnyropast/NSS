@@ -115,7 +115,7 @@ class Camera extends Entity {
         
         this.originalSize = size;
         
-        this.order = Infinity;
+        this.order = -Infinity;
         
         this.controllers.add(cameraKeyController);
         this.controllers.add(cameraZoomController);

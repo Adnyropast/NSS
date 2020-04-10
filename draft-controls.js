@@ -191,19 +191,11 @@ function getKDirection(kleft = K_LEFT, kup = K_UP, kright = K_RIGHT, kdown = K_D
     return direction.normalize();
 }
 
-function getMousePosition(dimension) {
+function getMousePosition() {
     const positionRelative = Vector.subtraction(mouse.position, [CANVAS.offsetLeft, CANVAS.offsetTop]);
     const positionOnCanvas = Vector.multiplication(positionRelative, [CANVAS.width / CANVAS.clientWidth, CANVAS.height / CANVAS.clientHeight]);
     
-    if(arguments.length == 1) {
-        let offset = CAMERA != null ? CAMERA.getOffset()[dimension] : 0;
-        
-        return positionOnCanvas[dimension] / CAMERA.getSizeProp(dimension) + offset;
-    }
-    
-    let offset = CAMERA != null ? CAMERA.getOffset() : [0, 0];
-    
-    return positionOnCanvas.divide(CAMERA.getSizeProp()).add(offset);
+    return canvasPoint_positionInGame(positionOnCanvas);
 }
 
 // 

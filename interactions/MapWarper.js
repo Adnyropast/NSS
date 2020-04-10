@@ -1,16 +1,15 @@
 
 let mapTransitioning = false;
 
-function mapTransition(mapName, warpPositionM) {
+function mapTransition(mapName, warpPositionM, focusPosition) {
     if(!mapTransitioning) {
         mapTransitioning = true;
         getCurrentChapter().playerPositionM = warpPositionM;
         updateCurrentCharacter();
         
-        transitionIn(16);
+        transitionIn(16, gamePoint_positionOnCanvas(focusPosition));
         
         setGameTimeout(function() {
-            transitionOut(16);
             saveMapState();
             loadMap(mapName);
             
@@ -19,9 +18,9 @@ function mapTransition(mapName, warpPositionM) {
                 updateSaveState({chapterPath : getInventoryItemPath(getCurrentChapter())});
             }
             
-            setGameTimeout(function() {
-                mapTransitioning = false;
-            }, 1);
+            transitionOut(16, gamePoint_positionOnCanvas(warpPositionM));
+            
+            mapTransitioning = false;
         }, 16);
     }
 }
@@ -40,8 +39,12 @@ class MapWarper extends Interactor {
     }
     
     interact(interrecipient) {
-        mapTransition(this.mapName, this.warpPositionM);
-        removeEntity(interrecipient.getRecipient());
+        const recipient = interrecipient.getRecipient();
+        
+        if(!mapTransitioning) {
+            mapTransition(this.mapName, this.warpPositionM, recipient.getPositionM());
+            removeEntity(recipient);
+        }
         
         return this;
     }

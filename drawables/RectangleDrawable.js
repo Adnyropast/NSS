@@ -169,34 +169,6 @@ class RectangleDrawable extends Rectangle {
     }
 }
 
-class TransitionDrawable extends RectangleDrawable {
-    constructor() {
-        super([0, 0], [CANVAS.width, CANVAS.height]);
-        this.setCameraMode("none");
-        this.lifespan = 16;
-        this.stepDirection = +1;
-        this.setStyle(new ColorTransition(CV_INVISIBLE, CV_BLACK, this.lifespan/2));
-    }
-    
-    update() {
-        if(this.lifespan > 0) {
-            --this.lifespan;
-        } else if(this.lifespan == 0) {
-            removeDrawable(this);
-            
-            return this;
-        }
-        
-        if(this.style.getProgress() == 1) {
-            this.stepDirection *= -1;
-        }
-        
-        this.style.step += this.stepDirection;
-        
-        return this;
-    }
-}
-
 class TextRectangleDrawable extends RectangleDrawable {
     constructor() {
         super(...arguments);

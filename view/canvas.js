@@ -267,3 +267,71 @@ function canvas_setResolution(resolution = 80) {
     CANVAS.width = resolution * 16;
     CANVAS.height = resolution * 9;
 }
+
+function makeClearElementCanvas(canvasWidth, canvasHeight, drawFn, surroundingColor = "black") {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    const ctx = canvas.getContext("2d");
+    
+    ctx.fillStyle = surroundingColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalCompositeOperation = "destination-out";
+    drawFn(ctx, canvas);
+    ctx.globalCompositeOperation = "source-over";
+    
+    return canvas;
+}
+
+makeClearElementCanvas.paddingTop = 16;
+makeClearElementCanvas.paddingRight = 16;
+makeClearElementCanvas.paddingBottom = 16;
+makeClearElementCanvas.paddingLeft = 16;
+makeClearElementCanvas.circlePaddingHorizontal = 16;
+makeClearElementCanvas.circlePaddingVertical = 16;
+
+makeClearElementCanvas.reset = function reset() {
+    makeClearElementCanvas.paddingTop = 16;
+    makeClearElementCanvas.paddingRight = 16;
+    makeClearElementCanvas.paddingBottom = 16;
+    makeClearElementCanvas.paddingLeft = 16;
+    makeClearElementCanvas.circlePaddingHorizontal = 16;
+    makeClearElementCanvas.circlePaddingVertical = 16;
+};
+
+function makeClearImageCanvas(img, surroundingColor = "black") {
+    const pTop = makeClearElementCanvas.paddingTop;
+    const pRight = makeClearElementCanvas.paddingRight;
+    const pBottom = makeClearElementCanvas.paddingBottom;
+    const pLeft = makeClearElementCanvas.paddingLeft;
+    
+    return makeClearElementCanvas(img.width + pLeft + pRight, img.height + pTop + pBottom, function(ctx, canvas) {
+        // ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, pLeft, pTop, img.width - pLeft - pRight, img.height - pTop - pBottom);
+    }, surroundingColor);
+}
+
+function makeClearCircleCanvas(radius, surroundingColor = "black") {
+    const pHorizontal = makeClearElementCanvas.circlePaddingHorizontal;
+    const pVertical = makeClearElementCanvas.circlePaddingVertical;
+    
+    return makeClearElementCanvas(2*(radius+pHorizontal), 2*(radius+pVertical), function(ctx, canvas) {
+        ctx.beginPath();
+        // ctx.arc(radius, radius, radius, 0, 2*Math.PI);
+        ctx.arc(radius+pHorizontal, radius+pVertical, radius, 0, 2*Math.PI);
+        ctx.closePath();
+        ctx.fill();
+    }, surroundingColor);
+}
+
+function makeResizedCanvas(canvas, canvasWidth, canvasHeight, canvasX = (canvasWidth-canvas.width)/2, canvasY = (canvasHeight-canvas.height)/2) {
+    const resizedCanvas = document.createElement("canvas");
+    resizedCanvas.width = canvasWidth;
+    resizedCanvas.height = canvasHeight;
+    
+    const ctx = resizedCanvas.getContext("2d");
+    
+    ctx.drawImage(canvas, canvasX, canvasY);
+    
+    return resizedCanvas;
+}
