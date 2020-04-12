@@ -16,8 +16,6 @@ class Battler {
         
         this.playable = false;
         
-        this.skillset = set_gather("flee");
-        
         this.drawable = new BattlerDrawable([0, 0]);
         
         this.energyBar = new EnergyBarDrawable([0, 0]);
@@ -31,7 +29,7 @@ class Battler {
         this.strategyControllers = new SetArray();
         
         this.autoMoveSelectController = function autoMoveSelectController() {
-            const move = new SKILLS["enemyAttack"];
+            const move = new EnemyAttackMove;
             Array.prototype.push.apply(move.targets, this.getOpponents());
             
             this.addMove(move);
@@ -79,18 +77,6 @@ class Battler {
     
     isPlayable() {return this.playable;}
     setPlayable(playable) {this.playable = playable; return this;}
-    
-    getSkills() {
-        let skills = [];
-        
-        for(let i = 0; i < this.skillset.length; ++i) {
-            if(SKILLS.hasOwnProperty(this.skillset[i])) {
-                skills.push(SKILLS[this.skillset[i]]);
-            }
-        }
-        
-        return skills;
-    }
     
     onadd() {
         BATTLELOOP.addDrawable(this.drawable);
@@ -313,7 +299,6 @@ class HapleBattler extends Battler {
         
         const battler = this;
         
-        this.skillset = set_gather("attack", "flee");
         this.drawable.setStyle(IMGCHAR["Haple"]["battle-right"]);
         // this.drawable.setSize([16, 16]);
         
@@ -323,7 +308,7 @@ class HapleBattler extends Battler {
             
         // }});
         this.visibleList.addItem({name:"Attack", use:function use() {
-            const move = new SKILLS["attack"];
+            const move = new RocketPunchMove;
             battler.prepareMove(move);
             battler.setControlType("targetPick");
         }});
@@ -334,7 +319,7 @@ class HapleBattler extends Battler {
             
         // }});
         this.visibleList.addItem({name:"Flee", use:function use() {
-            battler.addMove(new SKILLS["flee"]);
+            battler.addMove(new Flee);
             battler.setReady(true);
         }});
         this.visibleList.addItem({name:"Go!"/*"Pass"*/, use:function use() {
@@ -595,7 +580,6 @@ class EnemyBattler extends Battler {
     constructor() {
         super();
         
-        this.skillset = set_gather("enemyAttack");
         this.drawable.setStyle("purple");
         // this.drawable.setSize([24, 24]);
         

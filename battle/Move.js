@@ -1,7 +1,5 @@
 
-let SKILLS = {};
-
-class Skill {
+class Move {
     static getIcon() {
         return null;
     }
@@ -75,7 +73,7 @@ class Skill {
     }
 }
 
-class EnemyAttackSkill extends Skill {
+class EnemyAttackMove extends Move {
     constructor() {
         super();
     }
@@ -151,9 +149,7 @@ class EnemyAttackSkill extends Skill {
     }
 }
 
-SKILLS["enemyAttack"] = EnemyAttackSkill;
-
-SKILLS["flee"] = class FleeSkill extends Skill {
+class Flee extends Move {
     constructor() {
         super().setPriority(-Infinity);
     }
@@ -204,7 +200,7 @@ SKILLS["flee"] = class FleeSkill extends Skill {
     }
 };
 
-SKILLS["attack"] = class AttackSkill extends Skill {
+class RocketPunchMove extends Move {
     use() {
         const targets = this.getPresentTargets();
         const userDrawable = this.user.drawable;
