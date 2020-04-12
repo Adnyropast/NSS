@@ -115,7 +115,7 @@ class Camera extends Entity {
         
         this.originalSize = size;
         
-        this.order = -Infinity;
+        this.order = 1;
         
         this.controllers.add(cameraKeyController);
         this.controllers.add(cameraZoomController);
@@ -318,6 +318,7 @@ class Camera extends Entity {
 class CameraBoundary extends Entity {
     constructor(position, size) {
         super(position, size);
+        this.order = -Infinity;
         // this.setReplaceId(-1);
         
         this.addInteraction(new CameraReplaceActor());
