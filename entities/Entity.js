@@ -695,13 +695,13 @@ class Entity extends Rectangle {
             return this;
         }
         
-        ++this.lifeCounter;
-        
         if(this.lifeCounter == this.lifespan) {
             // this.triggerEvent("defeat", new EntityEvent());
             removeEntity(this);
             
             return this;
+        } else {
+            ++this.lifeCounter;
         }
         
         // for(let i = 0; i < this.controllers.length; ++i) {

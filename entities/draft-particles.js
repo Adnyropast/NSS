@@ -75,7 +75,6 @@ class SmokeParticle extends Particle {
         const avgsz = rectangle_averageSize(this);
         
         this.setDrawable(PolygonDrawable.from(makeRandomPolygon(Math.min(Math.max(4, avgsz*2), 32), 12, 16)));
-        this.drawable.setLifespan(this.lifespan);
         this.drawable.setPositionM(this.getPositionM());
         this.drawable.multiplySize(avgsz/polygon_averageSize(this.drawable));
         this.drawable.initImaginarySize(avgsz);

@@ -77,10 +77,12 @@ function routeTravel() {
 }
 
 function sizeTransitionController() {
-    this.setSizeM(this.sizeTransition.getNext());
-    
     if(this.sizeTransition.isDone()) {
+        this.setSizeM(this.sizeTransition.getNext());
+        
         delete this.sizeTransition;
         this.controllers.remove(sizeTransitionController);
+    } else {
+        this.setSizeM(this.sizeTransition.getNext());
     }
 }

@@ -61,7 +61,7 @@ class GameLoop {
     
     addEntity(entity) {
         entity.setGameLoop(this);
-        entity.onadd();
+        entity.triggerEvent("add");
         
         this.entities.add(entity);
         
@@ -84,7 +84,7 @@ class GameLoop {
     
     removeEntity(entity) {
         if(entity instanceof Entity) {
-            entity.onremove();
+            entity.triggerEvent("remove");
         }
         
         this.entities.remove(entity);
@@ -720,8 +720,8 @@ function worldUpdate() {
             const collidable2 = collidables[j];
             
             if(collidable1.collides(collidable2)) {
-                collidable1.oncollision(collidable2);
-                collidable2.oncollision(collidable1);
+                collidable1.triggerEvent("collision", collidable2);
+                collidable2.triggerEvent("collision", collidable1);
             }
         }
         

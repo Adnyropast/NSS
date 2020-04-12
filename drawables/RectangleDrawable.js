@@ -20,6 +20,7 @@ class RectangleDrawable extends Rectangle {
         
         this.shadowBlur = 0;
         this.shadowColor = undefined;
+        this.globalAlpha = 1;
     }
     
     getZIndex() {return this.zIndex;}
@@ -34,7 +35,7 @@ class RectangleDrawable extends Rectangle {
             return this.style.alpha[this.style.iindex];
         }
         
-        return 1;
+        return this.globalAlpha;
     }
     
     setStyle(style) {
@@ -166,6 +167,10 @@ class RectangleDrawable extends Rectangle {
     
     getShadowColor() {
         return Drawable.prototype.getShadowColor.bind(this)();
+    }
+    
+    getLifespan() {
+        return this.lifespan;
     }
 }
 

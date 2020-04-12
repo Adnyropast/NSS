@@ -271,35 +271,54 @@ function burstImpact(actor, recipient, style = "white") {
 typeImpacts[FX_WIND] = function onimpact(actor, recipient) {
     const {actorAvgsz, recipientAvgsz, bothAvgsz, actorPositionM, recipientPositionM, middlePosition} = interactionProperties(actor, recipient);
     
-    entityExplode(irandom(8, 12), SmokeParticle, recipientPositionM, undefined, 2)
+    const entities = new SetArray();
+    var e;
+    
+    e = entityExplode(irandom(8, 12), SmokeParticle, recipientPositionM, undefined, 3);
+    e
     .forEach(function(entity) {
-        entity.drawable.setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 0, 1], entity.lifespan, powt(1/2)));
+        entity.getDrawable()
+        .setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 0, 1], entity.getLifespan(), powt(1/2)))
+        .setStrokeStyle(new ColorTransition([0, 255, 255, 1], [0, 191, 0, 1], entity.getLifespan(), powt(1/2)));
     });
     
+    entities.push.apply(entities, e);
+    
     makeShockwave.lineWidth = 4;
-    makeShockwave(recipientPositionM, recipientAvgsz/8)
+    e = makeShockwave(recipientPositionM, recipientAvgsz/8);
+    e
     .setSpeed(Vector.fromAngle(0).normalize(0.125))
     .makeEllipse([0, 16])
     .getDrawable()
     .setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 0, 0], 24, powt(1/2)));
     
+    entities.push(e);
+    
     makeShockwave.lineWidth = 4;
-    makeShockwave(recipientPositionM, recipientAvgsz/8)
+    e = makeShockwave(recipientPositionM, recipientAvgsz/8);
+    e
     .setSpeed(Vector.fromAngle(-Math.PI/3).normalize(0.125))
     .makeEllipse([0, 16])
     .getDrawable()
     .setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 0, 0], 24, powt(1/2)));
     
+    entities.push(e);
+    
     makeShockwave.lineWidth = 4;
-    makeShockwave(recipientPositionM, recipientAvgsz/8)
+    e = makeShockwave(recipientPositionM, recipientAvgsz/8);
+    e
     .setSpeed(Vector.fromAngle(-2*Math.PI/3).normalize(0.125))
     .makeEllipse([0, 16])
     .getDrawable()
     .setStyle(new ColorTransition([255, 255, 255, 1], [0, 255, 0, 0], 24, powt(1/2)));
     
+    entities.push(e);
+    
     for(let i = 0; i < 2; ++i) {
         
     }
+    
+    return entities;
 };
 
 function entityExplode(count, entityClass, position, size, power) {

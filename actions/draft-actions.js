@@ -155,71 +155,137 @@ class DashKick extends Action {
     }
 }
 
+class ZoneEngageZone extends Entity {
+    constructor() {
+        super(...arguments);
+        
+        this.setLifespan(32);
+        this.setSizeTransition(new VectorTransition([0, 0], [240, 240], this.getLifespan() - 8, powt(4)));
+        
+        this.getDrawable()
+        .setZIndex(ALMOST_ZERO/8)
+        .setStyle(makeRadialGradientCanvas("cyan", "rgba(0, 255, 255, 0)", 256, 256));
+        
+        this.alphaTransition;
+    }
+    
+    updateDrawable() {
+        if(!this.sizeTransition) {
+            if(!this.alphaTransition) {
+                this.alphaTransition = new NumberTransition(1, 0, this.getLifespan() - this.lifeCounter, powt(0.75));
+            }
+            
+            this.getDrawable().globalAlpha = this.alphaTransition.getNext();
+        }
+        
+        // this.getDrawable().setStyle("rgba(0, 255, 255, " + (this.lifeCounter / this.getLifespan()) + ")");
+        
+        return this;
+    }
+}
+
+class ZoneEngageWindbox extends Hitbox {
+    constructor() {
+        super(...arguments);
+        
+        this.addInteraction(new VacuumDragActor(-0.5));
+        this.setTypeOffense(FX_WIND, 0.5);
+        this.removeAutoHitListeners();
+        this.addEventListener("hit", function(event) {
+            const entities = typeImpacts[FX_WIND](event.actor, event.recipient);
+            entities.forEach(function(entity) {
+                if(entity instanceof SmokeParticle) {
+                    entity.setLifespan(irandom(48, 64));
+                    entity.sizeTransition.duration = entity.getLifespan();
+                    
+                    entity.getDrawable()
+                    .setStyle(new ColorTransition([191, 255, 255, 1], [0, 223, 223, 1], entity.getLifespan(), powt(1/2)))
+                    .setStrokeStyle(new ColorTransition([0, 191, 191, 1], [0, 159, 191, 1], entity.getLifespan(), powt(1/2)));
+                }
+                
+                else if(entity instanceof OvalWaveParticle) {
+                    entity.getDrawable()
+                    .setStyle(new ColorTransition([255, 255, 255, 1], [0, 0, 255, 0], entity.getLifespan(), powt(1/2)));
+                }
+            });
+        });
+    }
+}
+
 class ZoneEngage extends BusyAction {
     constructor() {
         super();
-        
-        this.zone = null;
-        this.wind = null;
         
         this.targets = new SetArray();
         
         this.duration = 32;
         
         this.opponentFound = false;
+        this.endTime = 32;
     }
     
     use() {
         if(this.phase === 0) {
+            const action = this;
+            const user = this.user;
+            
             const positionM = this.user.getPositionM();
             
-            this.zone = Entity.fromMiddle(positionM, [0, 0]).setZIndex(this.user.getZIndex() + ALMOST_ZERO/8);
-            addEntity(this.zone);
-            this.wind = Hitbox.shared(this.zone);
-            this.wind.shareBlacklist(this.user.getBlacklist());
-            this.wind.addInteraction(new VacuumDragActor(-0.5));
-            this.wind.setTypeOffense(FX_WIND, 0.5);
-            addEntity(this.wind);
+            const zone = ZoneEngageZone.fromMiddle(positionM, [0, 0]);
+            const wind = ZoneEngageWindbox.shared(zone);
             
-            this.zone.setStyle(makeRadialGradientCanvas("cyan", "rgba(0, 255, 255, 0)", 256, 256));
+            zone.controllers.add(function samePositionAsUser() {
+                this.setPositionM(user.getPositionM());
+            });
+            
+            zone.addEventListener("remove", function zoneEngageEnd() {
+                for(let i = 0; i < action.targets.length; ++i) {
+                    if(user.opponents.includes(action.targets[i])) {
+                        action.opponentFound = true;
+                    }
+                }
+                
+                removeEntity(wind);
+                
+                if(action.opponentFound) {
+                    
+                }
+            });
+            
+            zone.addEventListener("collision", function recordBattlers(other) {
+                if(other.isBattler()) {
+                    action.targets.add(other);
+                }
+            });
+            
+            wind.shareBlacklist(this.user.getBlacklist());
+            
+            wind.addEventListener("hit", function opponentHitEffect(event) {
+                const recipient = event.recipient;
+                
+                if(user.opponents.includes(recipient)) {
+                    action.endTime = 72;
+                    const remTime = action.endTime - zone.lifeCounter;
+                    
+                    const background = (new RectangleDrawable([0, 0], [CANVAS.width, CANVAS.height])).setCameraMode("none");
+                    background.setLifespan(remTime);
+                    background.setZIndex(+1);
+                    background.setStyle(new ColorTransition([0, 255, 255, 0.125], [0, 255, 255, 1], Math.min(8, background.getLifespan() - 1), powt(1/4)));
+                    
+                    addDrawable(background);
+                    
+                    recipient.stun(remTime);
+                    entityShake(recipient, 4);
+                }
+            });
+            
+            addEntity(zone);
+            addEntity(wind);
             
             this.setRemovable(false);
         }
         
-        // repaceLoop(WORLD_PACE + Math.pow(2, this.phase));
-        
-        this.zone.setSizeM([Math.pow(1.125+0.0625, this.phase), Math.pow(1.125+0.0625, this.phase)]);
-        this.zone.setPositionM(this.user.getPositionM());
-        // this.zone.setStyle("rgba(0, 255, 255, " + (this.phase / 10) + ")");
-        
-        for(let i = 0; i < this.zone.collidedWith.length; ++i) {
-            if(this.zone.collidedWith[i].isBattler()) {
-                this.targets.add(this.zone.collidedWith[i]);
-            }
-        }
-        
-        if(this.phase === 32) {
-            for(let i = 0; i < this.targets.length; ++i) {
-                if(this.user.opponents.includes(this.targets[i])) {
-                    this.opponentFound = true;
-                }
-            }
-            
-            makeShockwave.lineWidth = 4;
-            makeShockwave(this.zone.getPositionM(), 24)
-            .getDrawable()
-            .setStyle(new ColorTransition([0, 255, 255, 0.5], [0, 255, 255, 0], 24, powt(1/2)));
-            
-            removeEntity(this.zone);
-            removeEntity(this.wind);
-            
-            if(this.opponentFound) {
-                repaceLoop(64);
-            }
-        }
-        
-        if(this.phase === 48) {
-            
+        if(this.phase === this.endTime) {
             this.setRemovable(true);
             this.end();
         }
@@ -228,14 +294,7 @@ class ZoneEngage extends BusyAction {
     }
     
     onend() {
-        // repaceLoop(WORLD_PACE);
-        
-        removeEntity(this.zone);
-        removeEntity(this.wind);
-        
-        repaceLoop(16);
-        
-        if(this.opponentFound) {
+        if(this.endId === 0 && this.opponentFound) {
             engageBattle(this.targets);
         }
         
