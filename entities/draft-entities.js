@@ -87,7 +87,10 @@ class Ground extends Obstacle {
         this.addInteraction(new WallActor());
     }
     
-    canMergeWith(entity) {return true;}
+    canMergeWith(entity) {
+        // return true;
+        return this.getDrawable().getZIndex() == entity.getDrawable().getZIndex();
+    }
 }
 
 class MovingObstacle extends Ground {
@@ -173,7 +176,7 @@ class WaterArea extends Area {
         this.addInteraction(new ThrustRecipient(THRUSTFACTOR_WATER));
         this.addInteraction(new WaterActor());
         
-        this.drawable.setZIndex(-10);
+        this.drawable.setZIndex(-1);
     }
 }
 
@@ -220,7 +223,7 @@ class AutoDoor extends Entity {
         this.warpPositionM = warpPositionM;
         
         this.setStyle("#000000BF");
-        this.setZIndex(+10);
+        this.setZIndex(+1);
         
         this.enablerTimeout = 2;
     }
@@ -604,7 +607,7 @@ class TextBubble extends Entity {
         this.lineCount = 5;
         
         this.setDrawable(new RectangleDrawable());
-        this.drawable.setZIndex(-10);
+        this.drawable.setZIndex(-1);
         this.drawable.setStyle("#FFFFFFBF");
     }
     
@@ -654,7 +657,7 @@ class TextBubble extends Entity {
             let drawable = new RectangleDrawable([this.getX(), this.getY() + y * this.lineHeight], [this.getWidth(), this.lineHeight]);
             
             drawable.setStyle(tf);
-            drawable.setZIndex(-11);
+            drawable.setZIndex(-2);
             
             addDrawable(drawable);
             this.drawables.push(drawable);

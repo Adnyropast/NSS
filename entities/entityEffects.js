@@ -81,7 +81,7 @@ function sharpSparks(count, position, size) {
     entityExplode.randomAngleVariation = 1;
     const entities = entityExplode(count, DiamondParticle, position, [size, size], 1);
     entities.forEach(function(entity) {
-        entity.setZIndex(random(-3, +1));
+        entity.setZIndex(random(-1, +1));
         entity.speed.multiply(irandom(size/12, size/8));
     });
     

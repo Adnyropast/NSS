@@ -26,7 +26,7 @@ class LCreated extends Entity {
     constructor() {
         super(...arguments);
         
-        this.setZIndex(-1000).setStyle(LCREATED_DEFSTYLE.copy());
+        this.setZIndex(0).setStyle(LCREATED_DEFSTYLE.copy());
         this.drawable.setStrokeStyle((new ColorTransition([0, 192, 255, 0.5], [0, 63, 255, 0.5], 128)).setLoop(true));
     }
 }

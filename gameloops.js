@@ -300,7 +300,7 @@ class BattleLoop extends GameLoop {
     constructor() {
         super();
         
-        this.camera = (Camera.fromMiddle([0, 0, 0], [256, 144, 0]));
+        this.camera = (BasicCamera.fromMiddle([0, 0, 0], [256, 144, 0]));
         this.battlers = new SetArray();
         this.movesQueue = new SetArray();
     }
@@ -1455,9 +1455,16 @@ function main() {
 function gamePoint_positionOnCanvas(position) {
     const positionOnCanvas = Vector.from(position);
     
-    if(CAMERA !== null) {
+    if(CAMERA instanceof BasicCamera) {
         positionOnCanvas.subtract(CAMERA.getOffset());
         positionOnCanvas.multiply(CAMERA.getSizeProp());
+    }
+    
+    else if(CAMERA instanceof AdvancedCamera) {
+        positionOnCanvas.subtract(CAMERA.getPositionM());
+        const sProp = CAMERA.getRange()/Math.abs(CAMERA.getZM());
+        positionOnCanvas.multiply(sProp);
+        positionOnCanvas.add([CANVAS.width/2, CANVAS.height/2]);
     }
     
     return positionOnCanvas;
@@ -1466,9 +1473,16 @@ function gamePoint_positionOnCanvas(position) {
 function canvasPoint_positionInGame(position) {
     const positionInGame = Vector.from(position);
     
-    if(CAMERA !== null) {
+    if(CAMERA instanceof BasicCamera) {
         positionInGame.divide(CAMERA.getSizeProp());
         positionInGame.add(CAMERA.getOffset());
+    }
+    
+    else if(CAMERA instanceof AdvancedCamera) {
+        positionInGame.subtract([CANVAS.width/2, CANVAS.height/2]);
+        const sProp = CAMERA.getRange()/Math.abs(CAMERA.getZM());
+        positionInGame.divide(sProp);
+        positionInGame.add(CAMERA.getPositionM());
     }
     
     return positionInGame;

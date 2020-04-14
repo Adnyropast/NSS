@@ -24,7 +24,7 @@ const EBAR_BORDERPROP = 4/36;
 class EnergyBarDrawable extends RectangleDrawable {
     constructor(position, size = [36, 12]) {
         super(position, size);
-        this.setZIndex(-200);
+        this.setZIndex(-1);
         this.setStyle("#00003F");
         this.colorTransition = ENETRA_DEFMAX2;
         this.borderWidth = 4;

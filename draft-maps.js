@@ -43,7 +43,8 @@ function loadFromData(data) {
     };
     
     if(data.hasOwnProperty("camera") && data.camera != undefined) {
-        lists.camera = Camera.fromData(object_clone(data.camera));
+        lists.camera = BasicCamera.fromData(object_clone(data.camera));
+        // lists.camera = AdvancedCamera.fromMiddle(lists.camera.getPositionM(), [16, 16, 16]).setZM(-128);
     }
     
     lists.player0 = makeEntityFromData(getCurrentCharacterData());
@@ -120,7 +121,7 @@ function loadMap(mapName) {
 
 function loadTest() {
     let lists = {
-        "camera" : Camera.fromMiddle([BASEWIDTH / 2, BASEHEIGHT / 2]),
+        "camera" : BasicCamera.fromMiddle([BASEWIDTH / 2, BASEHEIGHT / 2]),
         "player0" : (new (getPlayerClass())([80, 80])),
         entities : [],
         drawables : []

@@ -218,7 +218,7 @@ class MazeLevelBuilder {
     playerCellData() {
         // Camera
         
-        const camera = (Camera.fromMiddle([this.cellCenterX, this.cellCenterY]));
+        const camera = (BasicCamera.fromMiddle([this.cellCenterX, this.cellCenterY]));
         camera.maxSize = this.actualMazeSize;
         
         this.mapState.camera.positionM = camera.getPositionM();

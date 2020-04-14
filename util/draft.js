@@ -800,3 +800,32 @@ function modulo(a, b) {
 }
 
 let mod = modulo;
+
+function gaussianElimination(matrix) {
+    // Square matrix
+    
+    for(let y = 0; y < matrix.length; ++y) {
+        let pivot;
+        let limit = y;
+        
+        while((pivot = matrix[y][y]) == 0 && limit < matrix.length) {
+            matrix.push(matrix[y]);
+            matrix.splice(y, 1);
+            ++limit;
+        }
+        
+        if(pivot != 0) {
+            for(let y2 = y + 1; y2 < matrix.length; ++y2) {
+                let first = matrix[y2][y];
+                
+                if(first != 0) {
+                    for(let x = y; x < matrix[y].length; ++x) {
+                        matrix[y2][x] = matrix[y2][x] * pivot - first * matrix[y][x];
+                    }
+                }
+            }
+        }
+    }
+    
+    return matrix;
+}

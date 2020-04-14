@@ -91,7 +91,7 @@ class RocketPunchProjectile extends Projectile {
         // this.setForceFactor(0);
         this.setTypeOffense(FX_GOLD_, 4);
         
-        this.setZIndex(-97);
+        this.setZIndex(-0.5);
         
         let sizeTransition = new ColorTransition(Vector.multiplication(size, 1/2), size, this.lifespan, backForthTiming);
         

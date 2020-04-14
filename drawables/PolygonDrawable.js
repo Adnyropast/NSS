@@ -42,44 +42,57 @@ class PolygonDrawable extends Polygon {
     
     setCameraMode(cameraMode) {this.cameraMode = cameraMode; return this;}
     
+    getDrawPolygon() {
+        const camera = this.camera;
+        
+        let drawPolygon;
+        
+        if(this.cameraMode === "basic" && camera instanceof AdvancedCamera) {
+        // if(this.cameraMode === "advanced" && camera !== null) {
+            drawPolygon = new Polygon();
+            const zIndex = this.getZIndex();
+            
+            this.forEachPoint(function(point, index, polygon) {
+                const p = camera.projectPoint(point.concat(zIndex));
+                p[0] += CANVAS.width / 2;
+                p[1] += CANVAS.height / 2;
+                
+                drawPolygon.push(p);
+            });
+        }
+        
+        else if(this.cameraMode === "basic" && camera instanceof BasicCamera) {
+            drawPolygon = camera.getDrawPolygon(this);
+        }
+        
+        else if(this.cameraMode === "reproportion") {
+            const hProp = CANVAS.width / this.baseWidth;
+            const vProp = CANVAS.height / this.baseHeight;
+            
+            drawPolygon = Polygon.from(this);
+            
+            drawPolygon.forEachPoint(function(point, index, polygon) {
+                point[0] *= hProp;
+                point[1] *= vProp;
+            });
+        }
+        
+        else {
+            drawPolygon = Polygon.from(this);
+        }
+        
+        return drawPolygon;
+    }
+    
     draw(context) {
-        let camera = this.camera;
+        const drawPolygon = this.getDrawPolygon();
         
         context.beginPath();
         
-        for(var i = 0; i < this.size(); ++i) {
-            var point = this.getPoint(i);
+        for(let i = 0; i < drawPolygon.size(); ++i) {
+            const point = drawPolygon.getPoint(i);
             
-            if(this.cameraMode == "advanced") {
-                point = camera.projectPoint(point.concat(this.getZIndex()));
-            }
-            
-            var x = point[0], y = point[1];
-            
-            if(this.cameraMode == "advanced") {
-                x += CANVAS.width / 2;
-                y += CANVAS.height / 2;
-            }
-            
-            if(this.cameraMode == "basic") {
-                var wprop = camera.getWProp();
-                var hprop = camera.getHProp();
-                
-                x += -camera.getOffsetX();
-                y += -camera.getOffsetY();
-                
-                x *= wprop;
-                y *= hprop;
-            }
-            
-            if(this.cameraMode === "reproportion") {
-                let hProp = 1, vProp = 1;
-                if(this.baseWidth) {hProp = CANVAS.width / this.baseWidth;}
-                if(this.baseHeight) {vProp = CANVAS.height / this.baseHeight;}
-                
-                x *= hProp;
-                y *= vProp;
-            }
+            const x = point[0], y = point[1];
             
             if(i == 0) {
                 context.moveTo(x, y);
@@ -100,9 +113,6 @@ class PolygonDrawable extends Polygon {
         context.strokeStyle = this.getStrokeStyle();
         context.lineWidth = this.lineWidth;
         context.stroke();
-        
-        context.shadowBlur = 0;
-        context.shadowColor = "rgba(0, 0, 0, 0)";
         
         return this;
     }
@@ -127,6 +137,10 @@ class PolygonDrawable extends Polygon {
     
     setShadowBlur(shadowBlur) {
         return Drawable.prototype.setShadowBlur.bind(this)(...arguments);
+    }
+    
+    getCamera() {
+        return this.camera;
     }
 }
 
@@ -285,7 +299,15 @@ class MultiPolygonDrawable extends MultiPolygon {
     }
     
     getZIndex() {return this.zIndex;}
-    setZIndex(zIndex) {this.zIndex = zIndex; return this;}
+    setZIndex(zIndex) {
+        this.zIndex = zIndex;
+        
+        for(let i = 0; i < this.size(); ++i) {
+            this.getPolygon(i).setZIndex(zIndex);
+        }
+        
+        return this;
+    }
     draw(context) {
         for(let i = 0; i < this.size(); ++i) {
             this.getPolygon(i).draw(context);

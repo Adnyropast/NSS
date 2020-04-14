@@ -156,6 +156,10 @@ class Entity extends Rectangle {
                 entity.dataStyle = data.style;
             }
         }
+        if(data.zIndex) {
+            entity.getDrawable().setZIndex(data.zIndex);
+            entity.dataZIndex = data.zIndex;
+        }
         
         return entity;
     }
@@ -1117,6 +1121,10 @@ class Entity extends Rectangle {
             data.style = this.dataStyle;
         }
         
+        if(this.dataZIndex) {
+            data.zIndex = this.dataZIndex;
+        }
+        
         return data;
     }
     
@@ -1564,7 +1572,7 @@ class DetectionBox extends Entity {
         super(...arguments);
         this.setLifespan(16);
         this.getDrawable()
-        .setZIndex(-1024)
+        .setZIndex(-1)
         .setStyle(new ColorTransition([255, 0, 0, 1], [255, 0, 0, 0], this.getLifespan(), powt(6)));
         
         this.detected = new SetArray();

@@ -50,100 +50,75 @@ class RectangleDrawable extends Rectangle {
     
     setCameraMode(cameraMode) {this.cameraMode = cameraMode; return this;}
     
-    draw(context) {
-        let camera = this.camera;
+    getDrawRectangle() {
+        const camera = this.camera;
         
-        var x = this.getX();
-        var y = this.getY();
-        var width = this.getWidth();
-        var height = this.getHeight();
+        let drawRectangle;
         
-        if(this.cameraMode == "advanced" && camera != null) {
+        if(this.cameraMode === "basic" && camera instanceof AdvancedCamera) {
+        // if(this.cameraMode == "advanced" && camera != null) {
             let point1 = camera.projectPoint(this.getPosition1().concat(this.getZIndex()));
             let point2 = camera.projectPoint(this.getPosition2().concat(this.getZIndex()));
             
-            x = point1[0] + CANVAS.width / 2;
-            y = point1[1] + CANVAS.height / 2;
-            width = point2[0] - point1[0];
-            height = point2[1] - point1[1];
+            const x = point1[0] + CANVAS.width / 2;
+            const y = point1[1] + CANVAS.height / 2;
+            const width = point2[0] - point1[0];
+            const height = point2[1] - point1[1];
+            
+            drawRectangle = new Rectangle([x, y], [width, height]);
         }
         
-        if(this.cameraMode == "basic" && camera != null) {
-            var wprop = camera.getWProp();
-            var hprop = camera.getHProp();
-            
-            x -= camera.getOffsetX();
-            y -= camera.getOffsetY();
-            
-            x *= wprop;
-            y *= hprop;
-            width *= wprop;
-            height *= hprop;
+        else if(this.cameraMode == "basic" && camera instanceof BasicCamera) {
+            drawRectangle = camera.getDrawRectangle(this);
         }
         
-        if(this.cameraMode === "reproportion") {
-            let hProp = 1, vProp = 1;
-            if(this.baseWidth) {hProp = CANVAS.width / this.baseWidth;}
-            if(this.baseHeight) {vProp = CANVAS.height / this.baseHeight;}
+        else if(this.cameraMode === "reproportion") {
+            const hProp = CANVAS.width / this.baseWidth;
+            const vProp = CANVAS.height / this.baseHeight;
             
-            x *= hProp;
-            y *= vProp;
-            width *= hProp;
-            height *= vProp;
+            drawRectangle = new Rectangle(Vector.multiplication(this.position, [hProp, vProp]), Vector.multiplication(this.size, [hProp, vProp]));
         }
         
-        if(x == -Infinity) {
-            x = 0;
-        } if(y == -Infinity) {
-            y = 0;
-        } if(width == Infinity) {
-            width = CANVAS.width;
-        } if(height == Infinity) {
-            height = CANVAS.height;
+        else {
+            drawRectangle = Rectangle.from(this)
         }
+        
+        // if(drawRectangle.getX() == -Infinity) {drawRectangle.setX(0);}
+        // if(drawRectangle.getY() == -Infinity) {drawRectangle.setY(0);}
+        // if(drawRectangle.getWidth() == Infinity) {drawRectangle.setWidth(CANVAS.width);}
+        // if(drawRectangle.getHeight() == Infinity) {drawRectangle.setHeight(CANVAS.height);}
+        
+        return drawRectangle;
+    }
+    
+    draw(context) {
+        const drawRectangle = this.getDrawRectangle();
+        
+        const x = drawRectangle.getX();
+        const y = drawRectangle.getY();
+        const width = drawRectangle.getWidth();
+        const height = drawRectangle.getHeight();
+        
+        context.translate(x, y);
         
         if(shadowBlurOn) {
-            context.shadowBlur = this.shadowBlur;
+            context.shadowBlur = this.getShadowBlur();
             context.shadowColor = this.getShadowColor();
         }
         
-        var style = this.getStyle();
-        var alpha = this.getAlpha();
-        context.globalAlpha = alpha;
-        
-        this.actuallyDraw(context, style, x, y, width, height);
-        
-        context.globalAlpha = 1;
-        context.shadowBlur = 0;
-        context.shadowColor = "rgba(0, 0, 0, 0)";
-        
-        return this;
-    }
-    
-    setLifespan(lifespan) {this.lifespan = lifespan; return this;}
-    
-    actuallyDraw(context, style, x, y, width, height) {
-        context.translate(x, y);
+        context.globalAlpha = this.getAlpha();
+        const style = this.getStyle();
+        context.fillStyle = style;
+        context.strokeStyle = this.getStrokeStyle();
         
         try {
-        
-        if(style instanceof HTMLImageElement || style instanceof HTMLCanvasElement) {
-            context.shadowColor = "black";
-            
-            context.drawImage(style, 0, 0, width, height);
-        } else {
-            if(style !== INVISIBLE) {
-                context.fillStyle = style;
+            if(style instanceof HTMLImageElement || style instanceof HTMLCanvasElement) {
+                context.shadowColor = "black";
                 
+                context.drawImage(style, 0, 0, width, height);
+            } else {
                 context.fillRect(0, 0, width, height);
             }
-        }
-        
-        if(this.getStrokeStyle() !== INVISIBLE) {
-            context.strokeStyle = this.getStrokeStyle();
-            context.strokeRect(0, 0, width, height);
-        }
-        
         } catch(e) {
             if(style instanceof HTMLCanvasElement && (style.width === 0 || style.height === 0)) {
                 
@@ -154,8 +129,18 @@ class RectangleDrawable extends Rectangle {
             }
         }
         
+        context.strokeRect(0, 0, width, height);
+        
+        this.drawContextTranslated(context, drawRectangle);
+        
         context.translate(-x, -y);
         
+        return this;
+    }
+    
+    setLifespan(lifespan) {this.lifespan = lifespan; return this;}
+    
+    drawContextTranslated(context, drawRectangle) {
         return this;
     }
     
@@ -171,6 +156,10 @@ class RectangleDrawable extends Rectangle {
     
     getLifespan() {
         return this.lifespan;
+    }
+    
+    getShadowBlur() {
+        return this.shadowBlur;
     }
 }
 
@@ -194,18 +183,14 @@ class TextRectangleDrawable extends RectangleDrawable {
         return this;
     }
     
-    actuallyDraw(context, style, x, y, width, height) {
-        super.actuallyDraw(...arguments);
-        
-        context.translate(x, y);
+    drawContextTranslated(context, drawRectangle) {
+        super.drawContextTranslated(...arguments);
         
         try {
-            context.drawImage(this.contentStyle, 0, 0, width, height);
+            context.drawImage(this.contentStyle, 0, 0, drawRectangle.getWidth(), drawRectangle.getHeight());
         } catch(e) {
             
         }
-        
-        context.translate(-x, -y);
         
         return this;
     }

@@ -38,6 +38,9 @@ chapters["not_so_simple"].maps["hub"] = {
         
         {"className": "Hazard", "position": [-240, 24], "size": [16, 32]},
         
+        {"className": "Ground", "position": [-128, 64], "size": [256, 296], "zIndex": -16},
+        {"className": "Ground", "position": [-128, 64], "size": [256, 296], "zIndex": +16},
+        
         {"className": "SidewaysSetter", "position": [-640, -360], "size": [1280, 720]},
         
         {"className": "SkyDecoration"},

@@ -328,7 +328,8 @@ class CursorSmoke extends Entity {
         let drawable = new PolygonDrawable(makeRandomPolygon(16, 12, 16));
         drawable.multiplySize(avgsz/polygon_averageSize(drawable));
         drawable.initImaginarySize(avgsz);
-        drawable.setZIndex(-1000);
+        drawable.setCameraMode("reproportion");
+        drawable.setZIndex(-1024);
         
         this.setDrawable(drawable);
         
@@ -348,36 +349,27 @@ class PlayerCursor extends Cursor {
     constructor() {
         super(...arguments);
         
-        let crosshair = new MultiPolygonDrawable();
-        crosshair.setZIndex(-1000);
+        const crosshair = new MultiPolygonDrawable();
         
         for(let i = 0; i < 8; ++i) {
             let angle = i/8 * 2*Math.PI;
             let vector = Vector.fromAngle(angle).normalize(16);
             
             let drawable = new PolygonDrawable(makePathPolygon([[0, 0], vector.divided(2), vector], 1));
-            drawable.setStyle(CT_RAINBOW.copy().setDuration(1024));
-            drawable.shadowBlur = 8;
             
             crosshair.push(drawable);
         }
         
-        this.drawables[0] = crosshair;
-        
-        let circle = new PolygonDrawable(makePathPolygon(makeOvalPath(32, 8, 8), 0.5))
-        circle.setZIndex(-1000);
-        circle.setStyle(CT_RAINBOW.copy().setDuration(1024));
-        circle.shadowBlur = 16;
-        // this.drawables[1] = circle;
-        this.drawables[0].push(circle);
+        let circle = new PolygonDrawable(makePathPolygon(makeOvalPath(32, 8, 8), 0.5));
+        crosshair.push(circle);
         
         this.controllers.add(function() {
             if(this.speed.getNorm() > 1.5 && this.lifeCounter % 1 === 0) {
                 let vector = (new Vector(random(0, 4), 0)).rotate(Math.random() * 2*Math.PI);
                 
-                let smoke = CursorSmoke.fromMiddle(Vector.addition(this.getPositionM(), vector), [8, 8]);
+                let smoke = CursorSmoke.fromMiddle(gamePoint_positionOnCanvas(Vector.addition(this.getPositionM(), vector)).multiply(640/CANVAS.width), [16, 16]);
                 
-                smoke.setSpeed(vector.normalize(random(0, 0.5)));
+                smoke.setSpeed(vector.normalize(random(1, 1.5)));
                 
                 let cv = this.drawables[0][0].style.getCurrent();
                 let cv_start = colorVector_brighten(cv, 192);
@@ -390,7 +382,21 @@ class PlayerCursor extends Cursor {
             }
         });
         
+        crosshair.setZIndex(-1000);
+        crosshair.setStyle(CT_RAINBOW.copy().setDuration(1024));
+        crosshair.setShadowBlur(8);
+        crosshair.setCameraMode("reproportion");
+        crosshair.multiplySize(2);
+        
+        this.drawables[0] = crosshair;
+        
         this.alwaysLoad = true;
+    }
+    
+    updateDrawable() {
+        this.drawables[0].setPositionM(gamePoint_positionOnCanvas(this.getPositionM()).multiply(640/CANVAS.width));
+        
+        return this;
     }
 }
 

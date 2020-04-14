@@ -86,7 +86,7 @@ const DEF_CAMPOS = [0, 0, -(Math.pow(2, 9) + Math.pow(2, 8))/2];
 const DEF_CAMSIZE = [416, 234, 0];
 // const DEF_CAMSIZE = [16*10, 9*10, 0];
 
-class Camera extends Entity {
+class BasicCamera extends Entity {
     constructor(position, size = DEF_CAMSIZE) {
         let position_ = [], size_ = [];
         
@@ -104,11 +104,6 @@ class Camera extends Entity {
         this.accVal = 4;
         
         this.addInteraction(new CameraReplaceRecipient());
-        
-        this.range = Math.pow(2, 10.15);// Math.pow(2, 9) + Math.pow(2, 8);
-        this.direction = new Vector(0, 0, this.range);
-        this.vx = new Vector(-this.range, 0, 0);
-        this.vy = new Vector(0, -this.range, 0);
         
         this.maxSize = [480, 270];
         this.minSize = [256, 144];
@@ -172,16 +167,6 @@ class Camera extends Entity {
         return new Vector(this.getOffsetX(), this.getOffsetY());
     }
     
-    getRatio() {
-        return this.ratio;
-    }
-    
-    setRatio(ratio) {
-        this.ratio = ratio;
-        
-        return this;
-    }
-    
     update() {
         /**/
         
@@ -226,80 +211,6 @@ class Camera extends Entity {
         return super.update();
     }
     
-    getDestX() {
-        return this.position[0] + this.direction[0];
-    } getDestY() {
-        return this.position[1] + this.direction[1];
-    } getDestZ() {
-        return this.position[2] + this.direction[2];
-    } getDest() {
-        return this.direction.plus(this.position);
-    }
-    
-    normalize() {
-        let normX = 0, normY = 0, normZ = 0;
-        
-        for(let dim = 0; dim < 3; ++dim) {
-            normX += Math.pow(this.vx[dim], 2);
-            normY += Math.pow(this.vy[dim], 2);
-            normZ += Math.pow(this.direction[dim], 2);
-        }
-        
-        normX = Math.sqrt(normX);
-        normY = Math.sqrt(normY);
-        normZ = Math.sqrt(normZ);
-        
-        for(let dim = 0; dim < 3; ++dim) {
-            this.vx[dim] *= this.range / normX;
-            this.vy[dim] *= this.range / normY;
-            this.direction[dim] *= this.range / normZ;
-        }
-        
-        return this;
-    }
-    
-    getRange() {return this.range;}
-    setRange(range) {this.range = range; return this.normalize();}
-    
-    getPlanePoint(position) {
-        // if(position.length != 3) return this;
-        
-        let pointer = Vector.subtraction(position, this.getPositionM());
-        let scalar = 0;
-        
-        for(let dim = 0; dim < 3; ++dim) {
-            scalar += this.direction[dim] * pointer[dim];
-        }
-        
-        if(scalar <= 0) {
-            return new Vector(NaN, NaN, NaN);
-        }
-        
-        const k = this.direction.scalar(this.direction) / scalar;
-        
-        return pointer.multiply(k).add(this.getPositionM());
-    }
-    
-    projectPoint(position) {
-        let pp = this.getPlanePoint(position);
-        
-        let baseX = this.vx.normalized(-1);
-        let baseY = this.vy.normalized(-1);
-        
-        let matrix = gaussianElimination([
-            [baseX[0], baseY[0], pp[0] - (this.getPositionM(0) + this.direction[0])],
-            [baseX[1], baseY[1], pp[1] - (this.getPositionM(1) + this.direction[1])],
-            [baseX[2], baseY[2], pp[2] - (this.getPositionM(2) + this.direction[2])]
-        ]);
-        
-        let projection = new Vector();
-        
-        projection.set(1, matrix[1][2] / matrix[1][1]);
-        projection.set(0, (matrix[0][2] - matrix[0][1] * projection.get(1)) / matrix[0][0]);
-        
-        return projection;
-    }
-    
     getWProp() {return CANVAS.width / this.width;}
     getHProp() {return CANVAS.height / this.height;}
     getSizeProp(dimension) {
@@ -313,6 +224,25 @@ class Camera extends Entity {
         
         return null;
     }
+    
+    getDrawRectangle(rectangle) {
+        const wProp = this.getWProp();
+        const hProp = this.getHProp();
+        
+        return new Rectangle([(rectangle.getX() - this.getOffsetX()) * wProp, (rectangle.getY() - this.getOffsetY()) * hProp], [rectangle.getWidth() * wProp, rectangle.getHeight() * hProp]);
+    }
+    
+    getDrawPolygon(polygon) {
+        const wProp = this.getWProp();
+        const hProp = this.getHProp();
+        const offsetX = this.getOffsetX();
+        const offsetY = this.getOffsetY();
+        
+        return Polygon.from(polygon).forEachPoint(function(point, index, polygon) {
+            point[0] = (point[0] - offsetX) * wProp;
+            point[1] = (point[1] - offsetY) * hProp;
+        });
+    }
 }
 
 class CameraBoundary extends Entity {
@@ -325,35 +255,6 @@ class CameraBoundary extends Entity {
         // this.setStyle("#FF0000");
         this.setStyle(INVISIBLE);
     }
-}
-
-function gaussianElimination(matrix) {
-    // Square matrix
-    
-    for(let y = 0; y < matrix.length; ++y) {
-        let pivot;
-        let limit = y;
-        
-        while((pivot = matrix[y][y]) == 0 && limit < matrix.length) {
-            matrix.push(matrix[y]);
-            matrix.splice(y, 1);
-            ++limit;
-        }
-        
-        if(pivot != 0) {
-            for(let y2 = y + 1; y2 < matrix.length; ++y2) {
-                let first = matrix[y2][y];
-                
-                if(first != 0) {
-                    for(let x = y; x < matrix[y].length; ++x) {
-                        matrix[y2][x] = matrix[y2][x] * pivot - first * matrix[y][x];
-                    }
-                }
-            }
-        }
-    }
-    
-    return matrix;
 }
 
 class CameraBoundaryAround extends EntityAround {
